@@ -539,12 +539,19 @@ function enterRoom() {
   onValue(ref(db, `${ROOM_ID}/messages`), snap => {
     const container = document.getElementById('chatMessages');
     const msgs = snap.val();
+
+    // 현재 맨 아래 근처인지 확인 (50px 여유)
+    const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 50;
+
     container.innerHTML = '';
     if (msgs) Object.values(msgs).sort((a,b) => a.ts - b.ts).forEach(renderMessage);
-    // 렌더링 완료 후 확실하게 최하단으로
-    requestAnimationFrame(() => {
-      container.scrollTop = container.scrollHeight;
-    });
+
+    // 맨 아래 있었거나 새 메시지면 스크롤 이동
+    if (isAtBottom) {
+      requestAnimationFrame(() => {
+        container.scrollTop = container.scrollHeight;
+      });
+    }
   });
 
   onValue(ref(db, `${ROOM_ID}/lastRead/${partner.name}`), snap => {
@@ -608,19 +615,21 @@ window.sendMessage = async function() {
   if (!text) return;
   input.value = ''; input.style.height = 'auto';
 
-  const msgRef = push(ref(db, `${ROOM_ID}/messages`), {
+  // 번역을 먼저 완료한 뒤 한 번에 push → onValue가 1번만 발동
+  let translation = null;
+  if (translateEnabled) {
+    const tgt = myLang === 'ko' ? 'ja' : 'ko';
+    translation = await translate(text, myLang, tgt);
+  }
+
+  push(ref(db, `${ROOM_ID}/messages`), {
     uid: me.name, name: me.name, photoURL: me.photoURL || '',
-    lang: myLang, text, translation: null, type: 'text', ts: Date.now(),
+    lang: myLang, text,
+    translation: translation || null,
+    type: 'text', ts: Date.now(),
     ...(replyTo ? { replyTo: { text: replyTo.text, type: replyTo.type, name: replyTo.name } } : {})
   });
   cancelReply();
-
-  if (translateEnabled) {
-    const tgt = myLang === 'ko' ? 'ja' : 'ko';
-    const key = (await msgRef).key;
-    const translation = await translate(text, myLang, tgt);
-    if (translation) set(ref(db, `${ROOM_ID}/messages/${key}/translation`), translation);
-  }
 };
 
 window.handleKey  = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } };
