@@ -539,18 +539,22 @@ function enterRoom() {
   onValue(ref(db, `${ROOM_ID}/messages`), snap => {
     const container = document.getElementById('chatMessages');
     const msgs = snap.val();
-
-    // 현재 맨 아래 근처인지 확인 (50px 여유)
     const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 50;
 
     container.innerHTML = '';
-    if (msgs) Object.values(msgs).sort((a,b) => a.ts - b.ts).forEach(renderMessage);
-
-    // 맨 아래 있었거나 새 메시지면 스크롤 이동
-    if (isAtBottom) {
-      requestAnimationFrame(() => {
-        container.scrollTop = container.scrollHeight;
+    let latestTheirTs = 0;
+    if (msgs) {
+      Object.values(msgs).sort((a,b) => a.ts - b.ts).forEach(msg => {
+        renderMessage(msg);
+        if (msg.uid !== me.name && msg.ts > latestTheirTs) latestTheirTs = msg.ts;
       });
+    }
+
+    // 상대방 메시지 읽음 처리 — 렌더 후 1번만
+    if (latestTheirTs > 0) set(ref(db, `${ROOM_ID}/lastRead/${me.name}`), latestTheirTs);
+
+    if (isAtBottom) {
+      requestAnimationFrame(() => { container.scrollTop = container.scrollHeight; });
     }
   });
 
@@ -701,8 +705,6 @@ function renderMessage(msg) {
   }
   wrap.appendChild(t);
   container.appendChild(wrap);
-
-  if (!isMe) set(ref(db, `${ROOM_ID}/lastRead/${me.name}`), msg.ts);
 }
 
 const fmt = ts => { const d = new Date(ts); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
