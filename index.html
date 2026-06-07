@@ -86,8 +86,9 @@
   .tab-btn.active { color: var(--accent); }
 
   /* ── CHAT ── */
-  .chat-messages { flex: 1; overflow-y: auto; padding: 16px 12px; display: flex; flex-direction: column; gap: 8px; }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 16px 12px; display: flex; flex-direction: column; gap: 8px; overflow-anchor: none; }
   .chat-messages::-webkit-scrollbar { display: none; }
+  #chatAnchor { min-height: 1px; overflow-anchor: auto; }
   .msg-wrap { display: flex; flex-direction: column; max-width: 78%; }
   .msg-wrap.me { align-self: flex-end; align-items: flex-end; }
   .msg-wrap.them { align-self: flex-start; align-items: flex-start; }
@@ -260,7 +261,7 @@
           </button>
         </div>
       </div>
-      <div class="chat-messages" id="chatMessages"></div>
+      <div class="chat-messages" id="chatMessages"><div id="chatAnchor"></div></div>
       <div class="reply-bar" id="replyBar">
         <span style="color:var(--accent);font-size:0.75rem;flex-shrink:0">↩ 답장</span>
         <span class="reply-bar-text" id="replyBarText"></span>
@@ -538,21 +539,19 @@ function enterRoom() {
 
   onValue(ref(db, `${ROOM_ID}/messages`), snap => {
     const container = document.getElementById('chatMessages');
+    const anchor = document.getElementById('chatAnchor');
     const msgs = snap.val();
+
+    // 앵커 유지하면서 메시지만 교체
     container.innerHTML = '';
     if (msgs) Object.values(msgs).sort((a,b) => a.ts - b.ts).forEach(renderMessage);
+    container.appendChild(anchor);
 
-    // 항상 최하단 (이중 안전장치)
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      container.scrollTop = container.scrollHeight;
-    }));
-    setTimeout(() => { container.scrollTop = container.scrollHeight; }, 150);
+    // 앵커로 스크롤 — 브라우저가 자체적으로 처리하므로 가장 안정적
+    anchor.scrollIntoView(false);
 
     // 읽음 처리
-    if (msgs) {
-      const msgList = Object.values(msgs);
-      updateMyLastRead(msgList);
-    }
+    if (msgs) updateMyLastRead(Object.values(msgs));
   });
 
   // 읽음 처리 — 디바운스해서 onValue 재발동 최소화
