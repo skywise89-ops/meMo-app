@@ -537,6 +537,7 @@ function enterRoom() {
   });
 
   let lastMsgCount = 0;
+  let lastTheirTs = 0;
 
   onValue(ref(db, `${ROOM_ID}/messages`), snap => {
     const container = document.getElementById('chatMessages');
@@ -557,9 +558,13 @@ function enterRoom() {
       if (msg.uid !== me.name && msg.ts > latestTheirTs) latestTheirTs = msg.ts;
     });
 
-    if (latestTheirTs > 0) set(ref(db, `${ROOM_ID}/lastRead/${me.name}`), latestTheirTs);
+    // lastRead는 새 상대방 메시지가 있을 때만, onValue 밖에서 실행
+    if (latestTheirTs > lastTheirTs) {
+      lastTheirTs = latestTheirTs;
+      setTimeout(() => set(ref(db, `${ROOM_ID}/lastRead/${me.name}`), latestTheirTs), 0);
+    }
 
-    // 첫 로드 or 새 메시지 수신 or 이미 맨 아래였을 때 → 최하단
+    // 첫 로드 or 새 메시지 or 맨 아래 → 최하단
     if (isFirstLoad || isNewMessage || isAtBottom) {
       requestAnimationFrame(() => requestAnimationFrame(() => {
         container.scrollTop = container.scrollHeight;
