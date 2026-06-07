@@ -538,10 +538,13 @@ function enterRoom() {
 
   onValue(ref(db, `${ROOM_ID}/messages`), snap => {
     const container = document.getElementById('chatMessages');
-    container.innerHTML = '';
     const msgs = snap.val();
+    container.innerHTML = '';
     if (msgs) Object.values(msgs).sort((a,b) => a.ts - b.ts).forEach(renderMessage);
-    container.scrollTop = container.scrollHeight;
+    // 렌더링 완료 후 확실하게 최하단으로
+    requestAnimationFrame(() => {
+      container.scrollTop = container.scrollHeight;
+    });
   });
 
   onValue(ref(db, `${ROOM_ID}/lastRead/${partner.name}`), snap => {
