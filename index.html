@@ -14,7 +14,72 @@
     --text: #f0ede8; --text2: #9a9590; --danger: #c87e7e;
     --bubble-me: #2a2118; --bubble-them: #1a1e24;
     --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --chat-bg-img: none; --chat-bg-opacity: 0.15;
   }
+  /* 라이트로즈 */
+  .theme-rose {
+    --bg: #fff5f7; --surface: #ffffff; --surface2: #fce8ed;
+    --border: rgba(220,100,120,0.12); --accent: #d4607a; --accent2: #b07090;
+    --text: #2a1018; --text2: #906070; --danger: #c0392b;
+    --bubble-me: #fde8ee; --bubble-them: #f8f0f2;
+  }
+  /* 라이트블루 */
+  .theme-skyblue {
+    --bg: #f0f6ff; --surface: #ffffff; --surface2: #e4eefa;
+    --border: rgba(80,130,220,0.12); --accent: #4a7fd4; --accent2: #6090b8;
+    --text: #101828; --text2: #607090; --danger: #c0392b;
+    --bubble-me: #ddeeff; --bubble-them: #eef4ff;
+  }
+  /* 라이트퍼플 */
+  .theme-purple {
+    --bg: #f8f4ff; --surface: #ffffff; --surface2: #ede4ff;
+    --border: rgba(140,90,220,0.12); --accent: #8a5cd4; --accent2: #a070c8;
+    --text: #180e28; --text2: #806090; --danger: #c0392b;
+    --bubble-me: #ecdeff; --bubble-them: #f4f0ff;
+  }
+  /* 크림 */
+  .theme-cream {
+    --bg: #fdf8f0; --surface: #ffffff; --surface2: #f5ede0;
+    --border: rgba(180,140,80,0.12); --accent: #b8904a; --accent2: #8a7060;
+    --text: #1e160a; --text2: #806840; --danger: #c0392b;
+    --bubble-me: #fdf0d8; --bubble-them: #f8f0e8;
+  }
+  /* 채팅 배경 이미지 */
+  #chatPane { position: relative; }
+  #chatBgLayer {
+    position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    background-size: cover; background-position: center;
+    opacity: var(--chat-bg-opacity);
+  }
+  .chat-messages { position: relative; z-index: 1; }
+  .chat-input-wrap { position: relative; z-index: 1; }
+
+  /* 테마 선택 UI */
+  .theme-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 4px 0; }
+  .theme-dot {
+    width: 44px; height: 44px; border-radius: 50%; cursor: pointer;
+    border: 3px solid transparent; transition: transform 0.15s, border-color 0.15s;
+    display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+  }
+  .theme-dot:active { transform: scale(0.9); }
+  .theme-dot.active { border-color: var(--accent); }
+  .bg-preview-wrap { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .bg-option {
+    width: 52px; height: 52px; border-radius: 10px; cursor: pointer; overflow: hidden;
+    border: 2px solid transparent; transition: border-color 0.15s, transform 0.15s;
+    background-size: cover; background-position: center; flex-shrink: 0;
+  }
+  .bg-option:active { transform: scale(0.93); }
+  .bg-option.active { border-color: var(--accent); }
+  .bg-opacity-wrap { display: flex; align-items: center; gap: 10px; width: 100%; }
+  .bg-opacity-wrap input[type=range] { flex: 1; accent-color: var(--accent); }
+  .bg-upload-btn {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    background: var(--surface2); border: 1px dashed var(--border); border-radius: 10px;
+    color: var(--text2); padding: 10px 16px; font-size: 0.85rem; cursor: pointer;
+    transition: border-color 0.2s, color 0.2s; width: 100%;
+  }
+  .bg-upload-btn:active { border-color: var(--accent); color: var(--accent); }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: -apple-system, 'Noto Sans KR', sans-serif; }
   .screen { position: fixed; inset: 0; display: flex; flex-direction: column; }
@@ -119,10 +184,39 @@
   .call-btn.video-toggle { background: var(--surface2); border: 1px solid var(--border); }
   .call-btn.start-audio { background: #4a7a4a; }
   .call-btn.start-video { background: var(--accent2); }
-  .call-video-wrap { width: 100%; max-width: 360px; position: relative; border-radius: 16px; overflow: hidden; background: #000; aspect-ratio: 9/16; max-height: 55vh; }
-  .call-video-wrap video { width: 100%; height: 100%; object-fit: cover; }
-  #localVid { position: absolute; width: 30%; aspect-ratio: 9/16; bottom: 12px; right: 12px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); z-index: 2; }
-  #remoteVid { width: 100%; height: 100%; }
+  /* 영상통화 풀스크린 */
+  #videoCallScreen {
+    position: fixed; inset: 0; background: #000; z-index: 150;
+    display: none; flex-direction: column;
+  }
+  #videoCallScreen.active { display: flex; }
+  #remoteVid { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  #localVid {
+    position: absolute; bottom: 120px; right: 16px;
+    width: 100px; aspect-ratio: 9/16;
+    border-radius: 14px; overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.3);
+    z-index: 2; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+  #localVidEl { width: 100%; height: 100%; object-fit: cover; }
+  .video-controls {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    display: flex; justify-content: center; gap: 20px;
+    padding: 24px 24px calc(24px + var(--safe-bottom));
+    background: linear-gradient(transparent, rgba(0,0,0,0.7));
+    z-index: 3;
+  }
+  .video-top-bar {
+    position: absolute; top: 0; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 52px 20px 12px;
+    background: linear-gradient(rgba(0,0,0,0.5), transparent);
+    z-index: 3;
+  }
+  .video-top-name { color: white; font-size: 1rem; font-weight: 500; }
+  .video-top-timer { color: rgba(255,255,255,0.8); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+  /* 기존 call-video-wrap은 음성통화 때 사용 안 하므로 숨김 */
+  .call-video-wrap { display: none; }
 
   /* ── INCOMING CALL ── */
   #incomingCall { position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 200; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 1.5rem; }
@@ -157,6 +251,42 @@
   /* ── TOAST ── */
   #toast { position: fixed; bottom: calc(80px + var(--safe-bottom)); left: 50%; transform: translateX(-50%) translateY(10px); background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 20px; font-size: 0.85rem; color: var(--text); z-index: 300; opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; white-space: nowrap; }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* 답장 */
+  .reply-preview {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface2); border-left: 3px solid var(--accent);
+    border-radius: 8px; padding: 8px 12px; margin: 0 12px 4px;
+    font-size: 0.8rem; color: var(--text2);
+  }
+  .reply-preview-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .reply-cancel { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 1.1rem; padding: 0 4px; }
+  .msg-reply-quote {
+    background: var(--surface2); border-left: 3px solid var(--accent);
+    border-radius: 6px; padding: 5px 10px; margin-bottom: 5px;
+    font-size: 0.75rem; color: var(--text2);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .msg-wrap { cursor: pointer; }
+
+  /* 이모티콘 패널 */
+  .emoji-panel-btn {
+    background: none; border: none; color: var(--text2); cursor: pointer;
+    padding: 4px; font-size: 1.3rem; transition: transform 0.15s;
+  }
+  .emoji-panel-btn:active { transform: scale(0.85); }
+  #emojiPanel {
+    position: absolute; bottom: calc(100% + 4px); left: 0; right: 0;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px 16px 0 0; padding: 12px;
+    display: none; flex-wrap: wrap; gap: 6px; z-index: 10;
+  }
+  #emojiPanel.open { display: flex; }
+  .emoji-item { font-size: 1.6rem; cursor: pointer; padding: 4px; border-radius: 8px; transition: background 0.15s; }
+  .emoji-item:active { background: var(--surface2); }
+
+  /* 알림 토글 */
+  .notif-status { font-size: 0.75rem; color: var(--text2); }
 </style>
 </head>
 <body>
@@ -203,8 +333,38 @@
           </button>
         </div>
       </div>
+      <div id="chatBgLayer"></div>
       <div class="chat-messages" id="chatMessages"></div>
-      <div class="chat-input-wrap">
+      <div id="replyPreview" style="display:none" class="reply-preview">
+        <span style="color:var(--accent);font-size:0.75rem">↩ 답장</span>
+        <span class="reply-preview-text" id="replyPreviewText"></span>
+        <button class="reply-cancel" onclick="cancelReply()">✕</button>
+      </div>
+      <div class="chat-input-wrap" style="position:relative">
+        <div id="emojiPanel">
+          <!-- 복숭아 + 기본 이모티콘 -->
+          <span class="emoji-item" onclick="insertEmoji('🍑')">🍑</span>
+          <span class="emoji-item" onclick="insertEmoji('🍑💕')">🍑💕</span>
+          <span class="emoji-item" onclick="insertEmoji('🥰')">🥰</span>
+          <span class="emoji-item" onclick="insertEmoji('😍')">😍</span>
+          <span class="emoji-item" onclick="insertEmoji('🥺')">🥺</span>
+          <span class="emoji-item" onclick="insertEmoji('😘')">😘</span>
+          <span class="emoji-item" onclick="insertEmoji('💕')">💕</span>
+          <span class="emoji-item" onclick="insertEmoji('💖')">💖</span>
+          <span class="emoji-item" onclick="insertEmoji('✨')">✨</span>
+          <span class="emoji-item" onclick="insertEmoji('🌸')">🌸</span>
+          <span class="emoji-item" onclick="insertEmoji('🍀')">🍀</span>
+          <span class="emoji-item" onclick="insertEmoji('😂')">😂</span>
+          <span class="emoji-item" onclick="insertEmoji('🤣')">🤣</span>
+          <span class="emoji-item" onclick="insertEmoji('😭')">😭</span>
+          <span class="emoji-item" onclick="insertEmoji('😅')">😅</span>
+          <span class="emoji-item" onclick="insertEmoji('🙈')">🙈</span>
+          <span class="emoji-item" onclick="insertEmoji('💤')">💤</span>
+          <span class="emoji-item" onclick="insertEmoji('🍜')">🍜</span>
+          <span class="emoji-item" onclick="insertEmoji('☕')">☕</span>
+          <span class="emoji-item" onclick="insertEmoji('🎵')">🎵</span>
+        </div>
+        <button class="emoji-panel-btn" onclick="toggleEmojiPanel()" title="이모티콘">🍑</button>
         <button class="icon-btn" onclick="document.getElementById('mediaInput').click()">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         </button>
@@ -233,10 +393,6 @@
         <div class="call-name" id="callName">상대방</div>
         <div class="call-status" id="callStatus">통화 중이 아닙니다</div>
         <div class="call-timer" id="callTimer" style="display:none">00:00</div>
-        <div class="call-video-wrap" id="callVideoWrap" style="display:none">
-          <video id="remoteVid" autoplay playsinline></video>
-          <div id="localVid"><video id="localVidEl" autoplay playsinline muted></video></div>
-        </div>
         <div class="call-controls" id="callControls">
           <button class="call-btn start-audio" onclick="startCall('audio')">
             <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11.7 19.79 19.79 0 0115.9 3.07 2 2 0 0122 16.92z"/></svg>
@@ -268,7 +424,54 @@
           <div style="font-size:1.2rem;font-weight:400" id="myNameDisplay">-</div>
           <div style="font-size:0.8rem;color:var(--text2)" id="myEmailDisplay">-</div>
         </div>
+        <!-- 테마 -->
         <div class="profile-section">
+          <div class="profile-row" style="flex-direction:column;align-items:flex-start;gap:12px">
+            <span class="profile-row-label">테마</span>
+            <div class="theme-grid">
+              <div class="theme-dot active" id="theme-dark"     style="background:#0d0d0f;border:2px solid #555"    onclick="setTheme('dark')"     title="다크">🌑</div>
+              <div class="theme-dot"        id="theme-rose"     style="background:#fff5f7;border:2px solid #d4607a" onclick="setTheme('rose')"     title="라이트로즈">🌹</div>
+              <div class="theme-dot"        id="theme-skyblue"  style="background:#f0f6ff;border:2px solid #4a7fd4" onclick="setTheme('skyblue')"  title="라이트블루">🩵</div>
+              <div class="theme-dot"        id="theme-purple"   style="background:#f8f4ff;border:2px solid #8a5cd4" onclick="setTheme('purple')"   title="라이트퍼플">💜</div>
+              <div class="theme-dot"        id="theme-cream"    style="background:#fdf8f0;border:2px solid #b8904a" onclick="setTheme('cream')"    title="크림">🍞</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 채팅 배경 -->
+        <div class="profile-section">
+          <div class="profile-row" style="flex-direction:column;align-items:flex-start;gap:12px">
+            <span class="profile-row-label">채팅 배경</span>
+            <div class="bg-preview-wrap">
+              <div class="bg-option active" id="bg-none" style="background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:1.2rem" onclick="setBg('none')">✕</div>
+              <div class="bg-option" id="bg-1" style="background:linear-gradient(135deg,#1a0a20,#0a1530)" onclick="setBg('gradient1')"></div>
+              <div class="bg-option" id="bg-2" style="background:linear-gradient(135deg,#0a2010,#102820)" onclick="setBg('gradient2')"></div>
+              <div class="bg-option" id="bg-3" style="background:radial-gradient(circle,#1a1020,#0a0a0a)" onclick="setBg('gradient3')"></div>
+            </div>
+            <label class="bg-upload-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              내 사진으로 설정
+              <input type="file" accept="image/*" style="display:none" onchange="setBgFromFile(event)">
+            </label>
+            <div class="bg-opacity-wrap">
+              <span style="font-size:0.75rem;color:var(--text2)">투명도</span>
+              <input type="range" id="bgOpacity" min="5" max="40" value="15" oninput="setBgOpacity(this.value)">
+              <span style="font-size:0.75rem;color:var(--text2)" id="bgOpacityVal">15%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-section">
+          <div class="profile-row">
+            <div>
+              <div class="profile-row-label">알림</div>
+              <div class="notif-status" id="notifStatus">상태 확인 중...</div>
+            </div>
+            <label class="toggle-sw">
+              <input type="checkbox" id="notifToggle" onchange="toggleNotification()">
+              <span class="slider"></span>
+            </label>
+          </div>
           <div class="profile-row">
             <span class="profile-row-label">자동 번역 (한↔일)</span>
             <label class="toggle-sw">
@@ -335,6 +538,30 @@
 <div id="lightbox">
   <button class="close-lb" onclick="closeLightbox()">✕</button>
   <div id="lightboxContent"></div>
+</div>
+
+<!-- 영상통화 풀스크린 -->
+<div id="videoCallScreen">
+  <video id="remoteVid" autoplay playsinline></video>
+  <div id="localVid"><video id="localVidEl" autoplay playsinline muted></video></div>
+  <div class="video-top-bar">
+    <div class="video-top-name" id="videoCallName">-</div>
+    <div class="video-top-timer" id="videoCallTimer">00:00</div>
+  </div>
+  <div class="video-controls">
+    <button class="call-btn mute" id="muteBtnV" onclick="toggleMute()">
+      <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    </button>
+    <button class="call-btn video-toggle" id="videoToggleBtnV" onclick="toggleVideo()">
+      <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+    </button>
+    <button class="call-btn" style="background:#5a5a8a" onclick="flipCamera()" id="flipBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+    </button>
+    <button class="call-btn end" onclick="endCall()">
+      <svg viewBox="0 0 24 24"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07"/><path d="M6.67 6.67A19.5 19.5 0 0 0 3 15.9a2 2 0 0 1-2-2.18v-3a2 2 0 0 1 1.72-2 12.84 12.84 0 0 0 2.81-.7 2 2 0 0 1 2.11.45l1.27 1.27"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+    </button>
+  </div>
 </div>
 
 <div id="toast"></div>
@@ -521,6 +748,8 @@ function enterRoom() {
   document.getElementById('langSelect').value           = myLang;
   document.getElementById('translateToggle').checked    = translateEnabled;
 
+  loadThemeAndBg();
+  initNotifStatus();
   showScreen('mainScreen');
 }
 
@@ -572,6 +801,13 @@ function renderMessage(msg) {
   }
   const isMe = msg.uid === me.name;
   const wrap = document.createElement('div'); wrap.className = `msg-wrap ${isMe ? 'me' : 'them'}`;
+  // 길게 누르면 답장
+  let pressTimer;
+  wrap.addEventListener('touchstart', () => { pressTimer = setTimeout(() => { if (msg.type === 'text') setReply(msg); }, 500); });
+  wrap.addEventListener('touchend', () => clearTimeout(pressTimer));
+  wrap.addEventListener('touchmove', () => clearTimeout(pressTimer));
+  // PC: 더블클릭
+  wrap.addEventListener('dblclick', () => { if (msg.type === 'text') setReply(msg); });
 
   if (!isMe) {
     const s = document.createElement('div'); s.className = 'msg-sender';
@@ -600,6 +836,13 @@ function renderMessage(msg) {
     const v = document.createElement('video'); v.src = msg.url; v.controls = true; v.playsinline = true;
     d.appendChild(v); bubble.appendChild(d);
   }
+  // 답장 인용문
+  if (msg.replyTo) {
+    const quote = document.createElement('div');
+    quote.className = 'msg-reply-quote';
+    quote.textContent = '↩ ' + (msg.replyTo.text || (msg.replyTo.type === 'image' ? '📷 사진' : '🎥 영상'));
+    wrap.appendChild(quote);
+  }
   wrap.appendChild(bubble);
 
   if (msg.translation && translateEnabled) {
@@ -625,9 +868,11 @@ function renderMessage(msg) {
   wrap.appendChild(t);
   container.appendChild(wrap);
 
-  // 상대방 메시지 수신 시 → 내 lastRead 업데이트
+  // 상대방 메시지 수신 시 → 내 lastRead 업데이트 + 알림
   if (!isMe) {
     set(ref(db, `${ROOM_ID}/lastRead/${me.name}`), msg.ts);
+    if (msg.type === 'text') sendNotification(msg.name, msg.text);
+    else sendNotification(msg.name, msg.type === 'image' ? '📷 사진을 보냈어요' : '🎥 영상을 보냈어요');
   }
 }
 const fmt = ts => { const d = new Date(ts); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
@@ -757,16 +1002,53 @@ function setupPC(partnerName, isInitiator) {
 }
 
 function showCallUI() {
-  document.getElementById('callVideoWrap').style.display = callType==='video'?'block':'none';
   document.getElementById('callControls').style.display = 'none';
   document.getElementById('activeCallControls').style.display = 'flex';
   document.getElementById('callStatus').textContent = '연결 중...';
   document.getElementById('callTimer').style.display = 'block';
+
+  if (callType === 'video') {
+    // 영상통화 풀스크린
+    const vs = document.getElementById('videoCallScreen');
+    vs.classList.add('active');
+    document.getElementById('videoCallName').textContent = partner.name;
+  }
   switchTab('call');
 }
 
+// 전후방 카메라 전환
+let currentFacingMode = 'user';
+window.flipCamera = async function() {
+  if (!localStream) return;
+  currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+  const videoTrack = localStream.getVideoTracks()[0];
+  if (!videoTrack) return;
+  try {
+    await videoTrack.applyConstraints({ facingMode: currentFacingMode });
+  } catch {
+    // applyConstraints 실패 시 트랙 교체
+    const newStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: currentFacingMode }, audio: false
+    });
+    const newTrack = newStream.getVideoTracks()[0];
+    const sender = peerConnection?.getSenders().find(s => s.track?.kind === 'video');
+    if (sender) sender.replaceTrack(newTrack);
+    localStream.getVideoTracks().forEach(t => t.stop());
+    localStream.removeTrack(videoTrack);
+    localStream.addTrack(newTrack);
+    document.getElementById('localVidEl').srcObject = localStream;
+  }
+};
+
 function startTimer() {
-  let s=0; callTimerInterval = setInterval(()=>{ s++; document.getElementById('callTimer').textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; },1000);
+  let s=0;
+  callTimerInterval = setInterval(()=>{
+    s++;
+    const t = `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+    document.getElementById('callTimer').textContent = t;
+    const vt = document.getElementById('videoCallTimer');
+    if (vt) vt.textContent = t;
+  },1000);
 }
 
 window.endCall = async function(remote=false) {
@@ -774,17 +1056,31 @@ window.endCall = async function(remote=false) {
   if (peerConnection)    { peerConnection.close(); peerConnection=null; }
   if (localStream)       { localStream.getTracks().forEach(t=>t.stop()); localStream=null; }
   if (callTimerInterval) { clearInterval(callTimerInterval); callTimerInterval=null; }
-  document.getElementById('callVideoWrap').style.display='none';
+  // 풀스크린 영상통화 닫기
+  document.getElementById('videoCallScreen').classList.remove('active');
   document.getElementById('callControls').style.display='flex';
   document.getElementById('activeCallControls').style.display='none';
   document.getElementById('callStatus').textContent='통화 중이 아닙니다';
   document.getElementById('callTimer').textContent='00:00';
   document.getElementById('callTimer').style.display='none';
   document.getElementById('remoteVid').srcObject=null;
-  isMuted=false; isVideoOff=false;
+  isMuted=false; isVideoOff=false; currentFacingMode='user';
+  // 뮤트 버튼 복원
+  ['muteBtn','muteBtnV'].forEach(id => { const el=document.getElementById(id); if(el) el.style.opacity='1'; });
+  ['videoToggleBtn','videoToggleBtnV'].forEach(id => { const el=document.getElementById(id); if(el) el.style.opacity='1'; });
 };
-window.toggleMute  = () => { if (!localStream) return; isMuted=!isMuted; localStream.getAudioTracks().forEach(t=>t.enabled=!isMuted); document.getElementById('muteBtn').style.opacity=isMuted?'0.4':'1'; };
-window.toggleVideo = () => { if (!localStream) return; isVideoOff=!isVideoOff; localStream.getVideoTracks().forEach(t=>t.enabled=!isVideoOff); document.getElementById('videoToggleBtn').style.opacity=isVideoOff?'0.4':'1'; };
+window.toggleMute = () => {
+  if (!localStream) return;
+  isMuted = !isMuted;
+  localStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
+  ['muteBtn','muteBtnV'].forEach(id => { const el=document.getElementById(id); if(el) el.style.opacity=isMuted?'0.4':'1'; });
+};
+window.toggleVideo = () => {
+  if (!localStream) return;
+  isVideoOff = !isVideoOff;
+  localStream.getVideoTracks().forEach(t => t.enabled = !isVideoOff);
+  ['videoToggleBtn','videoToggleBtnV'].forEach(id => { const el=document.getElementById(id); if(el) el.style.opacity=isVideoOff?'0.4':'1'; });
+};
 
 function showIncomingCall(sig) {
   const av = document.getElementById('incomingAvatar');
@@ -820,6 +1116,187 @@ window.switchTab = tab => {
 
 // ── 설정 ──
 window.changeLang = () => { myLang=document.getElementById('langSelect').value; localStorage.setItem(`memo_lang_${me.email}`,myLang); };
+
+// ── 답장 기능 ──
+let replyTo = null;
+
+window.setReply = function(msg) {
+  replyTo = msg;
+  const preview = document.getElementById('replyPreview');
+  const previewText = document.getElementById('replyPreviewText');
+  preview.style.display = 'flex';
+  previewText.textContent = msg.text || (msg.type === 'image' ? '📷 사진' : '🎥 영상');
+  document.getElementById('msgInput').focus();
+};
+
+window.cancelReply = function() {
+  replyTo = null;
+  document.getElementById('replyPreview').style.display = 'none';
+};
+
+// ── 이모티콘 패널 ──
+window.toggleEmojiPanel = function() {
+  document.getElementById('emojiPanel').classList.toggle('open');
+};
+
+window.insertEmoji = function(emoji) {
+  const input = document.getElementById('msgInput');
+  input.value += emoji;
+  autoResize(input);
+  input.focus();
+};
+
+// 채팅창 클릭 시 이모티콘 패널 닫기
+document.addEventListener('click', e => {
+  const panel = document.getElementById('emojiPanel');
+  if (panel && !panel.contains(e.target) && !e.target.classList.contains('emoji-panel-btn')) {
+    panel.classList.remove('open');
+  }
+});
+
+// ── 브라우저 알림 ──
+window.toggleNotification = async function() {
+  const toggle = document.getElementById('notifToggle');
+  const status = document.getElementById('notifStatus');
+  if (toggle.checked) {
+    if (!('Notification' in window)) {
+      status.textContent = '이 브라우저는 알림을 지원하지 않아요';
+      toggle.checked = false; return;
+    }
+    const perm = await Notification.requestPermission();
+    if (perm === 'granted') {
+      status.textContent = '알림 켜짐';
+      localStorage.setItem('memo_notif', 'on');
+    } else {
+      status.textContent = '브라우저에서 알림을 허용해주세요';
+      toggle.checked = false;
+    }
+  } else {
+    status.textContent = '알림 꺼짐';
+    localStorage.setItem('memo_notif', 'off');
+  }
+};
+
+function initNotifStatus() {
+  const toggle = document.getElementById('notifToggle');
+  const status = document.getElementById('notifStatus');
+  if (!('Notification' in window)) {
+    status.textContent = '지원하지 않는 브라우저'; return;
+  }
+  if (Notification.permission === 'granted' && localStorage.getItem('memo_notif') === 'on') {
+    toggle.checked = true; status.textContent = '알림 켜짐';
+  } else if (Notification.permission === 'denied') {
+    toggle.checked = false; status.textContent = '브라우저 설정에서 허용 필요';
+  } else {
+    toggle.checked = false; status.textContent = '알림 꺼짐';
+  }
+}
+
+function sendNotification(title, body) {
+  if (Notification.permission === 'granted' && localStorage.getItem('memo_notif') === 'on' && document.hidden) {
+    new Notification(title, { body, icon: '🍑' });
+  }
+}
+
+// ── 테마 ──
+const THEMES = ['dark','rose','skyblue','purple','cream'];
+window.setTheme = function(theme) {
+  document.body.className = theme === 'dark' ? '' : `theme-${theme}`;
+  localStorage.setItem('memo_theme', theme);
+  THEMES.forEach(t => {
+    const el = document.getElementById(`theme-${t}`);
+    if (el) el.classList.toggle('active', t === theme);
+  });
+};
+
+// ── 배경 이미지 ──
+const BG_GRADIENTS = {
+  gradient1: 'linear-gradient(135deg,#1a0a20,#0a1530)',
+  gradient2: 'linear-gradient(135deg,#0a2010,#102820)',
+  gradient3: 'radial-gradient(circle,#1a1020,#0a0a0a)',
+};
+window.setBg = function(key) {
+  const layer = document.getElementById('chatBgLayer');
+  if (key === 'none') {
+    layer.style.backgroundImage = 'none';
+    layer.style.background = 'none';
+    localStorage.removeItem('memo_bg');
+    localStorage.removeItem('memo_bg_type');
+  } else if (BG_GRADIENTS[key]) {
+    layer.style.backgroundImage = 'none';
+    layer.style.background = BG_GRADIENTS[key];
+    localStorage.setItem('memo_bg', key);
+    localStorage.setItem('memo_bg_type', 'gradient');
+  }
+  // 활성 표시
+  ['none','1','2','3'].forEach(id => {
+    const el = document.getElementById(`bg-${id}`);
+    if (el) el.classList.remove('active');
+  });
+  const activeMap = { none:'bg-none', gradient1:'bg-1', gradient2:'bg-2', gradient3:'bg-3' };
+  const activeEl = document.getElementById(activeMap[key] || 'bg-none');
+  if (activeEl) activeEl.classList.add('active');
+};
+
+window.setBgFromFile = function(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const dataUrl = ev.target.result;
+    const layer = document.getElementById('chatBgLayer');
+    layer.style.background = 'none';
+    layer.style.backgroundImage = `url(${dataUrl})`;
+    layer.style.backgroundSize = 'cover';
+    layer.style.backgroundPosition = 'center';
+    localStorage.setItem('memo_bg', dataUrl);
+    localStorage.setItem('memo_bg_type', 'image');
+    ['none','1','2','3'].forEach(id => {
+      const el = document.getElementById(`bg-${id}`);
+      if (el) el.classList.remove('active');
+    });
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+};
+
+window.setBgOpacity = function(val) {
+  document.documentElement.style.setProperty('--chat-bg-opacity', val / 100);
+  document.getElementById('bgOpacityVal').textContent = val + '%';
+  localStorage.setItem('memo_bg_opacity', val);
+};
+
+function loadThemeAndBg() {
+  // 테마 복원
+  const savedTheme = localStorage.getItem('memo_theme') || 'dark';
+  setTheme(savedTheme);
+
+  // 배경 복원
+  const bgType    = localStorage.getItem('memo_bg_type');
+  const bgVal     = localStorage.getItem('memo_bg');
+  const bgOpacity = localStorage.getItem('memo_bg_opacity') || '15';
+
+  if (bgType && bgVal) {
+    const layer = document.getElementById('chatBgLayer');
+    if (bgType === 'gradient' && BG_GRADIENTS[bgVal]) {
+      layer.style.background = BG_GRADIENTS[bgVal];
+      const activeMap = { gradient1:'bg-1', gradient2:'bg-2', gradient3:'bg-3' };
+      const el = document.getElementById(activeMap[bgVal]);
+      if (el) { el.classList.add('active'); document.getElementById('bg-none')?.classList.remove('active'); }
+    } else if (bgType === 'image') {
+      layer.style.backgroundImage = `url(${bgVal})`;
+      layer.style.backgroundSize = 'cover';
+      layer.style.backgroundPosition = 'center';
+      document.getElementById('bg-none')?.classList.remove('active');
+    }
+  }
+
+  // 투명도 복원
+  document.documentElement.style.setProperty('--chat-bg-opacity', parseInt(bgOpacity) / 100);
+  const opacityEl = document.getElementById('bgOpacity');
+  const opacityVal = document.getElementById('bgOpacityVal');
+  if (opacityEl) opacityEl.value = bgOpacity;
+  if (opacityVal) opacityVal.textContent = bgOpacity + '%';
+}
 window.saveTranslatePref = () => { translateEnabled=document.getElementById('translateToggle').checked; localStorage.setItem('memo_translate',translateEnabled); };
 window.doLogout = async () => {
   if (!confirm('로그아웃 할까요?')) return;
