@@ -481,23 +481,19 @@ function enterRoom() {
 }
 
 // ── 번역 (LibreTranslate 무료) ──
+// ── 번역 (MyMemory — 무료, API 키 불필요) ──
 async function translate(text, src, tgt) {
   if (!translateEnabled) return null;
-  const servers = [
-    'https://libretranslate.com',
-    'https://translate.argosopentech.com',
-    'https://translate.terraprint.co'
-  ];
-  for (const server of servers) {
-    try {
-      const res  = await fetch(`${server}/translate`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ q: text, source: src, target: tgt, format: 'text' })
-      });
-      const data = await res.json();
-      if (data?.translatedText) return data.translatedText;
-    } catch { continue; }
-  }
+  try {
+    // MyMemory: ko↔ja 지원, 하루 5000자 무료
+    const langPair = `${src}|${tgt}`;
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langPair}`;
+    const res  = await fetch(url);
+    const data = await res.json();
+    const result = data?.responseData?.translatedText;
+    // MyMemory가 번역 실패 시 원문 그대로 반환하는 경우 걸러냄
+    if (result && result !== text) return result;
+  } catch {}
   return null;
 }
 
@@ -508,18 +504,17 @@ window.sendMessage = async function() {
   if (!text) return;
   input.value = ''; input.style.height = 'auto';
 
-  const msgRef = await push(ref(db, `${ROOM_ID}/messages`), {
-    uid: me.name, name: me.name, photoURL: me.photoURL || '',
-    lang: myLang, text, translation: null, type: 'text', ts: Date.now()
-  });
-
+  // 번역 먼저 실행 (양쪽 모두에게 보이게 하기 위해 전송 전에 번역)
+  let translation = null;
   if (translateEnabled) {
-    const tgt = partner.lang === 'ko' ? 'ko' : 'ja';
-    if (myLang !== tgt) {
-      const translation = await translate(text, myLang, tgt);
-      if (translation) set(ref(db, `${ROOM_ID}/messages/${msgRef.key}/translation`), translation);
-    }
+    const tgt = myLang === 'ko' ? 'ja' : 'ko'; // 내 언어 반대로
+    translation = await translate(text, myLang, tgt);
   }
+
+  push(ref(db, `${ROOM_ID}/messages`), {
+    uid: me.name, name: me.name, photoURL: me.photoURL || '',
+    lang: myLang, text, translation, type: 'text', ts: Date.now()
+  });
 };
 window.handleKey  = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } };
 window.autoResize = el => { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; };
