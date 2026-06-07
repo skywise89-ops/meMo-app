@@ -305,11 +305,8 @@
         </div>
         <div class="profile-section">
           <div class="profile-row" style="flex-direction:column;align-items:flex-start;gap:6px">
-            <span class="profile-row-label">Google 번역 API 키</span>
-            <input id="apiKeyInput" type="password" placeholder="AIza..."
-              style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 12px;font-size:0.85rem;outline:none;"
-              onchange="saveApiKey()">
-            <span style="font-size:0.72rem;color:var(--text2)">번역 기능 사용 시 필요 (선택사항)</span>
+            <span class="profile-row-label">자동 번역 (한↔일)</span>
+            <span style="font-size:0.72rem;color:var(--text2)">무료 자동 번역 사용 중</span>
           </div>
         </div>
         <button class="danger-btn" onclick="doLogout()">로그아웃</button>
@@ -405,7 +402,6 @@ let me = null;        // 현재 로그인 계정
 let partner = null;   // 상대방 계정
 let myLang = 'ko';
 let translateEnabled = true;
-let apiKey = '';
 let peerConnection = null, localStream = null, callType = null, callTimerInterval = null;
 let isMuted = false, isVideoOff = false;
 
@@ -430,7 +426,6 @@ window.doLogin = function() {
   partner = ACCOUNTS[account.partnerKey];
   myLang = localStorage.getItem(`memo_lang_${me.id}`) || me.lang;
   translateEnabled = localStorage.getItem('memo_translate') !== 'false';
-  apiKey = localStorage.getItem('memo_apikey') || '';
 
   localStorage.setItem('memo_loggedIn', me.id);
   enterRoom();
@@ -477,23 +472,31 @@ function enterRoom() {
   document.getElementById('myLangDisplay').textContent = myLang === 'ko' ? '🇰🇷 한국어' : '🇯🇵 日本語';
   document.getElementById('langSelect').value = myLang;
   document.getElementById('translateToggle').checked = translateEnabled;
-  document.getElementById('apiKeyInput').value = apiKey;
 
   showScreen('mainScreen');
 }
 
-// ── TRANSLATE ──
-async function translate(text, targetLang) {
-  if (!apiKey || !translateEnabled) return null;
-  try {
-    const res = await fetch(`https://translation.googleapis.com/language/translate/v2?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ q: text, target: targetLang, format: 'text' })
-    });
-    const data = await res.json();
-    return data?.data?.translations?.[0]?.translatedText || null;
-  } catch { return null; }
+// ── TRANSLATE (LibreTranslate 무료) ──
+async function translate(text, sourceLang, targetLang) {
+  if (!translateEnabled) return null;
+  // 여러 무료 서버 순서대로 시도
+  const servers = [
+    'https://libretranslate.com',
+    'https://translate.argosopentech.com',
+    'https://translate.terraprint.co'
+  ];
+  for (const server of servers) {
+    try {
+      const res = await fetch(`${server}/translate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ q: text, source: sourceLang, target: targetLang, format: 'text' })
+      });
+      const data = await res.json();
+      if (data?.translatedText) return data.translatedText;
+    } catch { continue; }
+  }
+  return null;
 }
 
 // ── SEND MESSAGE ──
@@ -504,16 +507,21 @@ window.sendMessage = async function() {
   input.value = '';
   input.style.height = 'auto';
 
-  let translation = null;
-  if (translateEnabled && apiKey) {
-    const targetLang = partner.lang === 'ko' ? 'ko' : 'ja';
-    translation = await translate(text, targetLang);
-  }
-
-  push(ref(db, `${ROOM_ID}/messages`), {
+  // 먼저 메시지 전송 (번역은 비동기로 나중에)
+  const msgRef = await push(ref(db, `${ROOM_ID}/messages`), {
     uid: me.id, name: me.id, emoji: me.emoji, lang: myLang,
-    text, translation, type: 'text', ts: Date.now()
+    text, translation: null, type: 'text', ts: Date.now()
   });
+
+  // 번역 후 DB 업데이트
+  if (translateEnabled) {
+    const src = myLang;                          // 내 언어
+    const tgt = partner.lang === 'ko' ? 'ko' : 'ja';  // 상대방 언어
+    if (src !== tgt) {
+      const translation = await translate(text, src, tgt);
+      if (translation) set(ref(db, `${ROOM_ID}/messages/${msgRef.key}/translation`), translation);
+    }
+  }
 };
 
 window.handleKey = function(e) {
@@ -803,11 +811,6 @@ window.changeLang = function() {
   localStorage.setItem(`memo_lang_${me.id}`, myLang);
   document.getElementById('myLangDisplay').textContent = myLang === 'ko' ? '🇰🇷 한국어' : '🇯🇵 日本語';
 };
-window.saveApiKey = function() {
-  apiKey = document.getElementById('apiKeyInput').value.trim();
-  localStorage.setItem('memo_apikey', apiKey);
-  showToast('저장됨');
-};
 window.saveTranslatePref = function() {
   translateEnabled = document.getElementById('translateToggle').checked;
   localStorage.setItem('memo_translate', translateEnabled);
@@ -841,7 +844,6 @@ window.addEventListener('load', () => {
       partner = ACCOUNTS[me.partnerKey];
       myLang = localStorage.getItem(`memo_lang_${me.id}`) || me.lang;
       translateEnabled = localStorage.getItem('memo_translate') !== 'false';
-      apiKey = localStorage.getItem('memo_apikey') || '';
       enterRoom();
     }
   }
