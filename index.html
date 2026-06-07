@@ -382,6 +382,20 @@ const CHECK_DOUBLE = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" st
 let peerConnection = null, localStream = null, callType = null, callTimerInterval = null;
 let isMuted = false, isVideoOff = false;
 
+// ── XSS 방지: 외부 데이터 sanitize ──
+function sanitize(str) {
+  if (!str) return '';
+  // URL인 경우 (photoURL) — javascript: 프로토콜 차단
+  if (str.startsWith('http://') || str.startsWith('https://')) return str;
+  // 일반 텍스트 — HTML 특수문자 이스케이프
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
 // ── 화면 전환 ──
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -440,14 +454,24 @@ function enterRoom() {
   onValue(ref(db, `${ROOM_ID}/presence/${partner.name}`), snap => {
     const data = snap.val();
     const el = document.getElementById('partnerStatus');
-    el.innerHTML = data?.online
-      ? `<span class="online-dot"></span>${partner.name} 온라인`
-      : `${partner.name} 오프라인`;
+    el.innerHTML = '';
+    if (data?.online) {
+      const dot = document.createElement('span');
+      dot.className = 'online-dot';
+      el.appendChild(dot);
+      el.appendChild(document.createTextNode(sanitize(partner.name) + ' 온라인'));
+    } else {
+      el.textContent = sanitize(partner.name) + ' 오프라인';
+    }
     document.getElementById('callName').textContent = partner.name;
     // 상대방 프로필 사진
     const av = document.getElementById('callAvatar');
     if (data?.photoURL) {
-      av.innerHTML = `<img src="${data.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+      const avImg = document.createElement('img');
+      avImg.src = sanitize(data.photoURL);
+      avImg.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%';
+      av.innerHTML = '';
+      av.appendChild(avImg);
     } else {
       av.textContent = partner.emoji;
     }
@@ -484,7 +508,11 @@ function enterRoom() {
   // 프로필 UI
   const avatarEl = document.getElementById('myAvatarDisplay');
   if (me.photoURL) {
-    avatarEl.innerHTML = `<img src="${me.photoURL}">`;
+    const myImg = document.createElement('img');
+    myImg.src = sanitize(me.photoURL);
+    myImg.style.cssText = 'width:100%;height:100%;object-fit:cover';
+    avatarEl.innerHTML = '';
+    avatarEl.appendChild(myImg);
   } else {
     avatarEl.textContent = me.emoji;
   }
@@ -548,7 +576,12 @@ function renderMessage(msg) {
   if (!isMe) {
     const s = document.createElement('div'); s.className = 'msg-sender';
     if (msg.photoURL) {
-      s.innerHTML = `<img src="${msg.photoURL}" style="width:18px;height:18px;border-radius:50%;object-fit:cover;margin-right:4px;vertical-align:middle"> ${msg.name}`;
+      const img = document.createElement('img');
+      img.src = sanitize(msg.photoURL || '');
+      img.style.cssText = 'width:18px;height:18px;border-radius:50%;object-fit:cover;margin-right:4px;vertical-align:middle';
+      const nameNode = document.createTextNode(' ' + sanitize(msg.name || ''));
+      s.appendChild(img);
+      s.appendChild(nameNode);
     } else {
       s.textContent = msg.name;
     }
@@ -755,7 +788,15 @@ window.toggleVideo = () => { if (!localStream) return; isVideoOff=!isVideoOff; l
 
 function showIncomingCall(sig) {
   const av = document.getElementById('incomingAvatar');
-  av.innerHTML = sig.photoURL ? `<img src="${sig.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : (partner.emoji||'🌸');
+  av.innerHTML = '';
+  if (sig.photoURL) {
+    const incImg = document.createElement('img');
+    incImg.src = sanitize(sig.photoURL);
+    incImg.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%';
+    av.appendChild(incImg);
+  } else {
+    av.textContent = partner.emoji || '🌸';
+  }
   document.getElementById('incomingName').textContent = sig.name||'상대방';
   document.getElementById('incomingType').textContent = sig.callType==='video'?'📹 영상 통화':'📞 음성 통화';
   document.getElementById('incomingCall').classList.add('show');
