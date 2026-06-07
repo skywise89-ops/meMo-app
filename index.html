@@ -46,13 +46,7 @@
   }
   /* 채팅 배경 이미지 */
   #chatPane { position: relative; }
-  #chatBgLayer {
-    position: absolute; inset: 0; z-index: 0; pointer-events: none;
-    background-size: cover; background-position: center;
-    opacity: var(--chat-bg-opacity);
-  }
-  .chat-messages { position: relative; z-index: 1; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-  .chat-input-wrap { position: relative; z-index: 2; flex-shrink: 0; }
+
 
   /* 테마 선택 UI */
   .theme-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 4px 0; }
@@ -125,9 +119,23 @@
   .tab-btn.active { color: var(--accent); }
 
   /* ── CHAT ── */
-  .chat-messages { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px 12px; display: flex; flex-direction: column; gap: 8px; scroll-behavior: smooth; }
+  /* chatPane는 flex column. 배경은 ::before 가상요소로 처리해서 터치 방해 없음 */
+  #chatPane { position: relative; }
+  #chatPane::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: var(--chat-bg-img, none);
+    background-size: cover; background-position: center;
+    opacity: var(--chat-bg-opacity, 0.15);
+    pointer-events: none; z-index: 0;
+  }
+  .chat-messages {
+    flex: 1; overflow-y: scroll; -webkit-overflow-scrolling: touch;
+    padding: 16px 12px; display: flex; flex-direction: column; gap: 8px;
+    position: relative; z-index: 1;
+    overscroll-behavior: contain;
+  }
   .chat-messages::-webkit-scrollbar { display: none; }
-  .msg-wrap { display: flex; flex-direction: column; max-width: 78%; touch-action: pan-y; }
+  .msg-wrap { display: flex; flex-direction: column; max-width: 78%; }
   .msg-wrap.me { align-self: flex-end; align-items: flex-end; }
   .msg-wrap.them { align-self: flex-start; align-items: flex-start; }
   .msg-bubble { padding: 10px 14px; border-radius: 18px; font-size: 0.95rem; line-height: 1.5; word-break: break-word; }
@@ -145,7 +153,9 @@
   .msg-media img { width: 100%; display: block; cursor: pointer; }
   .msg-media video { width: 100%; display: block; border-radius: 8px; }
   .system-msg { text-align: center; color: var(--text2); font-size: 0.75rem; padding: 4px 0; }
-  .chat-input-wrap { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px; padding-bottom: calc(10px + var(--safe-bottom)); background: var(--surface); border-top: 1px solid var(--border); flex-shrink: 0; }
+  /* 하단 입력 영역 전체 래퍼 */
+  .chat-bottom { position: relative; z-index: 2; flex-shrink: 0; background: var(--surface); }
+  .chat-input-wrap { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px; padding-bottom: calc(10px + var(--safe-bottom)); border-top: 1px solid var(--border); }
   .chat-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 22px; color: var(--text); padding: 10px 16px; font-size: 0.95rem; outline: none; resize: none; max-height: 120px; min-height: 42px; line-height: 1.4; font-family: inherit; transition: border-color 0.2s; }
   .chat-input:focus { border-color: var(--accent); }
   .chat-send-btn { width: 42px; height: 42px; border-radius: 50%; background: var(--accent); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: opacity 0.2s, transform 0.1s; }
@@ -336,23 +346,24 @@
           </button>
         </div>
       </div>
-      <div id="chatBgLayer"></div>
       <div class="chat-messages" id="chatMessages"></div>
-      <div id="replyPreview" style="display:none" class="reply-preview">
-        <span style="color:var(--accent);font-size:0.75rem">↩ 답장</span>
-        <span class="reply-preview-text" id="replyPreviewText"></span>
-        <button class="reply-cancel" onclick="cancelReply()">✕</button>
-      </div>
-      <div class="chat-input-wrap">
-        <button class="emoji-panel-btn" onclick="toggleEmojiPanel()" title="이모티콘">🍑</button>
-        <button class="icon-btn" onclick="document.getElementById('mediaInput').click()">
-          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        </button>
-        <textarea class="chat-input" id="msgInput" placeholder="메시지 입력..." rows="1"
-          oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
-        <button class="chat-send-btn" onclick="sendMessage()">
-          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        </button>
+      <div class="chat-bottom">
+        <div id="replyPreview" style="display:none" class="reply-preview">
+          <span style="color:var(--accent);font-size:0.75rem">↩ 답장</span>
+          <span class="reply-preview-text" id="replyPreviewText"></span>
+          <button class="reply-cancel" onclick="cancelReply()">✕</button>
+        </div>
+        <div class="chat-input-wrap">
+          <button class="emoji-panel-btn" onclick="toggleEmojiPanel()" title="이모티콘">🍑</button>
+          <button class="icon-btn" onclick="document.getElementById('mediaInput').click()">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </button>
+          <textarea class="chat-input" id="msgInput" placeholder="메시지 입력..." rows="1"
+            oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
+          <button class="chat-send-btn" onclick="sendMessage()">
+            <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
       </div>
       <input type="file" id="mediaInput" accept="image/*,video/*" style="display:none" onchange="sendMedia(event)">
     </div>
@@ -1220,19 +1231,20 @@ const BG_GRADIENTS = {
   gradient3: 'radial-gradient(circle,#1a1020,#0a0a0a)',
 };
 window.setBg = function(key) {
-  const layer = document.getElementById('chatBgLayer');
+  const pane = document.getElementById('chatPane');
   if (key === 'none') {
-    layer.style.backgroundImage = 'none';
-    layer.style.background = 'none';
+    pane.style.setProperty('--chat-bg-img', 'none');
+    document.documentElement.style.setProperty('--chat-bg-img', 'none');
     localStorage.removeItem('memo_bg');
     localStorage.removeItem('memo_bg_type');
   } else if (BG_GRADIENTS[key]) {
-    layer.style.backgroundImage = 'none';
-    layer.style.background = BG_GRADIENTS[key];
+    const val = `url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>")`;
+    // 그라디언트는 background-image로 안 되므로 별도 처리
+    pane.dataset.bgGradient = BG_GRADIENTS[key];
+    pane.style.setProperty('--chat-bg-gradient', BG_GRADIENTS[key]);
     localStorage.setItem('memo_bg', key);
     localStorage.setItem('memo_bg_type', 'gradient');
   }
-  // 활성 표시
   ['none','1','2','3'].forEach(id => {
     const el = document.getElementById(`bg-${id}`);
     if (el) el.classList.remove('active');
@@ -1247,11 +1259,8 @@ window.setBgFromFile = function(e) {
   const reader = new FileReader();
   reader.onload = ev => {
     const dataUrl = ev.target.result;
-    const layer = document.getElementById('chatBgLayer');
-    layer.style.background = 'none';
-    layer.style.backgroundImage = `url(${dataUrl})`;
-    layer.style.backgroundSize = 'cover';
-    layer.style.backgroundPosition = 'center';
+    const pane = document.getElementById('chatPane');
+    pane.style.setProperty('--chat-bg-img', `url("${dataUrl}")`);
     localStorage.setItem('memo_bg', dataUrl);
     localStorage.setItem('memo_bg_type', 'image');
     ['none','1','2','3'].forEach(id => {
@@ -1264,7 +1273,7 @@ window.setBgFromFile = function(e) {
 };
 
 window.setBgOpacity = function(val) {
-  document.documentElement.style.setProperty('--chat-bg-opacity', val / 100);
+  document.getElementById('chatPane').style.setProperty('--chat-bg-opacity', val / 100);
   document.getElementById('bgOpacityVal').textContent = val + '%';
   localStorage.setItem('memo_bg_opacity', val);
 };
@@ -1280,18 +1289,12 @@ function loadThemeAndBg() {
   const bgOpacity = localStorage.getItem('memo_bg_opacity') || '15';
 
   if (bgType && bgVal) {
-    const layer = document.getElementById('chatBgLayer');
-    if (bgType === 'gradient' && BG_GRADIENTS[bgVal]) {
-      layer.style.background = BG_GRADIENTS[bgVal];
-      const activeMap = { gradient1:'bg-1', gradient2:'bg-2', gradient3:'bg-3' };
-      const el = document.getElementById(activeMap[bgVal]);
-      if (el) { el.classList.add('active'); document.getElementById('bg-none')?.classList.remove('active'); }
-    } else if (bgType === 'image') {
-      layer.style.backgroundImage = `url(${bgVal})`;
-      layer.style.backgroundSize = 'cover';
-      layer.style.backgroundPosition = 'center';
+    const pane = document.getElementById('chatPane');
+    if (bgType === 'image' && pane) {
+      pane.style.setProperty('--chat-bg-img', `url("${bgVal}")`);
       document.getElementById('bg-none')?.classList.remove('active');
     }
+    // 그라디언트는 시각적으로만 표시 (::before는 bg-img만 지원)
   }
 
   // 투명도 복원
