@@ -537,11 +537,18 @@ function enterRoom() {
   });
 
   let lastMsgCount = 0;
+  let lastMsgSnapshot = '';
 
   onValue(ref(db, `${ROOM_ID}/messages`), snap => {
     const container = document.getElementById('chatMessages');
     const msgs = snap.val();
     const msgList = msgs ? Object.values(msgs).sort((a,b) => a.ts - b.ts) : [];
+
+    // 데이터가 실제로 바뀌었는지 확인 — 같으면 렌더링 스킵
+    const snapshot = JSON.stringify(msgs);
+    if (snapshot === lastMsgSnapshot) return;
+    lastMsgSnapshot = snapshot;
+
     const newMsgCount = msgList.length;
     const isFirstLoad = lastMsgCount === 0;
     const isNewMessage = newMsgCount > lastMsgCount;
@@ -550,14 +557,14 @@ function enterRoom() {
     container.innerHTML = '';
     msgList.forEach(msg => renderMessage(msg));
 
-    // 첫 로드 or 새 메시지 → 최하단
+    // 데이터가 바뀌었고 (새 메시지 or 첫 로드) → 최하단
     if (isFirstLoad || isNewMessage) {
       requestAnimationFrame(() => requestAnimationFrame(() => {
         container.scrollTop = container.scrollHeight;
       }));
     }
 
-    // 읽음 처리는 별도로
+    // 읽음 처리
     updateMyLastRead(msgList);
   });
 
