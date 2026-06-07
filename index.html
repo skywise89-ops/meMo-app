@@ -192,8 +192,28 @@
   .theme-dot.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
 
   /* ── TOAST ── */
+  /* ── 답장 ── */
+  .reply-bar {
+    display: none; align-items: center; gap: 8px;
+    background: var(--surface2); border-left: 3px solid var(--accent);
+    padding: 8px 14px; font-size: 0.8rem; color: var(--text2);
+    flex-shrink: 0;
+  }
+  .reply-bar.show { display: flex; }
+  .reply-bar-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .reply-bar-cancel { background: none; border: none; color: var(--text2); font-size: 1.1rem; cursor: pointer; padding: 0 4px; line-height: 1; }
+  .msg-quote {
+    background: var(--surface2); border-left: 3px solid var(--accent);
+    border-radius: 6px; padding: 5px 10px; margin-bottom: 5px;
+    font-size: 0.75rem; color: var(--text2);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    max-width: 100%;
+  }
+  .me .msg-quote { border-left: none; border-right: 3px solid var(--accent2); text-align: right; }
+
   #toast { position: fixed; bottom: calc(80px + var(--safe-bottom)); left: 50%; transform: translateX(-50%) translateY(10px); background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 20px; font-size: 0.85rem; color: var(--text); z-index: 300; opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; white-space: nowrap; }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
 </style>
 </head>
 <body>
@@ -241,6 +261,11 @@
         </div>
       </div>
       <div class="chat-messages" id="chatMessages"></div>
+      <div class="reply-bar" id="replyBar">
+        <span style="color:var(--accent);font-size:0.75rem;flex-shrink:0">↩ 답장</span>
+        <span class="reply-bar-text" id="replyBarText"></span>
+        <button class="reply-bar-cancel" onclick="cancelReply()">✕</button>
+      </div>
       <div class="chat-input-wrap">
         <button class="icon-btn" onclick="document.getElementById('mediaInput').click()">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -557,6 +582,23 @@ async function translate(text, src, tgt) {
   return null;
 }
 
+// ── 답장 ──
+let replyTo = null;
+
+window.setReply = function(msg) {
+  replyTo = msg;
+  const bar = document.getElementById('replyBar');
+  const txt = document.getElementById('replyBarText');
+  bar.classList.add('show');
+  txt.textContent = msg.type === 'text' ? msg.text : (msg.type === 'image' ? '📷 사진' : '🎥 영상');
+  document.getElementById('msgInput').focus();
+};
+
+window.cancelReply = function() {
+  replyTo = null;
+  document.getElementById('replyBar').classList.remove('show');
+};
+
 window.sendMessage = async function() {
   const input = document.getElementById('msgInput');
   const text  = input.value.trim();
@@ -565,8 +607,10 @@ window.sendMessage = async function() {
 
   const msgRef = push(ref(db, `${ROOM_ID}/messages`), {
     uid: me.name, name: me.name, photoURL: me.photoURL || '',
-    lang: myLang, text, translation: null, type: 'text', ts: Date.now()
+    lang: myLang, text, translation: null, type: 'text', ts: Date.now(),
+    ...(replyTo ? { replyTo: { text: replyTo.text, type: replyTo.type, name: replyTo.name } } : {})
   });
+  cancelReply();
 
   if (translateEnabled) {
     const tgt = myLang === 'ko' ? 'ja' : 'ko';
@@ -587,6 +631,15 @@ function renderMessage(msg) {
   const isMe = msg.uid === me.name;
   const wrap = document.createElement('div'); wrap.className = `msg-wrap ${isMe ? 'me' : 'them'}`;
 
+  // 길게 누르기(모바일) / 더블클릭(PC) → 답장
+  if (msg.type === 'text') {
+    let pressTimer;
+    wrap.addEventListener('touchstart', () => { pressTimer = setTimeout(() => setReply(msg), 500); }, { passive: true });
+    wrap.addEventListener('touchend',   () => clearTimeout(pressTimer), { passive: true });
+    wrap.addEventListener('touchmove',  () => clearTimeout(pressTimer), { passive: true });
+    wrap.addEventListener('dblclick',   () => setReply(msg));
+  }
+
   if (!isMe) {
     const s = document.createElement('div'); s.className = 'msg-sender';
     if (msg.photoURL) {
@@ -597,6 +650,14 @@ function renderMessage(msg) {
       s.appendChild(document.createTextNode(' ' + sanitize(msg.name || '')));
     } else { s.textContent = msg.name; }
     wrap.appendChild(s);
+  }
+
+  // 답장 인용문
+  if (msg.replyTo) {
+    const quote = document.createElement('div');
+    quote.className = 'msg-quote';
+    quote.textContent = '↩ ' + (msg.replyTo.text || (msg.replyTo.type === 'image' ? '📷 사진' : '🎥 영상'));
+    wrap.appendChild(quote);
   }
 
   const bubble = document.createElement('div'); bubble.className = 'msg-bubble';
