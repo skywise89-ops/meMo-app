@@ -536,25 +536,34 @@ function enterRoom() {
     } else { av.textContent = partner.emoji; }
   });
 
+  let lastMsgCount = 0;
+
   onValue(ref(db, `${ROOM_ID}/messages`), snap => {
     const container = document.getElementById('chatMessages');
     const msgs = snap.val();
-    const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 50;
+    const msgList = msgs ? Object.values(msgs).sort((a,b) => a.ts - b.ts) : [];
+    const newMsgCount = msgList.length;
+
+    // innerHTML 지우기 전에 상태 저장
+    const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 80;
+    const isNewMessage = newMsgCount > lastMsgCount;
+    const isFirstLoad = lastMsgCount === 0;
+    lastMsgCount = newMsgCount;
 
     container.innerHTML = '';
     let latestTheirTs = 0;
-    if (msgs) {
-      Object.values(msgs).sort((a,b) => a.ts - b.ts).forEach(msg => {
-        renderMessage(msg);
-        if (msg.uid !== me.name && msg.ts > latestTheirTs) latestTheirTs = msg.ts;
-      });
-    }
+    msgList.forEach(msg => {
+      renderMessage(msg);
+      if (msg.uid !== me.name && msg.ts > latestTheirTs) latestTheirTs = msg.ts;
+    });
 
-    // 상대방 메시지 읽음 처리 — 렌더 후 1번만
     if (latestTheirTs > 0) set(ref(db, `${ROOM_ID}/lastRead/${me.name}`), latestTheirTs);
 
-    if (isAtBottom) {
-      requestAnimationFrame(() => { container.scrollTop = container.scrollHeight; });
+    // 첫 로드 or 새 메시지 수신 or 이미 맨 아래였을 때 → 최하단
+    if (isFirstLoad || isNewMessage || isAtBottom) {
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        container.scrollTop = container.scrollHeight;
+      }));
     }
   });
 
