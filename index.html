@@ -15,6 +15,32 @@
     --bubble-me: #2a2118; --bubble-them: #1a1e24;
     --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
+  /* ── 테마 ── */
+  .theme-rose {
+    --bg: #fff5f7; --surface: #ffffff; --surface2: #fce8ed;
+    --border: rgba(220,100,120,0.12); --accent: #d4607a; --accent2: #b07090;
+    --text: #2a1018; --text2: #906070; --danger: #c0392b;
+    --bubble-me: #fde8ee; --bubble-them: #f8f0f2;
+  }
+  .theme-skyblue {
+    --bg: #f0f6ff; --surface: #ffffff; --surface2: #e4eefa;
+    --border: rgba(80,130,220,0.12); --accent: #4a7fd4; --accent2: #6090b8;
+    --text: #101828; --text2: #607090; --danger: #c0392b;
+    --bubble-me: #ddeeff; --bubble-them: #eef4ff;
+  }
+  .theme-purple {
+    --bg: #f8f4ff; --surface: #ffffff; --surface2: #ede4ff;
+    --border: rgba(140,90,220,0.12); --accent: #8a5cd4; --accent2: #a070c8;
+    --text: #180e28; --text2: #806090; --danger: #c0392b;
+    --bubble-me: #ecdeff; --bubble-them: #f4f0ff;
+  }
+  .theme-cream {
+    --bg: #fdf8f0; --surface: #ffffff; --surface2: #f5ede0;
+    --border: rgba(180,140,80,0.12); --accent: #b8904a; --accent2: #8a7060;
+    --text: #1e160a; --text2: #806840; --danger: #c0392b;
+    --bubble-me: #fdf0d8; --bubble-them: #f8f0e8;
+  }
+
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: -apple-system, 'Noto Sans KR', sans-serif; }
   .screen { position: fixed; inset: 0; display: flex; flex-direction: column; }
@@ -154,6 +180,17 @@
   .toggle-sw input:checked + .slider { background: rgba(200,169,126,0.2); border-color: var(--accent); }
   .toggle-sw input:checked + .slider::before { transform: translateX(20px); background: var(--accent); }
 
+  /* ── 테마 선택 UI ── */
+  .theme-row { display: flex; gap: 12px; padding: 4px 0; flex-wrap: wrap; }
+  .theme-dot {
+    width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+    border: 3px solid transparent; transition: transform 0.15s, border-color 0.15s;
+    display: flex; align-items: center; justify-content: center; font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .theme-dot:active { transform: scale(0.88); }
+  .theme-dot.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+
   /* ── TOAST ── */
   #toast { position: fixed; bottom: calc(80px + var(--safe-bottom)); left: 50%; transform: translateX(-50%) translateY(10px); background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 20px; font-size: 0.85rem; color: var(--text); z-index: 300; opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; white-space: nowrap; }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -268,6 +305,21 @@
           <div style="font-size:1.2rem;font-weight:400" id="myNameDisplay">-</div>
           <div style="font-size:0.8rem;color:var(--text2)" id="myEmailDisplay">-</div>
         </div>
+
+        <!-- 테마 -->
+        <div class="profile-section">
+          <div class="profile-row" style="flex-direction:column;align-items:flex-start;gap:12px">
+            <span class="profile-row-label">테마</span>
+            <div class="theme-row">
+              <div class="theme-dot active" id="tdark"    style="background:#0d0d0f;border:2px solid #555"    onclick="setTheme('dark')"    title="다크">🌑</div>
+              <div class="theme-dot"        id="trose"    style="background:#fff5f7;border:2px solid #d4607a" onclick="setTheme('rose')"    title="로즈">🌹</div>
+              <div class="theme-dot"        id="tskyblue" style="background:#f0f6ff;border:2px solid #4a7fd4" onclick="setTheme('skyblue')" title="스카이블루">🩵</div>
+              <div class="theme-dot"        id="tpurple"  style="background:#f8f4ff;border:2px solid #8a5cd4" onclick="setTheme('purple')"  title="퍼플">💜</div>
+              <div class="theme-dot"        id="tcream"   style="background:#fdf8f0;border:2px solid #b8904a" onclick="setTheme('cream')"   title="크림">🍞</div>
+            </div>
+          </div>
+        </div>
+
         <div class="profile-section">
           <div class="profile-row">
             <span class="profile-row-label">자동 번역 (한↔일)</span>
@@ -349,7 +401,6 @@ import { getDatabase, ref, set, push, onValue,
 import { getStorage, ref as sRef,
          uploadBytesResumable, getDownloadURL }             from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 
-// ── Firebase 설정 ──
 const firebaseConfig = {
   apiKey:            "AIzaSyBSfAOkWJtk41iCLIWkCtG91Hn9Aa44UNA",
   authDomain:        "memo-e366f.firebaseapp.com",
@@ -360,7 +411,6 @@ const firebaseConfig = {
   appId:             "1:103854425677:web:67e0b818c41b42bc3c7e04"
 };
 
-// ── 허용된 Google 계정 2개 ──
 const ALLOWED = {
   'fromkevinjung@gmail.com': { name: 'Kevin', emoji: '🍀', lang: 'ko', partnerEmail: 'momo.021118@gmail.com' },
   'momo.021118@gmail.com':   { name: 'Momo',  emoji: '🌸', lang: 'ja', partnerEmail: 'fromkevinjung@gmail.com' }
@@ -375,34 +425,38 @@ const storage = getStorage(app);
 let me = null, partner = null;
 let myLang = 'ko', translateEnabled = true;
 let partnerLastRead = 0;
-
-// 읽음 체크 SVG
 const CHECK_SINGLE = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
 const CHECK_DOUBLE = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 6 7 17 2 12"/><polyline points="23 6 12 17"/></svg>`;
 let peerConnection = null, localStream = null, callType = null, callTimerInterval = null;
 let isMuted = false, isVideoOff = false;
 
-// ── XSS 방지: 외부 데이터 sanitize ──
 function sanitize(str) {
   if (!str) return '';
-  // URL인 경우 (photoURL) — javascript: 프로토콜 차단
   if (str.startsWith('http://') || str.startsWith('https://')) return str;
-  // 일반 텍스트 — HTML 특수문자 이스케이프
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;');
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
 }
 
-// ── 화면 전환 ──
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
   document.getElementById(id).classList.remove('hidden');
 }
 
-// ── Google 로그인 ──
+// ── 테마 ──
+const THEME_IDS = ['dark','rose','skyblue','purple','cream'];
+window.setTheme = function(theme) {
+  document.body.className = theme === 'dark' ? '' : `theme-${theme}`;
+  localStorage.setItem('memo_theme', theme);
+  THEME_IDS.forEach(t => {
+    const el = document.getElementById(`t${t}`);
+    if (el) el.classList.toggle('active', t === theme);
+  });
+};
+
+function loadTheme() {
+  const saved = localStorage.getItem('memo_theme') || 'dark';
+  setTheme(saved);
+}
+
 window.signInWithGoogle = async function() {
   const provider = new GoogleAuthProvider();
   const errEl = document.getElementById('loginError');
@@ -416,68 +470,47 @@ window.signInWithGoogle = async function() {
   }
 };
 
-// ── 인증 상태 감지 (앱 시작점) ──
 onAuthStateChanged(auth, async user => {
-  if (!user) {
-    showScreen('loginScreen');
-    return;
-  }
-
+  if (!user) { showScreen('loginScreen'); return; }
   const email = user.email;
   const profile = ALLOWED[email];
-
   if (!profile) {
-    // 허용되지 않은 계정
     await signOut(auth);
-    const errEl = document.getElementById('loginError');
-    errEl.textContent = `${email} 은 접근이 허용되지 않은 계정입니다.`;
-    showScreen('loginScreen');
-    return;
+    document.getElementById('loginError').textContent = `${email} 은 접근이 허용되지 않은 계정입니다.`;
+    showScreen('loginScreen'); return;
   }
-
-  // 계정 정보 세팅
   me = { ...profile, email, photoURL: user.photoURL };
   partner = { ...ALLOWED[profile.partnerEmail], email: profile.partnerEmail };
   myLang = localStorage.getItem(`memo_lang_${email}`) || profile.lang;
   translateEnabled = localStorage.getItem('memo_translate') !== 'false';
-
   enterRoom();
 });
 
-// ── 입장 ──
 function enterRoom() {
   const meRef = ref(db, `${ROOM_ID}/presence/${me.name}`);
   set(meRef, { online: true, name: me.name, photoURL: me.photoURL || '', ts: serverTimestamp() });
   onDisconnect(meRef).update({ online: false });
 
-  // 상대방 온라인 감시
   onValue(ref(db, `${ROOM_ID}/presence/${partner.name}`), snap => {
     const data = snap.val();
     const el = document.getElementById('partnerStatus');
     el.innerHTML = '';
     if (data?.online) {
-      const dot = document.createElement('span');
-      dot.className = 'online-dot';
-      el.appendChild(dot);
+      const dot = document.createElement('span'); dot.className = 'online-dot'; el.appendChild(dot);
       el.appendChild(document.createTextNode(sanitize(partner.name) + ' 온라인'));
     } else {
       el.textContent = sanitize(partner.name) + ' 오프라인';
     }
     document.getElementById('callName').textContent = partner.name;
-    // 상대방 프로필 사진
     const av = document.getElementById('callAvatar');
     if (data?.photoURL) {
       const avImg = document.createElement('img');
       avImg.src = sanitize(data.photoURL);
       avImg.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%';
-      av.innerHTML = '';
-      av.appendChild(avImg);
-    } else {
-      av.textContent = partner.emoji;
-    }
+      av.innerHTML = ''; av.appendChild(avImg);
+    } else { av.textContent = partner.emoji; }
   });
 
-  // 채팅 감시
   onValue(ref(db, `${ROOM_ID}/messages`), snap => {
     const container = document.getElementById('chatMessages');
     container.innerHTML = '';
@@ -486,85 +519,66 @@ function enterRoom() {
     container.scrollTop = container.scrollHeight;
   });
 
-  // 상대방 읽음 시각 감시 → 내 메시지 체크 업데이트
   onValue(ref(db, `${ROOM_ID}/lastRead/${partner.name}`), snap => {
     partnerLastRead = snap.val() || 0;
-    // 화면의 읽음 아이콘 갱신
     document.querySelectorAll('.read-check[data-ts]').forEach(el => {
-      const ts = parseInt(el.dataset.ts);
-      if (ts <= partnerLastRead) {
-        el.className = 'read-check read';
-        el.innerHTML = CHECK_DOUBLE;
+      if (parseInt(el.dataset.ts) <= partnerLastRead) {
+        el.className = 'read-check read'; el.innerHTML = CHECK_DOUBLE;
       }
     });
   });
 
-  // 앨범
   onValue(ref(db, `${ROOM_ID}/media`), snap => updateAlbum(snap.val()));
-
-  // 시그널
   listenSignaling();
 
-  // 프로필 UI
   const avatarEl = document.getElementById('myAvatarDisplay');
   if (me.photoURL) {
     const myImg = document.createElement('img');
     myImg.src = sanitize(me.photoURL);
     myImg.style.cssText = 'width:100%;height:100%;object-fit:cover';
-    avatarEl.innerHTML = '';
-    avatarEl.appendChild(myImg);
-  } else {
-    avatarEl.textContent = me.emoji;
-  }
+    avatarEl.innerHTML = ''; avatarEl.appendChild(myImg);
+  } else { avatarEl.textContent = me.emoji; }
+
   document.getElementById('myNameDisplay').textContent  = me.name;
   document.getElementById('myEmailDisplay').textContent = me.email;
   document.getElementById('langSelect').value           = myLang;
   document.getElementById('translateToggle').checked    = translateEnabled;
 
+  loadTheme();
   showScreen('mainScreen');
 }
 
-// ── 번역 (LibreTranslate 무료) ──
-// ── 번역 (MyMemory) ──
 async function translate(text, src, tgt) {
   try {
-    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${src}|${tgt}`;
-    const res  = await fetch(url);
+    const res  = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${src}|${tgt}`);
     const data = await res.json();
-    const result = data?.responseData?.translatedText;
-    // 상태코드 200이고 결과가 있으면 반환 (원문과 같아도 허용)
-    if (data?.responseStatus === 200 && result) return result;
+    if (data?.responseStatus === 200 && data?.responseData?.translatedText) return data.responseData.translatedText;
   } catch {}
   return null;
 }
 
-// ── 메시지 전송 ──
 window.sendMessage = async function() {
   const input = document.getElementById('msgInput');
   const text  = input.value.trim();
   if (!text) return;
   input.value = ''; input.style.height = 'auto';
 
-  // 메시지 먼저 전송 (빠른 UX)
   const msgRef = push(ref(db, `${ROOM_ID}/messages`), {
     uid: me.name, name: me.name, photoURL: me.photoURL || '',
     lang: myLang, text, translation: null, type: 'text', ts: Date.now()
   });
 
-  // 번역 완료되면 같은 메시지에 업데이트 (양쪽 화면에 자동 반영)
   if (translateEnabled) {
     const tgt = myLang === 'ko' ? 'ja' : 'ko';
     const key = (await msgRef).key;
     const translation = await translate(text, myLang, tgt);
-    if (translation) {
-      set(ref(db, `${ROOM_ID}/messages/${key}/translation`), translation);
-    }
+    if (translation) set(ref(db, `${ROOM_ID}/messages/${key}/translation`), translation);
   }
 };
+
 window.handleKey  = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } };
 window.autoResize = el => { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; };
 
-// ── 메시지 렌더 ──
 function renderMessage(msg) {
   const container = document.getElementById('chatMessages');
   if (msg.type === 'system') {
@@ -579,12 +593,9 @@ function renderMessage(msg) {
       const img = document.createElement('img');
       img.src = sanitize(msg.photoURL || '');
       img.style.cssText = 'width:18px;height:18px;border-radius:50%;object-fit:cover;margin-right:4px;vertical-align:middle';
-      const nameNode = document.createTextNode(' ' + sanitize(msg.name || ''));
       s.appendChild(img);
-      s.appendChild(nameNode);
-    } else {
-      s.textContent = msg.name;
-    }
+      s.appendChild(document.createTextNode(' ' + sanitize(msg.name || '')));
+    } else { s.textContent = msg.name; }
     wrap.appendChild(s);
   }
 
@@ -605,34 +616,24 @@ function renderMessage(msg) {
   if (msg.translation && translateEnabled) {
     const tr = document.createElement('div'); tr.className = 'msg-translation'; tr.textContent = msg.translation; wrap.appendChild(tr);
   }
+
   const t = document.createElement('div'); t.className = 'msg-time';
   t.appendChild(document.createTextNode(fmt(msg.ts)));
-
-  if (isMe && msg.type !== 'system') {
-    // 내 메시지: 읽음 체크 표시
+  if (isMe) {
     const check = document.createElement('span');
     check.dataset.ts = msg.ts;
-    if (msg.ts <= partnerLastRead) {
-      check.className = 'read-check read';
-      check.innerHTML = CHECK_DOUBLE;
-    } else {
-      check.className = 'read-check unread';
-      check.innerHTML = CHECK_SINGLE;
-    }
+    check.className = msg.ts <= partnerLastRead ? 'read-check read' : 'read-check unread';
+    check.innerHTML  = msg.ts <= partnerLastRead ? CHECK_DOUBLE : CHECK_SINGLE;
     t.appendChild(check);
   }
-
   wrap.appendChild(t);
   container.appendChild(wrap);
 
-  // 상대방 메시지 수신 시 → 내 lastRead 업데이트
-  if (!isMe) {
-    set(ref(db, `${ROOM_ID}/lastRead/${me.name}`), msg.ts);
-  }
+  if (!isMe) set(ref(db, `${ROOM_ID}/lastRead/${me.name}`), msg.ts);
 }
+
 const fmt = ts => { const d = new Date(ts); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
 
-// ── 미디어 전송 ──
 window.sendMedia = async function(e) {
   const file = e.target.files[0]; if (!file) return; e.target.value = '';
   const isVideo = file.type.startsWith('video/');
@@ -650,7 +651,6 @@ window.sendMedia = async function(e) {
   );
 };
 
-// ── 앨범 ──
 function updateAlbum(media) {
   const grid = document.getElementById('albumGrid'); grid.innerHTML = '';
   if (!media) { grid.innerHTML = '<div class="album-empty" style="grid-column:1/-1;height:300px">아직 공유된 미디어가 없어요</div>'; return; }
@@ -668,7 +668,6 @@ function updateAlbum(media) {
   });
 }
 
-// ── 라이트박스 ──
 window.openLightbox = (type, url) => {
   const c=document.getElementById('lightboxContent'); c.innerHTML='';
   if (type==='image') { const i=document.createElement('img'); i.src=url; c.appendChild(i); }
@@ -677,28 +676,13 @@ window.openLightbox = (type, url) => {
 };
 window.closeLightbox = () => { document.getElementById('lightbox').classList.remove('open'); document.getElementById('lightboxContent').innerHTML=''; };
 
-// ── WebRTC ──
 const ICE = {
   iceServers: [
-    // STUN — 직접 연결 시도
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
-    // TURN — 직접 연결 실패 시 중계 (무료 공개 서버)
-    {
-      urls: 'turn:openrelay.metered.ca:80',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
-    },
-    {
-      urls: 'turn:openrelay.metered.ca:443',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
-    },
-    {
-      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
-    }
+    { urls: 'turn:openrelay.metered.ca:80',      username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443',     username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
   ]
 };
 
@@ -794,9 +778,7 @@ function showIncomingCall(sig) {
     incImg.src = sanitize(sig.photoURL);
     incImg.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%';
     av.appendChild(incImg);
-  } else {
-    av.textContent = partner.emoji || '🌸';
-  }
+  } else { av.textContent = partner.emoji || '🌸'; }
   document.getElementById('incomingName').textContent = sig.name||'상대방';
   document.getElementById('incomingType').textContent = sig.callType==='video'?'📹 영상 통화':'📞 음성 통화';
   document.getElementById('incomingCall').classList.add('show');
@@ -808,7 +790,6 @@ window.rejectCall = async () => {
   await set(ref(db,`${ROOM_ID}/signal/${partner.name}`), { type:'end', from:me.name, ts:Date.now() });
 };
 
-// ── 탭 ──
 window.switchTab = tab => {
   ['chat','album','call','profile'].forEach(t => {
     document.getElementById(t==='call'?'callTabPane':`${t}Pane`).classList.add('hidden');
@@ -818,7 +799,6 @@ window.switchTab = tab => {
   document.getElementById(`tab-${tab}`).classList.add('active');
 };
 
-// ── 설정 ──
 window.changeLang = () => { myLang=document.getElementById('langSelect').value; localStorage.setItem(`memo_lang_${me.email}`,myLang); };
 window.saveTranslatePref = () => { translateEnabled=document.getElementById('translateToggle').checked; localStorage.setItem('memo_translate',translateEnabled); };
 window.doLogout = async () => {
@@ -828,7 +808,6 @@ window.doLogout = async () => {
   await signOut(auth);
 };
 
-// ── 토스트 ──
 window.showToast = msg => {
   const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
   clearTimeout(window._tt); window._tt=setTimeout(()=>t.classList.remove('show'),2500);
