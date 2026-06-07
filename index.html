@@ -342,7 +342,7 @@
 <script type="module">
 import { initializeApp }                                    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup,
-         signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut }
+         onAuthStateChanged, signOut }
                                                             from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getDatabase, ref, set, push, onValue,
          onDisconnect, serverTimestamp }                    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
@@ -394,21 +394,15 @@ window.signInWithGoogle = async function() {
   const errEl = document.getElementById('loginError');
   errEl.textContent = '';
   try {
-    // 모바일은 redirect, 데스크탑은 popup
-    if (/Mobi|Android/i.test(navigator.userAgent)) {
-      await signInWithRedirect(auth, provider);
-    } else {
-      await signInWithPopup(auth, provider);
-    }
+    await signInWithPopup(auth, provider);
   } catch(e) {
-    errEl.textContent = '로그인 중 오류가 발생했습니다. 다시 시도해주세요.';
+    if (e.code !== 'auth/popup-closed-by-user') {
+      errEl.textContent = '로그인 중 오류가 발생했습니다. 다시 시도해주세요.';
+    }
   }
 };
 
 // ── 인증 상태 감지 (앱 시작점) ──
-// 모바일 redirect 결과 처리
-getRedirectResult(auth).catch(() => {});
-
 onAuthStateChanged(auth, async user => {
   if (!user) {
     showScreen('loginScreen');
