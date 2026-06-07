@@ -51,8 +51,8 @@
     background-size: cover; background-position: center;
     opacity: var(--chat-bg-opacity);
   }
-  .chat-messages { position: relative; z-index: 1; }
-  .chat-input-wrap { position: relative; z-index: 1; }
+  .chat-messages { position: relative; z-index: 1; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .chat-input-wrap { position: relative; z-index: 2; flex-shrink: 0; }
 
   /* 테마 선택 UI */
   .theme-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 4px 0; }
@@ -125,9 +125,9 @@
   .tab-btn.active { color: var(--accent); }
 
   /* ── CHAT ── */
-  .chat-messages { flex: 1; overflow-y: auto; padding: 16px 12px; display: flex; flex-direction: column; gap: 8px; scroll-behavior: smooth; }
+  .chat-messages { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px 12px; display: flex; flex-direction: column; gap: 8px; scroll-behavior: smooth; }
   .chat-messages::-webkit-scrollbar { display: none; }
-  .msg-wrap { display: flex; flex-direction: column; max-width: 78%; }
+  .msg-wrap { display: flex; flex-direction: column; max-width: 78%; touch-action: pan-y; }
   .msg-wrap.me { align-self: flex-end; align-items: flex-end; }
   .msg-wrap.them { align-self: flex-start; align-items: flex-start; }
   .msg-bubble { padding: 10px 14px; border-radius: 18px; font-size: 0.95rem; line-height: 1.5; word-break: break-word; }
@@ -276,12 +276,15 @@
   }
   .emoji-panel-btn:active { transform: scale(0.85); }
   #emojiPanel {
-    position: absolute; bottom: calc(100% + 4px); left: 0; right: 0;
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 16px 16px 0 0; padding: 12px;
-    display: none; flex-wrap: wrap; gap: 6px; z-index: 10;
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--surface); border-top: 1px solid var(--border);
+    border-radius: 16px 16px 0 0; padding: 14px 12px;
+    padding-bottom: calc(14px + var(--safe-bottom));
+    display: none; flex-wrap: wrap; gap: 8px; z-index: 50;
+    transform: translateY(100%);
+    transition: transform 0.25s cubic-bezier(.4,0,.2,1);
   }
-  #emojiPanel.open { display: flex; }
+  #emojiPanel.open { display: flex; transform: translateY(0); }
   .emoji-item { font-size: 1.6rem; cursor: pointer; padding: 4px; border-radius: 8px; transition: background 0.15s; }
   .emoji-item:active { background: var(--surface2); }
 
@@ -340,30 +343,7 @@
         <span class="reply-preview-text" id="replyPreviewText"></span>
         <button class="reply-cancel" onclick="cancelReply()">✕</button>
       </div>
-      <div class="chat-input-wrap" style="position:relative">
-        <div id="emojiPanel">
-          <!-- 복숭아 + 기본 이모티콘 -->
-          <span class="emoji-item" onclick="insertEmoji('🍑')">🍑</span>
-          <span class="emoji-item" onclick="insertEmoji('🍑💕')">🍑💕</span>
-          <span class="emoji-item" onclick="insertEmoji('🥰')">🥰</span>
-          <span class="emoji-item" onclick="insertEmoji('😍')">😍</span>
-          <span class="emoji-item" onclick="insertEmoji('🥺')">🥺</span>
-          <span class="emoji-item" onclick="insertEmoji('😘')">😘</span>
-          <span class="emoji-item" onclick="insertEmoji('💕')">💕</span>
-          <span class="emoji-item" onclick="insertEmoji('💖')">💖</span>
-          <span class="emoji-item" onclick="insertEmoji('✨')">✨</span>
-          <span class="emoji-item" onclick="insertEmoji('🌸')">🌸</span>
-          <span class="emoji-item" onclick="insertEmoji('🍀')">🍀</span>
-          <span class="emoji-item" onclick="insertEmoji('😂')">😂</span>
-          <span class="emoji-item" onclick="insertEmoji('🤣')">🤣</span>
-          <span class="emoji-item" onclick="insertEmoji('😭')">😭</span>
-          <span class="emoji-item" onclick="insertEmoji('😅')">😅</span>
-          <span class="emoji-item" onclick="insertEmoji('🙈')">🙈</span>
-          <span class="emoji-item" onclick="insertEmoji('💤')">💤</span>
-          <span class="emoji-item" onclick="insertEmoji('🍜')">🍜</span>
-          <span class="emoji-item" onclick="insertEmoji('☕')">☕</span>
-          <span class="emoji-item" onclick="insertEmoji('🎵')">🎵</span>
-        </div>
+      <div class="chat-input-wrap">
         <button class="emoji-panel-btn" onclick="toggleEmojiPanel()" title="이모티콘">🍑</button>
         <button class="icon-btn" onclick="document.getElementById('mediaInput').click()">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -538,6 +518,30 @@
 <div id="lightbox">
   <button class="close-lb" onclick="closeLightbox()">✕</button>
   <div id="lightboxContent"></div>
+</div>
+
+<!-- 이모티콘 패널 (화면 하단 슬라이드업) -->
+<div id="emojiPanel">
+  <span class="emoji-item" onclick="insertEmoji('🍑')">🍑</span>
+  <span class="emoji-item" onclick="insertEmoji('🍑💕')">🍑💕</span>
+  <span class="emoji-item" onclick="insertEmoji('🥰')">🥰</span>
+  <span class="emoji-item" onclick="insertEmoji('😍')">😍</span>
+  <span class="emoji-item" onclick="insertEmoji('🥺')">🥺</span>
+  <span class="emoji-item" onclick="insertEmoji('😘')">😘</span>
+  <span class="emoji-item" onclick="insertEmoji('💕')">💕</span>
+  <span class="emoji-item" onclick="insertEmoji('💖')">💖</span>
+  <span class="emoji-item" onclick="insertEmoji('✨')">✨</span>
+  <span class="emoji-item" onclick="insertEmoji('🌸')">🌸</span>
+  <span class="emoji-item" onclick="insertEmoji('🍀')">🍀</span>
+  <span class="emoji-item" onclick="insertEmoji('😂')">😂</span>
+  <span class="emoji-item" onclick="insertEmoji('🤣')">🤣</span>
+  <span class="emoji-item" onclick="insertEmoji('😭')">😭</span>
+  <span class="emoji-item" onclick="insertEmoji('😅')">😅</span>
+  <span class="emoji-item" onclick="insertEmoji('🙈')">🙈</span>
+  <span class="emoji-item" onclick="insertEmoji('💤')">💤</span>
+  <span class="emoji-item" onclick="insertEmoji('🍜')">🍜</span>
+  <span class="emoji-item" onclick="insertEmoji('☕')">☕</span>
+  <span class="emoji-item" onclick="insertEmoji('🎵')">🎵</span>
 </div>
 
 <!-- 영상통화 풀스크린 -->
