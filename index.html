@@ -252,7 +252,6 @@
           <div class="partner-status" id="partnerStatus">상대방 대기 중...</div>
         </div>
         <div class="topbar-actions">
-          <button class="icon-btn" onclick="debugScroll()" style="color:var(--danger);font-size:0.7rem;font-weight:bold">DBG</button>
           <button class="icon-btn" onclick="startCall('audio')">
             <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11.7 19.79 19.79 0 0115.9 3.07 2 2 0 0122 16.92z"/></svg>
           </button>
@@ -414,6 +413,9 @@
   <button class="close-lb" onclick="closeLightbox()">✕</button>
   <div id="lightboxContent"></div>
 </div>
+
+<!-- 디버그 버튼 (임시) -->
+<div onclick="debugScroll()" style="position:fixed;bottom:80px;right:16px;z-index:999;width:56px;height:56px;border-radius:50%;background:red;color:white;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.5);cursor:pointer">DBG</div>
 
 <div id="toast"></div>
 
