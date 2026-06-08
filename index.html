@@ -347,6 +347,13 @@
 
         <div class="profile-section">
           <div class="profile-row">
+            <span class="profile-row-label">메시지 알림</span>
+            <label class="toggle-sw">
+              <input type="checkbox" id="notifToggle" onchange="toggleNotif()">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="profile-row">
             <span class="profile-row-label">자동 번역 (한↔일)</span>
             <label class="toggle-sw">
               <input type="checkbox" id="translateToggle" checked onchange="saveTranslatePref()">
@@ -413,9 +420,6 @@
   <button class="close-lb" onclick="closeLightbox()">✕</button>
   <div id="lightboxContent"></div>
 </div>
-
-<!-- 디버그 버튼 (임시) -->
-<div onclick="debugScroll()" style="position:fixed;bottom:80px;right:16px;z-index:999;width:56px;height:56px;border-radius:50%;background:red;color:white;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.5);cursor:pointer">DBG</div>
 
 <div id="toast"></div>
 
@@ -569,10 +573,15 @@ function enterRoom() {
     const msg = snap.val();
     renderMessage(msg, key);
 
-    // 상대방 메시지 → 읽음 처리
+    // 상대방 메시지 → 읽음 처리 + 알림
     if (msg.uid !== me.name && msg.ts > latestTheirTs) {
       latestTheirTs = msg.ts;
       updateMyLastRead(msg.ts);
+      // 초기 로드가 아닌 새 메시지만 알림
+      if (msg.ts > enterTime) {
+        if (msg.type === 'text') sendNotif(msg.name, msg.text);
+        else sendNotif(msg.name, msg.type === 'image' ? '📷 사진' : '🎥 영상');
+      }
     }
   });
 
@@ -621,7 +630,9 @@ function enterRoom() {
   document.getElementById('langSelect').value           = myLang;
   document.getElementById('translateToggle').checked    = translateEnabled;
 
+  enterTime = Date.now();
   loadTheme();
+  initNotif();
   showScreen('mainScreen');
 }
 
@@ -922,16 +933,51 @@ window.doLogout = async () => {
   await signOut(auth);
 };
 
+// ── 알림 ──
+let notifEnabled = false;
+let enterTime = 0;
+
+window.toggleNotif = async function() {
+  const toggle = document.getElementById('notifToggle');
+  if (toggle.checked) {
+    if (!('Notification' in window)) {
+      showToast('이 브라우저는 알림을 지원하지 않아요');
+      toggle.checked = false; return;
+    }
+    const perm = await Notification.requestPermission();
+    if (perm === 'granted') {
+      notifEnabled = true;
+      localStorage.setItem('memo_notif', 'on');
+      showToast('알림이 켜졌어요');
+    } else {
+      toggle.checked = false;
+      showToast('브라우저 설정에서 알림을 허용해주세요');
+    }
+  } else {
+    notifEnabled = false;
+    localStorage.setItem('memo_notif', 'off');
+  }
+};
+
+function initNotif() {
+  const saved = localStorage.getItem('memo_notif');
+  const toggle = document.getElementById('notifToggle');
+  if (saved === 'on' && 'Notification' in window && Notification.permission === 'granted') {
+    notifEnabled = true;
+    toggle.checked = true;
+  }
+}
+
+function sendNotif(name, body) {
+  if (!notifEnabled || !document.hidden) return;
+  try {
+    new Notification('meMo — ' + name, { body, tag: 'memo-msg' });
+  } catch {}
+}
+
 window.showToast = msg => {
   const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
   clearTimeout(window._tt); window._tt=setTimeout(()=>t.classList.remove('show'),2500);
-};
-
-// 임시 디버그
-window.debugScroll = function() {
-  const c = document.getElementById('chatMessages');
-  const diff = Math.round(c.scrollHeight - c.scrollTop - c.clientHeight);
-  alert(`scrollTop: ${Math.round(c.scrollTop)}\nscrollHeight: ${Math.round(c.scrollHeight)}\nclientHeight: ${Math.round(c.clientHeight)}\n\ndiff (0이면 최하단): ${diff}\n\nwindow.innerHeight: ${window.innerHeight}\nvisualViewport: ${window.visualViewport ? Math.round(window.visualViewport.height) : 'N/A'}`);
 };
 </script>
 </body>
