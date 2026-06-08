@@ -252,6 +252,7 @@
           <div class="partner-status" id="partnerStatus">상대방 대기 중...</div>
         </div>
         <div class="topbar-actions">
+          <button class="icon-btn" onclick="debugScroll()" style="color:var(--danger);font-size:0.7rem;font-weight:bold">DBG</button>
           <button class="icon-btn" onclick="startCall('audio')">
             <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11.7 19.79 19.79 0 0115.9 3.07 2 2 0 0122 16.92z"/></svg>
           </button>
@@ -538,14 +539,15 @@ function enterRoom() {
 
   // ── 메시지: 새 메시지만 추가, 전체 재렌더링 없음 ──
   const seenKeys = new Set();
-  let initialLoadDone = false;
   let latestTheirTs = 0;
   let lastReadTimer = null;
   const container = document.getElementById('chatMessages');
 
-  function scrollToBottom() {
+  // DOM에 새 메시지 추가되면 자동으로 최하단 스크롤 (브라우저 레이아웃 완료 후 실행)
+  const scrollObserver = new MutationObserver(() => {
     container.scrollTop = container.scrollHeight;
-  }
+  });
+  scrollObserver.observe(container, { childList: true });
 
   function updateMyLastRead(ts) {
     if (ts <= 0 || ts === window._myLastReadSent) return;
@@ -568,21 +570,9 @@ function enterRoom() {
     // 상대방 메시지 → 읽음 처리
     if (msg.uid !== me.name && msg.ts > latestTheirTs) {
       latestTheirTs = msg.ts;
-    }
-
-    // 초기 로드 후에만 스크롤 + 읽음 업데이트
-    if (initialLoadDone) {
-      scrollToBottom();
-      if (msg.uid !== me.name) updateMyLastRead(msg.ts);
+      updateMyLastRead(msg.ts);
     }
   });
-
-  // 초기 로드 완료 → 스크롤 + 읽음 처리
-  setTimeout(() => {
-    initialLoadDone = true;
-    scrollToBottom();
-    if (latestTheirTs > 0) updateMyLastRead(latestTheirTs);
-  }, 100);
 
   // 번역 업데이트 → 해당 메시지만 수정 (재렌더링 없음)
   onChildChanged(ref(db, `${ROOM_ID}/messages`), snap => {
@@ -933,6 +923,13 @@ window.doLogout = async () => {
 window.showToast = msg => {
   const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
   clearTimeout(window._tt); window._tt=setTimeout(()=>t.classList.remove('show'),2500);
+};
+
+// 임시 디버그
+window.debugScroll = function() {
+  const c = document.getElementById('chatMessages');
+  const diff = Math.round(c.scrollHeight - c.scrollTop - c.clientHeight);
+  alert(`scrollTop: ${Math.round(c.scrollTop)}\nscrollHeight: ${Math.round(c.scrollHeight)}\nclientHeight: ${Math.round(c.clientHeight)}\n\ndiff (0이면 최하단): ${diff}\n\nwindow.innerHeight: ${window.innerHeight}\nvisualViewport: ${window.visualViewport ? Math.round(window.visualViewport.height) : 'N/A'}`);
 };
 </script>
 </body>
