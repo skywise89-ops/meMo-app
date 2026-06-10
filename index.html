@@ -800,33 +800,20 @@ window.openLightbox = (type, url) => {
 };
 window.closeLightbox = () => { document.getElementById('lightbox').classList.remove('open'); document.getElementById('lightboxContent').innerHTML=''; };
 
-// TURN 서버 설정 — metered.ca 무료 계정 발급 후 교체 권장
-// 가입: https://dashboard.metered.ca/signup?tool=turnserver
-// 무료: 월 500MB (두 사람 통화 충분)
-const ICE = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun.relay.metered.ca:80' },
-    // ↓↓↓ metered.ca 대시보드에서 발급받은 credential로 교체 ↓↓↓
-    {
-      urls: 'turn:global.relay.metered.ca:80',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
-    },
-    {
-      urls: 'turn:global.relay.metered.ca:443',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
-    },
-    {
-      urls: 'turn:global.relay.metered.ca:443?transport=tcp',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
-    }
-  ],
-  iceCandidatePoolSize: 10
-};
+// TURN 서버 — metered.ca에서 자동 발급
+let ICE = { iceServers: [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' }
+]};
+
+// 앱 시작 시 TURN credential 자동 가져오기
+(async () => {
+  try {
+    const res = await fetch('https://memoapp.metered.live/api/v1/turn/credentials?apiKey=M3ggTCTc_kc35A1_qpTJ3TnNZleoEWluPACAqwy5gMialFhW');
+    const servers = await res.json();
+    ICE.iceServers = [...ICE.iceServers, ...servers];
+  } catch {}
+})();
 
 function listenSignaling() {
   onValue(ref(db, `${ROOM_ID}/signal/${me.name}`), async snap => {
