@@ -91,7 +91,7 @@
   .tab-btn.active { color: var(--accent); }
 
   /* ── CHAT ── */
-  .chat-messages { flex: 1; overflow-y: auto; padding: 16px 12px; display: flex; flex-direction: column; gap: 8px; }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 16px 12px; display: flex; flex-direction: column-reverse; gap: 8px; }
   .chat-messages::-webkit-scrollbar { display: none; }
   .msg-wrap { display: flex; flex-direction: column; max-width: 78%; }
   .msg-wrap.me { align-self: flex-end; align-items: flex-end; }
@@ -554,12 +554,6 @@ function enterRoom() {
   let lastReadTimer = null;
   const container = document.getElementById('chatMessages');
 
-  // DOM에 새 메시지 추가되면 자동으로 최하단 스크롤 (브라우저 레이아웃 완료 후 실행)
-  const scrollObserver = new MutationObserver(() => {
-    container.scrollTop = container.scrollHeight;
-  });
-  scrollObserver.observe(container, { childList: true });
-
   function updateMyLastRead(ts) {
     if (ts <= 0 || ts === window._myLastReadSent) return;
     clearTimeout(lastReadTimer);
@@ -696,7 +690,7 @@ window.autoResize = el => { el.style.height = 'auto'; el.style.height = Math.min
 function renderMessage(msg, key) {
   const container = document.getElementById('chatMessages');
   if (msg.type === 'system') {
-    const d = document.createElement('div'); d.className = 'system-msg'; d.textContent = msg.text; container.appendChild(d); return;
+    const d = document.createElement('div'); d.className = 'system-msg'; d.textContent = msg.text; container.prepend(d); return;
   }
   const isMe = msg.uid === me.name;
   const wrap = document.createElement('div'); wrap.className = `msg-wrap ${isMe ? 'me' : 'them'}`;
@@ -759,7 +753,7 @@ function renderMessage(msg, key) {
     t.appendChild(check);
   }
   wrap.appendChild(t);
-  container.appendChild(wrap);
+  container.prepend(wrap);
 }
 
 const fmt = ts => { const d = new Date(ts); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
@@ -806,14 +800,32 @@ window.openLightbox = (type, url) => {
 };
 window.closeLightbox = () => { document.getElementById('lightbox').classList.remove('open'); document.getElementById('lightboxContent').innerHTML=''; };
 
+// TURN 서버 설정 — metered.ca 무료 계정 발급 후 교체 권장
+// 가입: https://dashboard.metered.ca/signup?tool=turnserver
+// 무료: 월 500MB (두 사람 통화 충분)
 const ICE = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'turn:openrelay.metered.ca:80',      username: 'openrelayproject', credential: 'openrelayproject' },
-    { urls: 'turn:openrelay.metered.ca:443',     username: 'openrelayproject', credential: 'openrelayproject' },
-    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
-  ]
+    { urls: 'stun:stun.relay.metered.ca:80' },
+    // ↓↓↓ metered.ca 대시보드에서 발급받은 credential로 교체 ↓↓↓
+    {
+      urls: 'turn:global.relay.metered.ca:80',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    },
+    {
+      urls: 'turn:global.relay.metered.ca:443',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    },
+    {
+      urls: 'turn:global.relay.metered.ca:443?transport=tcp',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    }
+  ],
+  iceCandidatePoolSize: 10
 };
 
 function listenSignaling() {
@@ -981,14 +993,21 @@ function initNotif() {
   }
 }
 
+// 앱이 포커스 상태인지 추적
+let appHasFocus = true;
+document.addEventListener('visibilitychange', () => { appHasFocus = document.visibilityState === 'visible'; });
+window.addEventListener('blur', () => { appHasFocus = false; });
+window.addEventListener('focus', () => { appHasFocus = true; });
+
 function sendNotif(name, body) {
-  if (!notifEnabled || !document.hidden) return;
+  if (!notifEnabled || appHasFocus) return;
   try {
-    // Service Worker 등록이 있으면 SW 알림 사용 (iOS PWA 지원)
+    // tag에 타임스탬프 추가 → 알림이 덮어쓰이지 않음
+    const tag = 'memo-' + Date.now();
     if (swRegistration) {
-      swRegistration.showNotification('meMo — ' + name, { body, tag: 'memo-msg' });
+      swRegistration.showNotification('meMo — ' + name, { body, tag });
     } else {
-      new Notification('meMo — ' + name, { body, tag: 'memo-msg' });
+      new Notification('meMo — ' + name, { body, tag });
     }
   } catch {}
 }
