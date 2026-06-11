@@ -212,6 +212,48 @@
   }
   .me .msg-quote { border-left: none; border-right: 3px solid var(--accent2); text-align: right; }
 
+  /* ── 최신 메시지 버튼 ── */
+  .scroll-bottom-btn {
+    position: absolute; bottom: 12px; right: 12px;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text2); cursor: pointer;
+    display: none; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3); z-index: 5;
+    transition: opacity 0.2s;
+    font-size: 1rem;
+  }
+  .scroll-bottom-btn.show { display: flex; }
+
+  /* ── 날짜 구분선 ── */
+  .date-sep {
+    text-align: center; padding: 12px 0 4px;
+    font-size: 0.7rem; color: var(--text2);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .date-sep::before, .date-sep::after {
+    content: ''; flex: 1; height: 1px;
+    background: var(--border);
+  }
+
+  /* ── 검색바 ── */
+  .search-bar {
+    display: none; gap: 8px; align-items: center;
+    padding: 8px 12px; background: var(--surface);
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .search-bar.show { display: flex; }
+  .search-input {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 18px; color: var(--text); padding: 8px 14px;
+    font-size: 0.85rem; outline: none; font-family: inherit;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-nav { background: none; border: none; color: var(--text2); font-size: 1.1rem; cursor: pointer; padding: 4px 6px; }
+  .search-nav:active { color: var(--accent); }
+  .search-count { font-size: 0.75rem; color: var(--text2); white-space: nowrap; }
+  .msg-highlight { background: rgba(200,169,126,0.25); border-radius: 8px; }
+
   #toast { position: fixed; bottom: calc(80px + var(--safe-bottom)); left: 50%; transform: translateX(-50%) translateY(10px); background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 20px; font-size: 0.85rem; color: var(--text); z-index: 300; opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; white-space: nowrap; }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
@@ -253,6 +295,9 @@
           <div class="partner-status" id="partnerStatus">상대방 대기 중...</div>
         </div>
         <div class="topbar-actions">
+          <button class="icon-btn" onclick="toggleSearch()">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </button>
           <button class="icon-btn" onclick="startJitsiCall('audio')">
             <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11.7 19.79 19.79 0 0115.9 3.07 2 2 0 0122 16.92z"/></svg>
           </button>
@@ -261,7 +306,17 @@
           </button>
         </div>
       </div>
-      <div class="chat-messages" id="chatMessages"></div>
+      <div class="search-bar" id="searchBar">
+        <input class="search-input" id="searchInput" placeholder="메시지 검색..." oninput="doSearch()" onkeydown="if(event.key==='Enter')searchNext()">
+        <span class="search-count" id="searchCount"></span>
+        <button class="search-nav" onclick="searchPrev()">▲</button>
+        <button class="search-nav" onclick="searchNext()">▼</button>
+        <button class="search-nav" onclick="toggleSearch()">✕</button>
+      </div>
+      <div style="position:relative;flex:1;display:flex;flex-direction:column;overflow:hidden">
+        <div class="chat-messages" id="chatMessages"></div>
+        <button class="scroll-bottom-btn" id="scrollBottomBtn" onclick="scrollToLatest()">↓</button>
+      </div>
       <div class="reply-bar" id="replyBar">
         <span style="color:var(--accent);font-size:0.75rem;flex-shrink:0">↩ 답장</span>
         <span class="reply-bar-text" id="replyBarText"></span>
@@ -745,6 +800,9 @@ function renderMessage(msg, key) {
   }
   wrap.appendChild(t);
   container.prepend(wrap);
+
+  // 날짜 구분선 삽입
+  insertDateSep(container, wrap, msg.ts);
 }
 
 const fmt = ts => { const d = new Date(ts); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
@@ -937,6 +995,106 @@ function sendNotif(name, body) {
       new Notification('meMo — ' + name, { body, tag });
     }
   } catch {}
+}
+
+// ── 날짜 구분선 ──
+let lastDateStr = '';
+
+function getDateStr(ts) {
+  const d = new Date(ts);
+  const days = ['일','월','화','수','목','금','토'];
+  return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 ${days[d.getDay()]}요일`;
+}
+
+function insertDateSep(container, wrap, ts) {
+  const dateStr = getDateStr(ts);
+  if (dateStr !== lastDateStr) {
+    lastDateStr = dateStr;
+    const sep = document.createElement('div');
+    sep.className = 'date-sep';
+    sep.textContent = dateStr;
+    // column-reverse: separator를 message 뒤에 넣으면 시각적으로 위에 표시
+    wrap.after(sep);
+  }
+}
+
+// ── 최신 메시지 버튼 ──
+window.scrollToLatest = function() {
+  document.getElementById('chatMessages').scrollTop = 0;
+};
+
+// 스크롤 감지 — column-reverse에서 scrollTop > 100이면 위로 스크롤한 상태
+document.addEventListener('DOMContentLoaded', () => {
+  const cm = document.getElementById('chatMessages');
+  const btn = document.getElementById('scrollBottomBtn');
+  if (cm && btn) {
+    cm.addEventListener('scroll', () => {
+      // column-reverse: Chrome은 음수, Safari는 양수 — 절대값 사용
+      btn.classList.toggle('show', Math.abs(cm.scrollTop) > 100);
+    }, { passive: true });
+  }
+});
+
+// ── 메시지 검색 ──
+let searchMatches = [];
+let searchIdx = -1;
+
+window.toggleSearch = function() {
+  const bar = document.getElementById('searchBar');
+  const isOpen = bar.classList.toggle('show');
+  if (isOpen) {
+    document.getElementById('searchInput').focus();
+  } else {
+    clearSearch();
+  }
+};
+
+window.doSearch = function() {
+  clearSearchHighlights();
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  if (!q) { document.getElementById('searchCount').textContent = ''; searchMatches = []; return; }
+
+  const bubbles = document.querySelectorAll('#chatMessages .msg-bubble');
+  searchMatches = [];
+  bubbles.forEach(b => {
+    if (b.textContent.toLowerCase().includes(q)) {
+      b.classList.add('msg-highlight');
+      searchMatches.push(b);
+    }
+  });
+
+  // column-reverse이므로 배열 뒤집어서 오래된 순으로
+  searchMatches.reverse();
+  searchIdx = searchMatches.length > 0 ? 0 : -1;
+  document.getElementById('searchCount').textContent = searchMatches.length > 0
+    ? `${searchIdx+1}/${searchMatches.length}` : '0건';
+
+  if (searchMatches.length > 0) searchMatches[0].scrollIntoView({ block: 'center' });
+};
+
+window.searchNext = function() {
+  if (searchMatches.length === 0) return;
+  searchIdx = (searchIdx + 1) % searchMatches.length;
+  searchMatches[searchIdx].scrollIntoView({ block: 'center' });
+  document.getElementById('searchCount').textContent = `${searchIdx+1}/${searchMatches.length}`;
+};
+
+window.searchPrev = function() {
+  if (searchMatches.length === 0) return;
+  searchIdx = (searchIdx - 1 + searchMatches.length) % searchMatches.length;
+  searchMatches[searchIdx].scrollIntoView({ block: 'center' });
+  document.getElementById('searchCount').textContent = `${searchIdx+1}/${searchMatches.length}`;
+};
+
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchCount').textContent = '';
+  clearSearchHighlights();
+  searchMatches = []; searchIdx = -1;
+}
+
+function clearSearchHighlights() {
+  document.querySelectorAll('.msg-highlight').forEach(el => el.classList.remove('msg-highlight'));
 }
 
 window.showToast = msg => {
