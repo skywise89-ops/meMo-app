@@ -99,4 +99,991 @@
   .topbar-actions { display: flex; gap: 12px; }
   .icon-btn { background: none; border: none; color: var(--text2); cursor: pointer; padding: 4px; display: flex; align-items: center; border-radius: 8px; transition: color 0.2s; }
   .icon-btn:active { color: var(--accent); }
-  .icon-btn svg { width: 22px; height: 22px; stroke: currentColor
+  .icon-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+
+  /* ── MAIN ── */
+  #mainScreen { background: var(--bg); }
+  .tab-content { flex: 1; overflow: hidden; position: relative; }
+  .tab-pane { position: absolute; inset: 0; display: flex; flex-direction: column; overflow: hidden; }
+  .tab-pane.hidden { display: none; }
+  .tab-bar { display: flex; background: var(--surface); border-top: 1px solid var(--border); padding-bottom: var(--safe-bottom); flex-shrink: 0; }
+  .tab-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0 8px; background: none; border: none; color: var(--text2); font-size: 0.65rem; cursor: pointer; transition: color 0.2s; }
+  .tab-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+  .tab-btn.active { color: var(--accent); }
+
+  .chat-messages { flex: 1; overflow-y: auto; padding: 16px 16px; display: flex; flex-direction: column-reverse; gap: 8px; }
+  .chat-messages::-webkit-scrollbar { display: none; }
+  .msg-wrap { display: flex; flex-direction: column; max-width: 78%; }
+  .msg-wrap.me { align-self: flex-end; align-items: flex-end; }
+  .msg-wrap.them { align-self: flex-start; align-items: flex-start; }
+  .msg-bubble { padding: 10px 14px; border-radius: 18px; font-size: 0.95rem; line-height: 1.5; word-break: break-word; }
+  .me .msg-bubble { background: var(--bubble-me); border-bottom-right-radius: 4px; border: 1px solid rgba(200,169,126,0.15); }
+  .them .msg-bubble { background: var(--bubble-them); border-bottom-left-radius: 4px; border: 1px solid var(--border); }
+  .msg-translation { font-size: 0.78rem; color: var(--text2); margin-top: 4px; padding-left: 8px; border-left: 2px solid var(--accent); }
+  .me .msg-translation { border-left: none; border-right: 2px solid var(--accent2); padding-left: 0; padding-right: 8px; text-align: right; }
+  .msg-time { font-size: 0.68rem; color: var(--text2); margin-top: 3px; padding: 0 4px; display: flex; align-items: center; gap: 3px; justify-content: flex-end; }
+  .read-check { display: inline-flex; align-items: center; }
+  .read-check svg { width: 14px; height: 14px; }
+  .read-check.read svg { stroke: var(--accent2); }
+  .read-check.unread svg { stroke: var(--text2); opacity: 0.5; }
+  .msg-sender { font-size: 0.72rem; color: var(--text2); margin-bottom: 3px; padding: 0 4px; }
+  .msg-media { max-width: 220px; border-radius: 12px; overflow: hidden; }
+  .msg-media img { width: 100%; display: block; cursor: pointer; }
+  .msg-media video { width: 100%; display: block; border-radius: 8px; }
+  .system-msg { text-align: center; color: var(--text2); font-size: 0.75rem; padding: 4px 0; }
+  
+  .chat-input-wrap { display: flex; align-items: flex-end; gap: 8px; padding: 10px 16px; padding-bottom: calc(10px + var(--safe-bottom)); background: var(--surface); border-top: 1px solid var(--border); flex-shrink: 0; }
+  .chat-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 22px; color: var(--text); padding: 10px 16px; font-size: 0.95rem; outline: none; resize: none; max-height: 120px; min-height: 42px; line-height: 1.4; font-family: inherit; transition: border-color 0.2s; }
+  .chat-input:focus { border-color: var(--accent); }
+  .chat-send-btn { width: 42px; height: 42px; border-radius: 50%; background: var(--accent); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: opacity 0.2s, transform 0.1s; }
+  .chat-send-btn:active { opacity: 0.7; transform: scale(0.93); }
+  .chat-send-btn svg { width: 18px; height: 18px; stroke: #0d0d0f; fill: none; stroke-width: 2; }
+  .partner-status { font-size: 0.75rem; color: var(--text2); }
+  .online-dot { width: 8px; height: 8px; border-radius: 50%; background: #4a7a4a; display: inline-block; margin-right: 6px; }
+
+  /* ── ALBUM ── */
+  .album-grid { flex: 1; overflow-y: auto; padding: 2px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+  .album-item { aspect-ratio: 1; overflow: hidden; position: relative; cursor: pointer; background: var(--surface); }
+  .album-item img, .album-item video { width: 100%; height: 100%; object-fit: cover; }
+  .album-item .play-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); }
+  .album-item .play-icon svg { width: 32px; height: 32px; fill: rgba(255,255,255,0.9); }
+  .album-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text2); font-size: 0.9rem; }
+
+  /* ── LIGHTBOX ── */
+  #lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  #lightbox.open { opacity: 1; pointer-events: all; }
+  #lightbox img, #lightbox video { max-width: 90vw; max-height: 85vh; object-fit: contain; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+  #lightbox .close-lb { position: absolute; top: 52px; right: 20px; background: none; border: none; color: white; font-size: 2rem; cursor: pointer; z-index: 101; padding: 8px; }
+
+  /* ── CALL ── */
+  #callPane { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2rem; padding: 2rem; }
+  .call-avatar { width: 100px; height: 100px; border-radius: 50%; background: var(--surface2); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; overflow: hidden; }
+  .call-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .call-name { font-size: 1.3rem; font-weight: 300; color: var(--accent); }
+  .call-controls { display: flex; gap: 20px; margin-top: 1rem; }
+  .call-btn { width: 64px; height: 64px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s, transform 0.1s; }
+  .call-btn:active { opacity: 0.7; transform: scale(0.93); }
+  .call-btn svg { width: 26px; height: 26px; stroke: white; fill: none; stroke-width: 1.8; }
+  .call-btn.start-audio { background: #4a7a4a; }
+  .call-btn.start-video { background: var(--accent2); }
+
+  /* ── INCOMING CALL ── */
+  #incomingCall { position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 200; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 1.5rem; }
+  #incomingCall.show { display: flex; }
+  .incoming-name { font-size: 1.8rem; font-weight: 300; color: var(--accent); }
+  .incoming-type { font-size: 0.85rem; color: var(--text2); }
+  .incoming-btns { display: flex; gap: 40px; margin-top: 1rem; }
+  .inc-btn { width: 72px; height: 72px; border-radius: 50%; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+  .inc-btn svg { width: 28px; height: 28px; stroke: white; fill: none; stroke-width: 1.8; }
+  .inc-btn span { font-size: 0.7rem; color: white; }
+  .inc-btn.accept { background: #4a7a4a; }
+  .inc-btn.reject { background: var(--danger); }
+
+  /* ── PROFILE ── */
+  .profile-header { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 20px 0; }
+  .profile-avatar-lg { width: 88px; height: 88px; border-radius: 50%; background: var(--surface2); border: 2px solid var(--border); overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+  .profile-avatar-lg img { width: 100%; height: 100%; object-fit: cover; }
+  .profile-section { background: var(--surface); border-radius: 16px; overflow: hidden; }
+  .profile-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); gap: 12px; }
+  .profile-row:last-child { border-bottom: none; }
+  .profile-row-label { font-size: 0.9rem; color: var(--text2); }
+  .lang-select { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 6px 10px; font-size: 0.85rem; outline: none; cursor: pointer; }
+  .danger-btn { background: none; border: 1px solid var(--danger); border-radius: 12px; color: var(--danger); padding: 12px; font-size: 0.9rem; cursor: pointer; width: 100%; }
+  .danger-btn:active { background: rgba(200,126,126,0.1); }
+  .toggle-sw { position: relative; width: 44px; height: 24px; }
+  .toggle-sw input { opacity: 0; width: 0; height: 0; }
+  .toggle-sw .slider { position: absolute; inset: 0; background: var(--surface2); border-radius: 24px; border: 1px solid var(--border); cursor: pointer; transition: background 0.2s; }
+  .toggle-sw .slider::before { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: var(--text2); top: 2px; left: 2px; transition: transform 0.2s, background 0.2s; }
+  .toggle-sw input:checked + .slider { background: rgba(200,169,126,0.2); border-color: var(--accent); }
+  .toggle-sw input:checked + .slider::before { transform: translateX(20px); background: var(--accent); }
+
+  /* ── 테마 선택 UI ── */
+  .theme-row { display: flex; gap: 12px; padding: 4px 0; flex-wrap: wrap; }
+  .theme-dot {
+    width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+    border: 3px solid transparent; transition: transform 0.15s, border-color 0.15s;
+    display: flex; align-items: center; justify-content: center; font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .theme-dot:active { transform: scale(0.88); }
+  .theme-dot.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+
+  /* ── 답장 ── */
+  .reply-bar {
+    display: none; align-items: center; gap: 8px;
+    background: var(--surface2); border-left: 3px solid var(--accent);
+    padding: 8px 14px; font-size: 0.8rem; color: var(--text2);
+    flex-shrink: 0;
+  }
+  .reply-bar.show { display: flex; }
+  .reply-bar-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .reply-bar-cancel { background: none; border: none; color: var(--text2); font-size: 1.1rem; cursor: pointer; padding: 0 4px; line-height: 1; }
+  .msg-quote {
+    background: var(--surface2); border-left: 3px solid var(--accent);
+    border-radius: 6px; padding: 5px 10px; margin-bottom: 5px;
+    font-size: 0.75rem; color: var(--text2);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    max-width: 100%;
+  }
+  .me .msg-quote { border-left: none; border-right: 3px solid var(--accent2); text-align: right; }
+
+  /* ── 최신 메시지 버튼 ── */
+  .scroll-bottom-btn {
+    position: absolute; bottom: 12px; right: 12px;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text2); cursor: pointer;
+    display: none; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3); z-index: 5;
+    transition: opacity 0.2s;
+    font-size: 1rem;
+  }
+  .scroll-bottom-btn.show { display: flex; }
+
+  /* ── 날짜 구분선 ── */
+  .date-sep {
+    text-align: center; padding: 12px 0 4px;
+    font-size: 0.7rem; color: var(--text2);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .date-sep::before, .date-sep::after {
+    content: ''; flex: 1; height: 1px;
+    background: var(--border);
+  }
+
+  .search-bar {
+    display: none; gap: 8px; align-items: center;
+    padding: 8px 16px; background: var(--surface);
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  .search-bar.show { display: flex; }
+  .search-input {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 18px; color: var(--text); padding: 8px 14px;
+    font-size: 0.85rem; outline: none; font-family: inherit;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-nav { background: none; border: none; color: var(--text2); font-size: 1.1rem; cursor: pointer; padding: 4px 6px; }
+  .search-nav:active { color: var(--accent); }
+  .search-count { font-size: 0.75rem; color: var(--text2); white-space: nowrap; }
+  .msg-highlight { background: rgba(200,169,126,0.25); border-radius: 8px; }
+
+  #toast { position: fixed; bottom: calc(80px + var(--safe-bottom)); left: 50%; transform: translateX(-50%) translateY(10px); background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 20px; font-size: 0.85rem; color: var(--text); z-index: 300; opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; white-space: nowrap; }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div id="loadingScreen" class="screen">
+  <div class="spinner"></div>
+  <div class="loading-text">연결 중...</div>
+</div>
+
+<div id="loginScreen" class="screen hidden">
+  <div class="login-logo">me<span>M</span>o</div>
+  <div class="login-sub">only for two</div>
+  <button class="google-btn" onclick="signInWithGoogle()">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    </svg>
+    Google로 로그인
+  </button>
+  <div class="login-error" id="loginError"></div>
+</div>
+
+<div id="mainScreen" class="screen hidden">
+  <div class="tab-content">
+
+    <div id="chatPane" class="tab-pane">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">💬 채팅</div>
+          <div class="partner-status" id="partnerStatus">상대방 대기 중...</div>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-btn" onclick="toggleSearch()">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </button>
+          <button class="icon-btn" onclick="startJitsiCall('audio')">
+            <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11.7 19.79 19.79 0 0115.9 3.07 2 2 0 0122 16.92z"/></svg>
+          </button>
+          <button class="icon-btn" onclick="startJitsiCall('video')">
+            <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="search-bar" id="searchBar">
+        <input class="search-input" id="searchInput" placeholder="메시지 검색..." oninput="doSearch()" onkeydown="if(event.key==='Enter')searchNext()">
+        <span class="search-count" id="searchCount"></span>
+        <button class="search-nav" onclick="searchPrev()">▲</button>
+        <button class="search-nav" onclick="searchNext()">▼</button>
+        <button class="search-nav" onclick="toggleSearch()">✕</button>
+      </div>
+      <div style="position:relative;flex:1;display:flex;flex-direction:column;overflow:hidden">
+        <div class="chat-messages" id="chatMessages"></div>
+        <button class="scroll-bottom-btn" id="scrollBottomBtn" onclick="scrollToLatest()">↓</button>
+      </div>
+      <div class="reply-bar" id="replyBar">
+        <span style="color:var(--accent);font-size:0.75rem;flex-shrink:0">↩ 답장</span>
+        <span class="reply-bar-text" id="replyBarText"></span>
+        <button class="reply-bar-cancel" onclick="cancelReply()">✕</button>
+      </div>
+      <div class="chat-input-wrap">
+        <button class="icon-btn" onclick="document.getElementById('mediaInput').click()">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </button>
+        <textarea class="chat-input" id="msgInput" placeholder="메시지 입력..." rows="1"
+          oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
+        <button class="chat-send-btn" onclick="sendMessage()">
+          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+      <input type="file" id="mediaInput" accept="image/*,video/*" style="display:none" onchange="sendMedia(event)">
+    </div>
+
+    <div id="albumPane" class="tab-pane hidden">
+      <div class="topbar"><div class="topbar-title">📷 앨범</div></div>
+      <div class="album-grid" id="albumGrid">
+        <div class="album-empty" style="grid-column:1/-1;height:300px">아직 공유된 미디어가 없어요</div>
+      </div>
+    </div>
+
+    <div id="callTabPane" class="tab-pane hidden">
+      <div class="topbar"><div class="topbar-title">📞 통화</div></div>
+      <div id="callPane">
+        <div class="call-avatar" id="callAvatar">🌸</div>
+        <div class="call-name" id="callName">상대방</div>
+
+        <div style="color:var(--text2);font-size:0.8rem;text-align:center;max-width:260px;line-height:1.6">
+          Jitsi Meet으로 무료 통화를 시작합니다<br>가입 없이 바로 사용 가능해요
+        </div>
+        <div class="call-controls">
+          <button class="call-btn start-audio" onclick="startJitsiCall('audio')">
+            <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11.7 19.79 19.79 0 0115.9 3.07 2 2 0 0122 16.92z"/></svg>
+          </button>
+          <button class="call-btn start-video" onclick="startJitsiCall('video')">
+            <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="profilePane" class="tab-pane hidden">
+      <div class="topbar"><div class="topbar-title">⚙️ 설정</div></div>
+      <div style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px">
+        <div class="profile-header">
+          <div class="profile-avatar-lg" id="myAvatarDisplay">🙂</div>
+          <div style="font-size:1.2rem;font-weight:400" id="myNameDisplay">-</div>
+          <div style="font-size:0.8rem;color:var(--text2)" id="myEmailDisplay">-</div>
+        </div>
+
+        <div class="profile-section">
+          <div class="profile-row" style="flex-direction:column;align-items:flex-start;gap:12px">
+            <span class="profile-row-label">테마</span>
+            <div class="theme-row">
+              <div class="theme-dot active" id="tdark"    style="background:#0d0d0f;border:2px solid #555"    onclick="setTheme('dark')"    title="다크">🌑</div>
+              <div class="theme-dot"        id="trose"    style="background:#fff5f7;border:2px solid #d4607a" onclick="setTheme('rose')"    title="로즈">🌹</div>
+              <div class="theme-dot"        id="tskyblue" style="background:#f0f6ff;border:2px solid #4a7fd4" onclick="setTheme('skyblue')" title="스카이블루">🩵</div>
+              <div class="theme-dot"        id="tpurple"  style="background:#f8f4ff;border:2px solid #8a5cd4" onclick="setTheme('purple')"  title="퍼플">💜</div>
+              <div class="theme-dot"        id="tcream"   style="background:#fdf8f0;border:2px solid #b8904a" onclick="setTheme('cream')"   title="크림">🍞</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-section">
+          <div class="profile-row">
+            <span class="profile-row-label">메시지 푸시 알림</span>
+            <label class="toggle-sw">
+              <input type="checkbox" id="notifToggle" onchange="toggleNotif()">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="profile-row">
+            <span class="profile-row-label">자동 번역 (한↔일)</span>
+            <label class="toggle-sw">
+              <input type="checkbox" id="translateToggle" checked onchange="saveTranslatePref()">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="profile-row">
+            <span class="profile-row-label">내 언어</span>
+            <select class="lang-select" id="langSelect" onchange="changeLang()">
+              <option value="ko">🇰🇷 한국어</option>
+              <option value="ja">🇯🇵 日本語</option>
+            </select>
+          </div>
+        </div>
+        <button class="danger-btn" onclick="doLogout()">로그아웃</button>
+      </div>
+    </div>
+
+  </div>
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tab-chat" onclick="switchTab('chat')">
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      채팅
+    </button>
+    <button class="tab-btn" id="tab-album" onclick="switchTab('album')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      앨범
+    </button>
+    <button class="tab-btn" id="tab-call" onclick="switchTab('call')">
+      <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11.7 19.79 19.79 0 0115.9 3.07 2 2 0 0122 16.92z"/></svg>
+      통화
+    </button>
+    <button class="tab-btn" id="tab-profile" onclick="switchTab('profile')">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      설정
+    </button>
+  </div>
+</div>
+
+<div id="incomingCall">
+  <div class="call-avatar" style="width:80px;height:80px;font-size:2rem" id="incomingAvatar">🌸</div>
+  <div style="color:var(--text2);font-size:0.9rem">전화가 왔어요</div>
+  <div class="incoming-name" id="incomingName">-</div>
+  <div class="incoming-type" id="incomingType">음성 통화</div>
+  <div class="incoming-btns">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+      <button class="inc-btn reject" onclick="rejectCall()">
+        <svg viewBox="0 0 24 24"><path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7 2 2 0 011.72 2v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07"/><path d="M6.67 6.67A19.5 19.5 0 003 15.9a2 2 0 01-2-2.18v-3a2 2 0 011.72-2 12.84 12.84 0 002.81-.7 2 2 0 012.11.45l1.27 1.27"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        <span>거절</span>
+      </button>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+      <button class="inc-btn accept" onclick="acceptCall()">
+        <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11.7 19.79 19.79 0 0115.9 3.07 2 2 0 0122 16.92z"/></svg>
+        <span>수락</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="lightbox">
+  <button class="close-lb" onclick="closeLightbox()">✕</button>
+  <div id="lightboxContent"></div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module">
+import { initializeApp }                                    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup,
+         onAuthStateChanged, signOut }
+                                                            from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getDatabase, ref, set, push, onValue, onChildAdded, onChildChanged,
+         onDisconnect, serverTimestamp }                    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+import { getStorage, ref as sRef,
+         uploadBytesResumable, getDownloadURL }             from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
+import { getMessaging, getToken }                           from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyBSfAOkWJtk41iCLIWkCtG91Hn9Aa44UNA",
+  authDomain:        "memo-e366f.firebaseapp.com",
+  databaseURL:       "https://memo-e366f-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:         "memo-e366f",
+  storageBucket:     "memo-e366f.firebasestorage.app",
+  messagingSenderId: "103854425677",
+  appId:             "1:103854425677:web:67e0b818c41b42bc3c7e04"
+};
+
+const ALLOWED = {
+  'fromkevinjung@gmail.com': { name: 'Kevin', emoji: '🍀', lang: 'ko', partnerEmail: 'momo.021118@gmail.com' },
+  'momo.021118@gmail.com':   { name: 'Momo',  emoji: '🌸', lang: 'ja', partnerEmail: 'fromkevinjung@gmail.com' }
+};
+const ROOM_ID = 'memo_private_room';
+
+const app     = initializeApp(firebaseConfig);
+const auth    = getAuth(app);
+const db      = getDatabase(app);
+const storage = getStorage(app);
+const messaging = getMessaging(app);
+
+let me = null, partner = null;
+let myLang = 'ko', translateEnabled = true;
+let partnerLastRead = 0;
+const CHECK_SINGLE = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+const CHECK_DOUBLE = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 6 7 17 2 12"/><polyline points="23 6 12 17"/></svg>`;
+
+function sanitize(str) {
+  if (!str) return '';
+  if (str.startsWith('http://') || str.startsWith('https://')) return str;
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+
+// ── 테마 ──
+const THEME_IDS = ['dark','rose','skyblue','purple','cream'];
+window.setTheme = function(theme) {
+  document.body.className = theme === 'dark' ? '' : `theme-${theme}`;
+  localStorage.setItem('memo_theme', theme);
+  THEME_IDS.forEach(t => {
+    const el = document.getElementById(`t${t}`);
+    if (el) el.classList.toggle('active', t === theme);
+  });
+};
+
+function loadTheme() {
+  const saved = localStorage.getItem('memo_theme') || 'dark';
+  setTheme(saved);
+}
+
+window.signInWithGoogle = async function() {
+  const provider = new GoogleAuthProvider();
+  const errEl = document.getElementById('loginError');
+  errEl.textContent = '';
+  try {
+    await signInWithPopup(auth, provider);
+  } catch(e) {
+    if (e.code !== 'auth/popup-closed-by-user') {
+      errEl.textContent = '로그인 중 오류가 발생했습니다. 다시 시도해주세요.';
+    }
+  }
+};
+
+onAuthStateChanged(auth, async user => {
+  if (!user) { showScreen('loginScreen'); return; }
+  const email = user.email;
+  const profile = ALLOWED[email];
+  if (!profile) {
+    await signOut(auth);
+    document.getElementById('loginError').textContent = `${email} 은 접근이 허용되지 않은 계정입니다.`;
+    showScreen('loginScreen'); return;
+  }
+  me = { ...profile, email, photoURL: user.photoURL };
+  partner = { ...ALLOWED[profile.partnerEmail], email: profile.partnerEmail };
+  myLang = localStorage.getItem(`memo_lang_${email}`) || profile.lang;
+  translateEnabled = localStorage.getItem('memo_translate') !== 'false';
+  enterRoom();
+});
+
+function enterRoom() {
+  const meRef = ref(db, `${ROOM_ID}/presence/${me.name}`);
+  const meData = { online: true, name: me.name, photoURL: me.photoURL || '', ts: serverTimestamp() };
+  set(meRef, meData);
+  onDisconnect(meRef).update({ online: false });
+
+  document.addEventListener('visibilitychange', () => {
+    set(ref(db, `${ROOM_ID}/presence/${me.name}/online`), document.visibilityState === 'visible');
+  });
+  window.addEventListener('beforeunload', () => {
+    set(ref(db, `${ROOM_ID}/presence/${me.name}/online`), false);
+  });
+
+  onValue(ref(db, `${ROOM_ID}/presence/${partner.name}`), snap => {
+    const data = snap.val();
+    const el = document.getElementById('partnerStatus');
+    el.innerHTML = '';
+    if (data?.online) {
+      const dot = document.createElement('span'); dot.className = 'online-dot'; el.appendChild(dot);
+      el.appendChild(document.createTextNode(sanitize(partner.name) + ' 온라인'));
+    } else {
+      el.textContent = sanitize(partner.name) + ' 오프라인';
+    }
+    document.getElementById('callName').textContent = partner.name;
+    const av = document.getElementById('callAvatar');
+    if (data?.photoURL) {
+      const avImg = document.createElement('img');
+      avImg.src = sanitize(data.photoURL);
+      avImg.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%';
+      av.innerHTML = ''; av.appendChild(avImg);
+    } else { av.textContent = partner.emoji; }
+  });
+
+  const seenKeys = new Set();
+  let latestTheirTs = 0;
+  let lastReadTimer = null;
+  const container = document.getElementById('chatMessages');
+
+  function updateMyLastRead(ts) {
+    if (ts <= 0 || ts === window._myLastReadSent) return;
+    clearTimeout(lastReadTimer);
+    lastReadTimer = setTimeout(() => {
+      window._myLastReadSent = ts;
+      set(ref(db, `${ROOM_ID}/lastRead/${me.name}`), ts);
+    }, 500);
+  }
+
+  onChildAdded(ref(db, `${ROOM_ID}/messages`), snap => {
+    const key = snap.key;
+    if (seenKeys.has(key)) return;
+    seenKeys.add(key);
+
+    const msg = snap.val();
+    renderMessage(msg, key);
+
+    if (msg.uid !== me.name && msg.ts > latestTheirTs) {
+      latestTheirTs = msg.ts;
+      updateMyLastRead(msg.ts);
+      if (msg.ts > enterTime) {
+        if (msg.type === 'text') sendLocalNotif(msg.name, msg.text);
+        else sendLocalNotif(msg.name, msg.type === 'image' ? '📷 사진' : '🎥 영상');
+      }
+    }
+  });
+
+  onChildChanged(ref(db, `${ROOM_ID}/messages`), snap => {
+    const key = snap.key;
+    const msg = snap.val();
+    const el = container.querySelector(`[data-key="${key}"]`);
+    if (!el || !msg.translation || !translateEnabled) return;
+
+    let trEl = el.querySelector('.msg-translation');
+    if (!trEl) {
+      trEl = document.createElement('div');
+      trEl.className = 'msg-translation';
+      const isMe = msg.uid === me.name;
+      if (isMe) { trEl.style.cssText = 'border-left:none;border-right:2px solid var(--accent2);padding-left:0;padding-right:8px;text-align:right'; }
+      const timeEl = el.querySelector('.msg-time');
+      if (timeEl) el.insertBefore(trEl, timeEl);
+      else el.appendChild(trEl);
+    }
+    trEl.textContent = msg.translation;
+  });
+
+  onValue(ref(db, `${ROOM_ID}/lastRead/${partner.name}`), snap => {
+    partnerLastRead = snap.val() || 0;
+    document.querySelectorAll('.read-check[data-ts]').forEach(el => {
+      if (parseInt(el.dataset.ts) <= partnerLastRead) {
+        el.className = 'read-check read'; el.innerHTML = CHECK_DOUBLE;
+      }
+    });
+  });
+
+  onValue(ref(db, `${ROOM_ID}/media`), snap => updateAlbum(snap.val()));
+  listenSignaling();
+
+  const avatarEl = document.getElementById('myAvatarDisplay');
+  if (me.photoURL) {
+    const myImg = document.createElement('img');
+    myImg.src = sanitize(me.photoURL);
+    myImg.style.cssText = 'width:100%;height:100%;object-fit:cover';
+    avatarEl.innerHTML = ''; avatarEl.appendChild(myImg);
+  } else { avatarEl.textContent = me.emoji; }
+
+  document.getElementById('myNameDisplay').textContent  = me.name;
+  document.getElementById('myEmailDisplay').textContent = me.email;
+  document.getElementById('langSelect').value           = myLang;
+  document.getElementById('translateToggle').checked    = translateEnabled;
+
+  enterTime = Date.now();
+  loadTheme();
+  initNotif();
+  showScreen('mainScreen');
+}
+
+async function translate(text, src, tgt) {
+  try {
+    const res  = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${src}|${tgt}`);
+    const data = await res.json();
+    if (data?.responseStatus === 200 && data?.responseData?.translatedText) return data.responseData.translatedText;
+  } catch {}
+  return null;
+}
+
+// ── 답장 ──
+let replyTo = null;
+
+window.setReply = function(msg) {
+  replyTo = msg;
+  const bar = document.getElementById('replyBar');
+  const txt = document.getElementById('replyBarText');
+  bar.classList.add('show');
+  txt.textContent = msg.type === 'text' ? msg.text : (msg.type === 'image' ? '📷 사진' : '🎥 영상');
+  document.getElementById('msgInput').focus();
+};
+
+window.cancelReply = function() {
+  replyTo = null;
+  document.getElementById('replyBar').classList.remove('show');
+};
+
+window.sendMessage = async function() {
+  const input = document.getElementById('msgInput');
+  const text  = input.value.trim();
+  if (!text) return;
+  input.value = ''; input.style.height = 'auto';
+
+  let translation = null;
+  if (translateEnabled) {
+    const tgt = myLang === 'ko' ? 'ja' : 'ko';
+    translation = await translate(text, myLang, tgt);
+  }
+
+  push(ref(db, `${ROOM_ID}/messages`), {
+    uid: me.name, name: me.name, photoURL: me.photoURL || '',
+    lang: myLang, text,
+    translation: translation || null,
+    type: 'text', ts: Date.now(),
+    ...(replyTo ? { replyTo: { text: replyTo.text, type: replyTo.type, name: replyTo.name } } : {})
+  });
+  cancelReply();
+};
+
+window.handleKey  = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } };
+window.autoResize = el => { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; };
+
+function renderMessage(msg, key) {
+  const container = document.getElementById('chatMessages');
+  if (msg.type === 'system') {
+    const d = document.createElement('div'); d.className = 'system-msg'; d.textContent = msg.text; container.prepend(d); return;
+  }
+  const isMe = msg.uid === me.name;
+  const wrap = document.createElement('div'); wrap.className = `msg-wrap ${isMe ? 'me' : 'them'}`;
+  if (key) wrap.dataset.key = key;
+
+  if (msg.type === 'text') {
+    let pressTimer;
+    wrap.addEventListener('touchstart', () => { pressTimer = setTimeout(() => setReply(msg), 500); }, { passive: true });
+    wrap.addEventListener('touchend',   () => clearTimeout(pressTimer), { passive: true });
+    wrap.addEventListener('touchmove',  () => clearTimeout(pressTimer), { passive: true });
+    wrap.addEventListener('dblclick',   () => setReply(msg));
+  }
+
+  if (!isMe) {
+    const s = document.createElement('div'); s.className = 'msg-sender';
+    if (msg.photoURL) {
+      const img = document.createElement('img');
+      img.src = sanitize(msg.photoURL || '');
+      img.style.cssText = 'width:18px;height:18px;border-radius:50%;object-fit:cover;margin-right:4px;vertical-align:middle';
+      s.appendChild(img);
+      s.appendChild(document.createTextNode(' ' + sanitize(msg.name || '')));
+    } else { s.textContent = msg.name; }
+    wrap.appendChild(s);
+  }
+
+  if (msg.replyTo) {
+    const quote = document.createElement('div');
+    quote.className = 'msg-quote';
+    quote.textContent = '↩ ' + (msg.replyTo.text || (msg.replyTo.type === 'image' ? '📷 사진' : '🎥 영상'));
+    wrap.appendChild(quote);
+  }
+
+  const bubble = document.createElement('div'); bubble.className = 'msg-bubble';
+  if (msg.type === 'text') {
+    // [기능 추가] 해킹 방지를 위해 보안 처리를 먼저 거친 후, 링크가 있으면 클릭할 수 있는 <a> 태그 형태로 자동 변환해 줍니다.
+    const escapedText = msg.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    bubble.innerHTML = escapedText.replace(urlRegex, (url) => {
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="color:var(--accent2); text-decoration:underline; word-break:break-all;">${url}</a>`;
+    });
+  } else if (msg.type === 'image') {
+    const d = document.createElement('div'); d.className = 'msg-media';
+    const img = document.createElement('img'); img.src = msg.url; img.loading = 'lazy';
+    img.onclick = () => openLightbox('image', msg.url); d.appendChild(img); bubble.appendChild(d);
+  } else if (msg.type === 'video') {
+    const d = document.createElement('div'); d.className = 'msg-media';
+    const v = document.createElement('video'); v.src = msg.url; v.controls = true; v.playsinline = true;
+    d.appendChild(v); bubble.appendChild(d);
+  }
+  wrap.appendChild(bubble);
+
+  if (msg.translation && translateEnabled) {
+    const tr = document.createElement('div'); tr.className = 'msg-translation'; tr.textContent = msg.translation; wrap.appendChild(tr);
+  }
+
+  const t = document.createElement('div'); t.className = 'msg-time';
+  t.appendChild(document.createTextNode(fmt(msg.ts)));
+  if (isMe) {
+    const check = document.createElement('span');
+    check.dataset.ts = msg.ts;
+    check.className = msg.ts <= partnerLastRead ? 'read-check read' : 'read-check unread';
+    check.innerHTML  = msg.ts <= partnerLastRead ? CHECK_DOUBLE : CHECK_SINGLE;
+    t.appendChild(check);
+  }
+  wrap.appendChild(t);
+  container.prepend(wrap);
+
+  insertDateSep(container, wrap, msg.ts);
+}
+
+const fmt = ts => { const d = new Date(ts); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+
+window.sendMedia = async function(e) {
+  const file = e.target.files[0]; if (!file) return; e.target.value = '';
+  const isVideo = file.type.startsWith('video/');
+  showToast('업로드 중...');
+  const task = uploadBytesResumable(sRef(storage, `${ROOM_ID}/${Date.now()}_${file.name}`), file);
+  task.on('state_changed',
+    s => showToast(`업로드 ${Math.round(s.bytesTransferred/s.totalBytes*100)}%`),
+    err => showToast('실패: ' + err.message),
+    async () => {
+      const url = await getDownloadURL(task.snapshot.ref);
+      push(ref(db, `${ROOM_ID}/messages`), { uid: me.name, name: me.name, photoURL: me.photoURL||'', type: isVideo?'video':'image', url, ts: Date.now() });
+      push(ref(db, `${ROOM_ID}/media`),    { uid: me.name, type: isVideo?'video':'image', url, ts: Date.now() });
+      showToast('공유 완료!');
+    }
+  );
+};
+
+function updateAlbum(media) {
+  const grid = document.getElementById('albumGrid'); grid.innerHTML = '';
+  if (!media) { grid.innerHTML = '<div class="album-empty" style="grid-column:1/-1;height:300px">아직 공유된 미디어가 없어요</div>'; return; }
+  Object.values(media).sort((a,b)=>b.ts-a.ts).forEach(item => {
+    const div = document.createElement('div'); div.className = 'album-item';
+    if (item.type==='video') {
+      const v=document.createElement('video'); v.src=item.url; v.preload='metadata'; div.appendChild(v);
+      const ic=document.createElement('div'); ic.className='play-icon'; ic.innerHTML=`<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>`; div.appendChild(ic);
+      div.onclick=()=>openLightbox('video',item.url);
+    } else {
+      const img=document.createElement('img'); img.src=item.url; img.loading='lazy'; div.appendChild(img);
+      div.onclick=()=>openLightbox('image',item.url);
+    }
+    grid.appendChild(div);
+  });
+}
+
+window.openLightbox = (type, url) => {
+  const c=document.getElementById('lightboxContent'); c.innerHTML='';
+  if (type==='image') { const i=document.createElement('img'); i.src=url; c.appendChild(i); }
+  else { const v=document.createElement('video'); v.src=url; v.controls=true; v.playsinline=true; v.autoplay=true; c.appendChild(v); }
+  const lb = document.getElementById('lightbox');
+  lb.classList.add('open');
+  lb.onclick = e => { if (e.target === lb) closeLightbox(); };
+};
+window.closeLightbox = () => { document.getElementById('lightbox').classList.remove('open'); document.getElementById('lightboxContent').innerHTML=''; };
+
+// ── Jitsi Meet 통화 ──
+const JITSI_DOMAIN = 'meet.jit.si';
+const JITSI_ROOM_PREFIX = 'memo-private-kv-mm';
+
+window.startJitsiCall = async function(type) {
+  const roomName = `${JITSI_ROOM_PREFIX}-${Date.now()}`;
+  const config = type === 'audio' ? '#config.startWithVideoMuted=true' : '';
+  const jitsiUrl = `https://${JITSI_DOMAIN}/${roomName}${config}`;
+
+  await set(ref(db, `${ROOM_ID}/signal/${partner.name}`), {
+    type: 'incoming', from: me.name, name: me.name,
+    photoURL: me.photoURL || '', callType: type,
+    jitsiUrl, ts: Date.now()
+  });
+
+  window.open(jitsiUrl, '_blank');
+  showToast(type === 'audio' ? '음성통화 시작...' : '영상통화 시작...');
+};
+
+function listenSignaling() {
+  onValue(ref(db, `${ROOM_ID}/signal/${me.name}`), snap => {
+    const sig = snap.val();
+    if (!sig) return;
+    if (sig.ts && Date.now() - sig.ts > 30000) {
+      set(ref(db, `${ROOM_ID}/signal/${me.name}`), null);
+      return;
+    }
+    if (sig.type === 'incoming') {
+      showIncomingCall(sig);
+      window._incomingJitsiUrl = sig.jitsiUrl;
+    }
+  });
+}
+
+function showIncomingCall(sig) {
+  const av = document.getElementById('incomingAvatar');
+  av.innerHTML = '';
+  if (sig.photoURL) {
+    const incImg = document.createElement('img');
+    incImg.src = sanitize(sig.photoURL);
+    incImg.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%';
+    av.appendChild(incImg);
+  } else { av.textContent = partner.emoji || '🌸'; }
+  document.getElementById('incomingName').textContent = sig.name||'상대방';
+  document.getElementById('incomingType').textContent = sig.callType==='video'?'📹 영상 통화':'📞 음성 통화';
+  document.getElementById('incomingCall').classList.add('show');
+  if (navigator.vibrate) navigator.vibrate([300,200,300]);
+}
+window.acceptCall = async () => {
+  document.getElementById('incomingCall').classList.remove('show');
+  await set(ref(db, `${ROOM_ID}/signal/${me.name}`), null);
+  if (window._incomingJitsiUrl) {
+    window.open(window._incomingJitsiUrl, '_blank');
+    window._incomingJitsiUrl = null;
+  }
+};
+window.rejectCall = async () => {
+  document.getElementById('incomingCall').classList.remove('show');
+  window._incomingJitsiUrl = null;
+  await set(ref(db, `${ROOM_ID}/signal/${me.name}`), null);
+};
+
+window.switchTab = tab => {
+  ['chat','album','call','profile'].forEach(t => {
+    document.getElementById(t==='call'?'callTabPane':`${t}Pane`).classList.add('hidden');
+    document.getElementById(`tab-${t}`).classList.remove('active');
+  });
+  document.getElementById(tab==='call'?'callTabPane':`${tab}Pane`).classList.remove('hidden');
+  document.getElementById(`tab-${tab}`).classList.add('active');
+};
+
+window.changeLang = () => { myLang=document.getElementById('langSelect').value; localStorage.setItem(`memo_lang_${me.email}`,myLang); };
+window.saveTranslatePref = () => { translateEnabled=document.getElementById('translateToggle').checked; localStorage.setItem('memo_translate',translateEnabled); };
+window.doLogout = async () => {
+  if (!confirm('로그아웃 할까요?')) return;
+  await set(ref(db,`${ROOM_ID}/presence/${me.name}`), { online:false });
+  await signOut(auth);
+};
+
+// ── FCM 푸시 알림 제어 부 ──
+let notifEnabled = false;
+let enterTime = 0;
+let swRegistration = null;
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./firebase-messaging-sw.js').then(reg => {
+    swRegistration = reg;
+  }).catch(() => {});
+}
+
+window.toggleNotif = async function() {
+  const toggle = document.getElementById('notifToggle');
+  if (toggle.checked) {
+    if (!('Notification' in window)) {
+      showToast('이 브라우저는 알림을 지원하지 않아요');
+      toggle.checked = false; return;
+    }
+    const perm = await Notification.requestPermission();
+    if (perm === 'granted') {
+      try {
+        const token = await getToken(messaging, { vapidKey: 'BKvA2crddS7igPxkQbnuVjN93065I97kfjX8AlQ7OJwkOZWzn8XO8yklEbjmSfsYYhz7lwdwiKFc7wxvXOpPNEE' });
+        if (token) {
+          await set(ref(db, `${ROOM_ID}/tokens/${me.name}`), token);
+          notifEnabled = true;
+          localStorage.setItem('memo_notif', 'on');
+          showToast('실시간 푸시 알림이 켜졌습니다.');
+        } else {
+          showToast('FCM 토큰을 생성할 수 없습니다.');
+          toggle.checked = false;
+        }
+      } catch (err) {
+        console.error('FCM Token Error:', err);
+        showToast('알림 연동에 실패했습니다.');
+        toggle.checked = false;
+      }
+    } else {
+      toggle.checked = false;
+      showToast('브라우저 설정에서 알림 권한을 허용해주세요.');
+    }
+  } else {
+    notifEnabled = false;
+    localStorage.setItem('memo_notif', 'off');
+    if (me) await set(ref(db, `${ROOM_ID}/tokens/${me.name}`), null);
+    showToast('알림이 꺼졌습니다.');
+  }
+};
+
+async function initNotif() {
+  const saved = localStorage.getItem('memo_notif');
+  const toggle = document.getElementById('notifToggle');
+  if (saved === 'on' && 'Notification' in window && Notification.permission === 'granted') {
+    notifEnabled = true;
+    toggle.checked = true;
+    try {
+      const token = await getToken(messaging, { vapidKey: 'BKvA2crddS7igPxkQbnuVjN93065I97kfjX8AlQ7OJwkOZWzn8XO8yklEbjmSfsYYhz7lwdwiKFc7wxvXOpPNEE' });
+      if (token && me) {
+        await set(ref(db, `${ROOM_ID}/tokens/${me.name}`), token);
+      }
+    } catch {}
+  }
+}
+
+let appHasFocus = true;
+document.addEventListener('visibilitychange', () => { appHasFocus = document.visibilityState === 'visible'; });
+window.addEventListener('blur', () => { appHasFocus = false; });
+window.addEventListener('focus', () => { appHasFocus = true; });
+
+function sendLocalNotif(name, body) {
+  if (!notifEnabled || appHasFocus) return;
+  try {
+    const tag = 'memo-' + Date.now();
+    if (swRegistration) {
+      swRegistration.showNotification('meMo — ' + name, { body, tag });
+    } else {
+      new Notification('meMo — ' + name, { body, tag });
+    }
+  } catch {}
+}
+
+// ── 날짜 구분선 ──
+let lastDateStr = '';
+function getDateStr(ts) {
+  const d = new Date(ts);
+  const days = ['일','월','화','수','목','금','토'];
+  return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 ${days[d.getDay()]}요일`;
+}
+function insertDateSep(container, wrap, ts) {
+  const dateStr = getDateStr(ts);
+  if (dateStr !== lastDateStr) {
+    lastDateStr = dateStr;
+    const sep = document.createElement('div');
+    sep.className = 'date-sep';
+    sep.textContent = dateStr;
+    wrap.after(sep);
+  }
+}
+
+// ── 최신 메시지 버튼 ──
+window.scrollToLatest = function() { document.getElementById('chatMessages').scrollTop = 0; };
+document.addEventListener('DOMContentLoaded', () => {
+  const cm = document.getElementById('chatMessages');
+  const btn = document.getElementById('scrollBottomBtn');
+  if (cm && btn) {
+    cm.addEventListener('scroll', () => {
+      btn.classList.toggle('show', Math.abs(cm.scrollTop) > 100);
+    }, { passive: true });
+  }
+});
+
+// ── 메시지 검색 ──
+let searchMatches = [];
+let searchIdx = -1;
+window.toggleSearch = function() {
+  const bar = document.getElementById('searchBar');
+  const isOpen = bar.classList.toggle('show');
+  if (isOpen) { document.getElementById('searchInput').focus(); } else { clearSearch(); }
+};
+window.doSearch = function() {
+  clearSearchHighlights();
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  if (!q) { document.getElementById('searchCount').textContent = ''; searchMatches = []; return; }
+  const bubbles = document.querySelectorAll('#chatMessages .msg-bubble');
+  searchMatches = [];
+  bubbles.forEach(b => {
+    if (b.textContent.toLowerCase().includes(q)) { b.classList.add('msg-highlight'); searchMatches.push(b); }
+  });
+  searchMatches.reverse();
+  searchIdx = searchMatches.length > 0 ? 0 : -1;
+  document.getElementById('searchCount').textContent = searchMatches.length > 0 ? `${searchIdx+1}/${searchMatches.length}` : '0건';
+  if (searchMatches.length > 0) searchMatches[0].scrollIntoView({ block: 'center' });
+};
+window.searchNext = function() {
+  if (searchMatches.length === 0) return;
+  searchIdx = (searchIdx + 1) % searchMatches.length;
+  searchMatches[searchIdx].scrollIntoView({ block: 'center' });
+  document.getElementById('searchCount').textContent = `${searchIdx+1}/${searchMatches.length}`;
+};
+window.searchPrev = function() {
+  if (searchMatches.length === 0) return;
+  searchIdx = (searchIdx - 1 + searchMatches.length) % searchMatches.length;
+  searchMatches[searchIdx].scrollIntoView({ block: 'center' });
+  document.getElementById('searchCount').textContent = `${searchIdx+1}/${searchMatches.length}`;
+};
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchCount').textContent = '';
+  clearSearchHighlights();
+  searchMatches = []; searchIdx = -1;
+}
+function clearSearchHighlights() { document.querySelectorAll('.msg-highlight').forEach(el => el.classList.remove('msg-highlight')); }
+window.showToast = msg => {
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(window._tt); window._tt=setTimeout(()=>t.classList.remove('show'),2500);
+};
+</script>
+</body>
+</html>
