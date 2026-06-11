@@ -49,6 +49,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: -apple-system, 'Noto Sans KR', sans-serif; }
   
+  /* [여백 수정] 전체 스크린 창이 PC/큰 화면에서 좌우로 무한정 늘어나는 현상 방지 및 가운데 정렬 */
   .screen { 
     position: fixed; 
     inset: 0; 
@@ -94,6 +95,7 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-text { color: var(--text2); font-size: 0.85rem; }
 
+  /* [여백 수정] 상단바, 채팅 메시지창, 입력부의 좌우 패딩을 16px로 대칭 일치 */
   .topbar { display: flex; align-items: center; justify-content: space-between; padding: 52px 16px 12px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
   .topbar-title { font-size: 1rem; font-weight: 500; }
   .topbar-actions { display: flex; gap: 12px; }
@@ -111,6 +113,7 @@
   .tab-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5; }
   .tab-btn.active { color: var(--accent); }
 
+  /* [여백 수정] 패딩 좌우 균형 정렬 */
   .chat-messages { flex: 1; overflow-y: auto; padding: 16px 16px; display: flex; flex-direction: column-reverse; gap: 8px; }
   .chat-messages::-webkit-scrollbar { display: none; }
   .msg-wrap { display: flex; flex-direction: column; max-width: 78%; }
@@ -132,6 +135,7 @@
   .msg-media video { width: 100%; display: block; border-radius: 8px; }
   .system-msg { text-align: center; color: var(--text2); font-size: 0.75rem; padding: 4px 0; }
   
+  /* [여백 수정] 하단바 입력창 패딩 대칭화 */
   .chat-input-wrap { display: flex; align-items: flex-end; gap: 8px; padding: 10px 16px; padding-bottom: calc(10px + var(--safe-bottom)); background: var(--surface); border-top: 1px solid var(--border); flex-shrink: 0; }
   .chat-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 22px; color: var(--text); padding: 10px 16px; font-size: 0.95rem; outline: none; resize: none; max-height: 120px; min-height: 42px; line-height: 1.4; font-family: inherit; transition: border-color 0.2s; }
   .chat-input:focus { border-color: var(--accent); }
@@ -251,6 +255,7 @@
     background: var(--border);
   }
 
+  /* [여백 수정] 검색바 패딩 보정 */
   .search-bar {
     display: none; gap: 8px; align-items: center;
     padding: 8px 16px; background: var(--surface);
@@ -768,12 +773,7 @@ function renderMessage(msg, key) {
 
   const bubble = document.createElement('div'); bubble.className = 'msg-bubble';
   if (msg.type === 'text') {
-    // [기능 추가] 해킹 방지를 위해 보안 처리를 먼저 거친 후, 링크가 있으면 클릭할 수 있는 <a> 태그 형태로 자동 변환해 줍니다.
-    const escapedText = msg.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    bubble.innerHTML = escapedText.replace(urlRegex, (url) => {
-      return `<a href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="color:var(--accent2); text-decoration:underline; word-break:break-all;">${url}</a>`;
-    });
+    bubble.textContent = msg.text;
   } else if (msg.type === 'image') {
     const d = document.createElement('div'); d.className = 'msg-media';
     const img = document.createElement('img'); img.src = msg.url; img.loading = 'lazy';
