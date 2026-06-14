@@ -511,6 +511,86 @@ const db      = getDatabase(app);
 const storage = getStorage(app);
 const messaging = getMessaging(app);
 
+// ── FCM 푸시 알림 상태 (모듈 스코프 안에서 관리) ──
+let notifEnabled = false;
+let enterTime = 0;
+let swRegistration = null;
+let appHasFocus = true;
+
+document.addEventListener('visibilitychange', () => { appHasFocus = document.visibilityState === 'visible'; });
+window.addEventListener('blur', () => { appHasFocus = false; });
+window.addEventListener('focus', () => { appHasFocus = true; });
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./firebase-messaging-sw.js')
+    .then(reg => { swRegistration = reg; })
+    .catch(err => console.warn('[SW] 등록 실패:', err));
+}
+
+const VAPID_KEY = 'BKvA2crddS7igPxkQbnuVjN93065I97kfjX8AlQ7OJwkOZWzn8XO8yklEbjmSfsYYhz7lwdwiKFc7wxvXOpPNEE';
+
+async function initNotif() {
+  const saved  = localStorage.getItem('memo_notif');
+  const toggle = document.getElementById('notifToggle');
+  if (saved === 'on' && 'Notification' in window && Notification.permission === 'granted') {
+    notifEnabled = true;
+    toggle.checked = true;
+    try {
+      const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+      if (token && me) await set(ref(db, `${ROOM_ID}/tokens/${me.name}`), token);
+    } catch (e) { console.warn('[FCM] 토큰 갱신 실패:', e); }
+  }
+}
+
+window.toggleNotif = async function() {
+  const toggle = document.getElementById('notifToggle');
+  if (toggle.checked) {
+    if (!('Notification' in window)) {
+      showToast('이 브라우저는 알림을 지원하지 않아요');
+      toggle.checked = false; return;
+    }
+    const perm = await Notification.requestPermission();
+    if (perm === 'granted') {
+      try {
+        const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+        if (token) {
+          await set(ref(db, `${ROOM_ID}/tokens/${me.name}`), token);
+          notifEnabled = true;
+          localStorage.setItem('memo_notif', 'on');
+          showToast('실시간 푸시 알림이 켜졌습니다.');
+        } else {
+          showToast('FCM 토큰을 생성할 수 없습니다.');
+          toggle.checked = false;
+        }
+      } catch (err) {
+        console.error('[FCM] Token Error:', err);
+        showToast('알림 연동에 실패했습니다: ' + (err.message || err));
+        toggle.checked = false;
+      }
+    } else {
+      toggle.checked = false;
+      showToast('브라우저 설정에서 알림 권한을 허용해주세요.');
+    }
+  } else {
+    notifEnabled = false;
+    localStorage.setItem('memo_notif', 'off');
+    if (me) await set(ref(db, `${ROOM_ID}/tokens/${me.name}`), null);
+    showToast('알림이 꺼졌습니다.');
+  }
+};
+
+function sendLocalNotif(name, body) {
+  if (!notifEnabled || appHasFocus) return;
+  try {
+    const tag = 'memo-' + Date.now();
+    if (swRegistration) {
+      swRegistration.showNotification('meMo — ' + name, { body, tag });
+    } else {
+      new Notification('meMo — ' + name, { body, tag });
+    }
+  } catch (e) { console.warn('[Notif]', e); }
+}
+
 let me = null, partner = null;
 let myLang = 'ko', translateEnabled = true;
 let partnerLastRead = 0;
@@ -952,86 +1032,6 @@ window.doLogout = async () => {
   await set(ref(db,`${ROOM_ID}/presence/${me.name}`), { online:false });
   await signOut(auth);
 };
-
-// ── FCM 푸시 알림 제어 부 ──
-let notifEnabled = false;
-let enterTime = 0;
-let swRegistration = null;
-
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./firebase-messaging-sw.js').then(reg => {
-    swRegistration = reg;
-  }).catch(() => {});
-}
-
-window.toggleNotif = async function() {
-  const toggle = document.getElementById('notifToggle');
-  if (toggle.checked) {
-    if (!('Notification' in window)) {
-      showToast('이 브라우저는 알림을 지원하지 않아요');
-      toggle.checked = false; return;
-    }
-    const perm = await Notification.requestPermission();
-    if (perm === 'granted') {
-      try {
-        const token = await getToken(messaging, { vapidKey: 'BKvA2crddS7igPxkQbnuVjN93065I97kfjX8AlQ7OJwkOZWzn8XO8yklEbjmSfsYYhz7lwdwiKFc7wxvXOpPNEE' });
-        if (token) {
-          await set(ref(db, `${ROOM_ID}/tokens/${me.name}`), token);
-          notifEnabled = true;
-          localStorage.setItem('memo_notif', 'on');
-          showToast('실시간 푸시 알림이 켜졌습니다.');
-        } else {
-          showToast('FCM 토큰을 생성할 수 없습니다.');
-          toggle.checked = false;
-        }
-      } catch (err) {
-        console.error('FCM Token Error:', err);
-        showToast('알림 연동에 실패했습니다.');
-        toggle.checked = false;
-      }
-    } else {
-      toggle.checked = false;
-      showToast('브라우저 설정에서 알림 권한을 허용해주세요.');
-    }
-  } else {
-    notifEnabled = false;
-    localStorage.setItem('memo_notif', 'off');
-    if (me) await set(ref(db, `${ROOM_ID}/tokens/${me.name}`), null);
-    showToast('알림이 꺼졌습니다.');
-  }
-};
-
-async function initNotif() {
-  const saved = localStorage.getItem('memo_notif');
-  const toggle = document.getElementById('notifToggle');
-  if (saved === 'on' && 'Notification' in window && Notification.permission === 'granted') {
-    notifEnabled = true;
-    toggle.checked = true;
-    try {
-      const token = await getToken(messaging, { vapidKey: 'BKvA2crddS7igPxkQbnuVjN93065I97kfjX8AlQ7OJwkOZWzn8XO8yklEbjmSfsYYhz7lwdwiKFc7wxvXOpPNEE' });
-      if (token && me) {
-        await set(ref(db, `${ROOM_ID}/tokens/${me.name}`), token);
-      }
-    } catch {}
-  }
-}
-
-let appHasFocus = true;
-document.addEventListener('visibilitychange', () => { appHasFocus = document.visibilityState === 'visible'; });
-window.addEventListener('blur', () => { appHasFocus = false; });
-window.addEventListener('focus', () => { appHasFocus = true; });
-
-function sendLocalNotif(name, body) {
-  if (!notifEnabled || appHasFocus) return;
-  try {
-    const tag = 'memo-' + Date.now();
-    if (swRegistration) {
-      swRegistration.showNotification('meMo — ' + name, { body, tag });
-    } else {
-      new Notification('meMo — ' + name, { body, tag });
-    }
-  } catch {}
-}
 
 // ── 날짜 구분선 ──
 let lastDateStr = '';
