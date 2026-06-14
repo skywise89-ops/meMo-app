@@ -521,13 +521,22 @@ document.addEventListener('visibilitychange', () => { appHasFocus = document.vis
 window.addEventListener('blur', () => { appHasFocus = false; });
 window.addEventListener('focus', () => { appHasFocus = true; });
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./firebase-messaging-sw.js')
-    .then(reg => { swRegistration = reg; })
-    .catch(err => console.warn('[SW] 등록 실패:', err));
-}
+// SW 등록을 Promise로 관리 — getToken에 직접 넘겨서 FCM이 자체 등록 시도하지 않도록 함
+const swReadyPromise = ('serviceWorker' in navigator)
+  ? navigator.serviceWorker.register('./firebase-messaging-sw.js')
+      .then(reg => { swRegistration = reg; return reg; })
+      .catch(err => { console.warn('[SW] 등록 실패:', err); return null; })
+  : Promise.resolve(null);
 
 const VAPID_KEY = 'BKvA2crddS7igPxkQbnuVjN93065I97kfjX8AlQ7OJwkOZWzn8XO8yklEbjmSfsYYhz7lwdwiKFc7wxvXOpPNEE';
+
+// SW 등록을 기다린 뒤 FCM 토큰 발급 — serviceWorkerRegistration을 명시해서
+// Firebase가 /firebase-messaging-sw.js 를 루트에서 재탐색하는 것을 막음
+async function getFCMToken() {
+  const reg = await swReadyPromise;
+  if (!reg) throw new Error('Service Worker 등록 실패 — firebase-messaging-sw.js를 확인하세요');
+  return await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
+}
 
 async function initNotif() {
   const saved  = localStorage.getItem('memo_notif');
@@ -536,7 +545,7 @@ async function initNotif() {
     notifEnabled = true;
     toggle.checked = true;
     try {
-      const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+      const token = await getFCMToken();
       if (token && me) await set(ref(db, `${ROOM_ID}/tokens/${me.name}`), token);
     } catch (e) { console.warn('[FCM] 토큰 갱신 실패:', e); }
   }
@@ -552,7 +561,7 @@ window.toggleNotif = async function() {
     const perm = await Notification.requestPermission();
     if (perm === 'granted') {
       try {
-        const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+        const token = await getFCMToken();
         if (token) {
           await set(ref(db, `${ROOM_ID}/tokens/${me.name}`), token);
           notifEnabled = true;
