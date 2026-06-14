@@ -264,6 +264,47 @@
   .search-count { font-size: 0.75rem; color: var(--text2); white-space: nowrap; }
   .msg-highlight { background: rgba(200,169,126,0.25); border-radius: 8px; }
 
+  /* ── 컨텍스트 메뉴 (길게 누름) ── */
+  #ctxMenu {
+    position: fixed; z-index: 400;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    display: none; flex-direction: column; min-width: 140px;
+  }
+  #ctxMenu.show { display: flex; }
+  .ctx-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 18px; background: none; border: none;
+    color: var(--text); font-size: 0.9rem; cursor: pointer;
+    text-align: left; border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+  .ctx-item:last-child { border-bottom: none; }
+  .ctx-item:active { background: var(--surface2); }
+  .ctx-item svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; }
+
+  /* ── 보관함 탭 ── */
+  .archive-list { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .archive-list::-webkit-scrollbar { display: none; }
+  .archive-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text2); font-size: 0.9rem; }
+  .archive-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 6px; position: relative;
+  }
+  .archive-item-meta { font-size: 0.72rem; color: var(--text2); display: flex; gap: 8px; align-items: center; }
+  .archive-item-sender { color: var(--accent); font-weight: 500; }
+  .archive-item-text { font-size: 0.92rem; color: var(--text); line-height: 1.5; word-break: break-word; }
+  .archive-item-media { max-width: 180px; border-radius: 10px; overflow: hidden; }
+  .archive-item-media img { width: 100%; display: block; cursor: pointer; }
+  .archive-del {
+    position: absolute; top: 10px; right: 12px;
+    background: none; border: none; color: var(--text2);
+    font-size: 1rem; cursor: pointer; padding: 4px; line-height: 1;
+  }
+  .archive-del:active { color: var(--danger); }
+
   #toast { position: fixed; bottom: calc(80px + var(--safe-bottom)); left: 50%; transform: translateX(-50%) translateY(10px); background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 20px; font-size: 0.85rem; color: var(--text); z-index: 300; opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; white-space: nowrap; }
   #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
@@ -347,6 +388,13 @@
       </div>
     </div>
 
+    <div id="archivePane" class="tab-pane hidden">
+      <div class="topbar"><div class="topbar-title">🔖 보관함</div></div>
+      <div class="archive-list" id="archiveList">
+        <div class="archive-empty">보관된 메시지가 없어요</div>
+      </div>
+    </div>
+
     <div id="profilePane" class="tab-pane hidden">
       <div class="topbar"><div class="topbar-title">⚙️ 설정</div></div>
       <div style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px">
@@ -406,11 +454,26 @@
       <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
       앨범
     </button>
+    <button class="tab-btn" id="tab-archive" onclick="switchTab('archive')">
+      <svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+      보관함
+    </button>
     <button class="tab-btn" id="tab-profile" onclick="switchTab('profile')">
       <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       설정
     </button>
   </div>
+</div>
+
+<div id="ctxMenu">
+  <button class="ctx-item" id="ctxReply">
+    <svg viewBox="0 0 24 24"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/></svg>
+    답장
+  </button>
+  <button class="ctx-item" id="ctxArchive">
+    <svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+    보관
+  </button>
 </div>
 
 <div id="incomingCall">
@@ -716,6 +779,7 @@ function enterRoom() {
 
   onValue(ref(db, `${ROOM_ID}/media`), snap => updateAlbum(snap.val()));
   listenSignaling();
+  listenArchive();
 
   const avatarEl = document.getElementById('myAvatarDisplay');
   if (me.photoURL) {
@@ -811,10 +875,12 @@ function renderMessage(msg, key) {
 
   if (msg.type === 'text') {
     let pressTimer;
-    wrap.addEventListener('touchstart', () => { pressTimer = setTimeout(() => setReply(msg), 500); }, { passive: true });
-    wrap.addEventListener('touchend',   () => clearTimeout(pressTimer), { passive: true });
-    wrap.addEventListener('touchmove',  () => clearTimeout(pressTimer), { passive: true });
-    wrap.addEventListener('dblclick',   () => setReply(msg));
+    wrap.addEventListener('touchstart', () => {
+      pressTimer = setTimeout(() => showCtxMenu(msg, wrap), 500);
+    }, { passive: true });
+    wrap.addEventListener('touchend',  () => clearTimeout(pressTimer), { passive: true });
+    wrap.addEventListener('touchmove', () => clearTimeout(pressTimer), { passive: true });
+    wrap.addEventListener('dblclick',  () => setReply(msg));
   }
 
   if (!isMe) {
@@ -982,7 +1048,7 @@ window.rejectCall = async () => {
 };
 
 window.switchTab = tab => {
-  ['chat','album','profile'].forEach(t => {
+  ['chat','album','archive','profile'].forEach(t => {
     document.getElementById(`${t}Pane`).classList.add('hidden');
     document.getElementById(`tab-${t}`).classList.remove('active');
   });
@@ -1069,6 +1135,134 @@ function clearSearch() {
   searchMatches = []; searchIdx = -1;
 }
 function clearSearchHighlights() { document.querySelectorAll('.msg-highlight').forEach(el => el.classList.remove('msg-highlight')); }
+// ── 컨텍스트 메뉴 ──
+let ctxTargetMsg = null;
+const ctxMenu = document.getElementById('ctxMenu');
+
+function showCtxMenu(msg, wrap) {
+  ctxTargetMsg = msg;
+  const rect = wrap.getBoundingClientRect();
+  const menuH = 100; // 버튼 2개 예상 높이
+  let top = rect.bottom + 6;
+  if (top + menuH > window.innerHeight - 20) top = rect.top - menuH - 6;
+  ctxMenu.style.top  = `${top}px`;
+  // 말풍선 좌우 위치 맞춤
+  const isMe = msg.uid === me.name;
+  if (isMe) {
+    ctxMenu.style.right = `${window.innerWidth - rect.right}px`;
+    ctxMenu.style.left  = 'auto';
+  } else {
+    ctxMenu.style.left  = `${rect.left}px`;
+    ctxMenu.style.right = 'auto';
+  }
+  ctxMenu.classList.add('show');
+  if (navigator.vibrate) navigator.vibrate(30);
+}
+
+function hideCtxMenu() { ctxMenu.classList.remove('show'); ctxTargetMsg = null; }
+
+document.getElementById('ctxReply').addEventListener('click', () => {
+  if (ctxTargetMsg) setReply(ctxTargetMsg);
+  hideCtxMenu();
+});
+
+document.getElementById('ctxArchive').addEventListener('click', () => {
+  if (ctxTargetMsg) saveToArchive(ctxTargetMsg);
+  hideCtxMenu();
+});
+
+// 메뉴 바깥 터치 시 닫기
+document.addEventListener('touchstart', e => {
+  if (ctxMenu.classList.contains('show') && !ctxMenu.contains(e.target)) hideCtxMenu();
+}, { passive: true });
+document.addEventListener('click', e => {
+  if (ctxMenu.classList.contains('show') && !ctxMenu.contains(e.target)) hideCtxMenu();
+});
+
+// ── 보관함 ──
+function archivePath() { return `${ROOM_ID}/archive/${me.name}`; }
+
+async function saveToArchive(msg) {
+  const item = {
+    text:      msg.text      || null,
+    type:      msg.type      || 'text',
+    url:       msg.url       || null,
+    name:      msg.name      || '',
+    uid:       msg.uid       || '',
+    ts:        msg.ts        || Date.now(),
+    savedAt:   Date.now()
+  };
+  await push(ref(db, archivePath()), item);
+  showToast('보관함에 저장됐어요 🔖');
+}
+
+async function deleteFromArchive(archiveKey) {
+  await set(ref(db, `${archivePath()}/${archiveKey}`), null);
+}
+
+function renderArchiveList(data) {
+  const list = document.getElementById('archiveList');
+  list.innerHTML = '';
+  if (!data) {
+    list.innerHTML = '<div class="archive-empty">보관된 메시지가 없어요</div>';
+    return;
+  }
+  const items = Object.entries(data).sort((a,b) => b[1].savedAt - a[1].savedAt);
+  items.forEach(([key, item]) => {
+    const div = document.createElement('div');
+    div.className = 'archive-item';
+
+    const meta = document.createElement('div');
+    meta.className = 'archive-item-meta';
+    const senderSpan = document.createElement('span');
+    senderSpan.className = 'archive-item-sender';
+    senderSpan.textContent = sanitize(item.name) || '알 수 없음';
+    const timeSpan = document.createElement('span');
+    timeSpan.textContent = fmtFull(item.ts);
+    meta.appendChild(senderSpan);
+    meta.appendChild(timeSpan);
+    div.appendChild(meta);
+
+    if (item.type === 'text' && item.text) {
+      const p = document.createElement('div');
+      p.className = 'archive-item-text';
+      p.textContent = item.text;
+      div.appendChild(p);
+    } else if ((item.type === 'image' || item.type === 'video') && item.url) {
+      const wrap = document.createElement('div');
+      wrap.className = 'archive-item-media';
+      if (item.type === 'image') {
+        const img = document.createElement('img');
+        img.src = item.url; img.loading = 'lazy';
+        img.onclick = () => openLightbox('image', item.url);
+        wrap.appendChild(img);
+      } else {
+        const v = document.createElement('video');
+        v.src = item.url; v.controls = true; v.playsinline = true;
+        wrap.appendChild(v);
+      }
+      div.appendChild(wrap);
+    }
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'archive-del';
+    delBtn.textContent = '✕';
+    delBtn.onclick = () => deleteFromArchive(key);
+    div.appendChild(delBtn);
+
+    list.appendChild(div);
+  });
+}
+
+function fmtFull(ts) {
+  const d = new Date(ts);
+  return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function listenArchive() {
+  onValue(ref(db, archivePath()), snap => renderArchiveList(snap.val()));
+}
+
 window.showToast = msg => {
   const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
   clearTimeout(window._tt); window._tt=setTimeout(()=>t.classList.remove('show'),2500);
