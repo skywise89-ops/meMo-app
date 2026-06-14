@@ -670,11 +670,24 @@ function enterRoom() {
 }
 
 async function translate(text, src, tgt) {
+  // 1차: 비공식 Google Translate (품질 높음, 무료)
+  try {
+    const url  = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${src}&tl=${tgt}&dt=t&q=${encodeURIComponent(text)}`;
+    const res  = await fetch(url);
+    if (res.ok) {
+      const data       = await res.json();
+      const translated = data?.[0]?.map(x => x?.[0]).filter(Boolean).join('');
+      if (translated) return translated;
+    }
+  } catch {}
+
+  // 2차 폴백: MyMemory
   try {
     const res  = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${src}|${tgt}`);
     const data = await res.json();
     if (data?.responseStatus === 200 && data?.responseData?.translatedText) return data.responseData.translatedText;
   } catch {}
+
   return null;
 }
 
