@@ -20,7 +20,6 @@
     --bubble-me: #2a2118; --bubble-them: #1a1e24;
     --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
-  /* ── 테마 ── */
   .theme-rose {
     --bg: #fff5f7; --surface: #ffffff; --surface2: #fce8ed;
     --border: rgba(220,100,120,0.12); --accent: #d4607a; --accent2: #b07090;
@@ -48,8 +47,6 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: -apple-system, 'Noto Sans KR', sans-serif; }
-  
-  /* [버그 수정] 모바일 환경에서의 기기별 사이드 터치 밀림 현상을 원천 차단 */
   .screen { position: fixed; inset: 0; display: flex; flex-direction: column; overflow-x: hidden; }
   .screen.hidden { display: none; }
 
@@ -88,12 +85,11 @@
   .tab-pane { position: absolute; inset: 0; display: flex; flex-direction: column; overflow: hidden; }
   .tab-pane.hidden { display: none; }
   .tab-bar { display: flex; background: var(--surface); border-top: 1px solid var(--border); padding-bottom: var(--safe-bottom); flex-shrink: 0; }
-  .tab-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0 8px; background: none; border: none; color: var(--text2); font-size: 0.65rem; cursor: pointer; transition: color 0.2s; }
-  .tab-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+  .tab-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 0 8px; background: none; border: none; color: var(--text2); font-size: 0.6rem; cursor: pointer; transition: color 0.2s; }
+  .tab-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.5; }
   .tab-btn.active { color: var(--accent); }
 
   /* ── CHAT ── */
-  /* [버그 수정] flex-direction: column-reverse 리버싱 환경에서 발생하는 자식 마이크로 오버플로우 가로 스크롤 차단 */
   .chat-messages { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 16px 12px; display: flex; flex-direction: column-reverse; gap: 8px; width: 100%; }
   .chat-messages::-webkit-scrollbar { display: none; }
   .msg-wrap { display: flex; flex-direction: column; max-width: 78%; }
@@ -104,7 +100,7 @@
   .them .msg-bubble { background: var(--bubble-them); border-bottom-left-radius: 4px; border: 1px solid var(--border); }
   .msg-translation { font-size: 0.78rem; color: var(--text2); margin-top: 4px; padding-left: 8px; border-left: 2px solid var(--accent); }
   .me .msg-translation { border-left: none; border-right: 2px solid var(--accent2); padding-left: 0; padding-right: 8px; text-align: right; }
-  .msg-time { font-size: 0.68rem; color: var(--text2); margin-top: 3px; padding: 0 4px; display: flex; align-items: center; gap: 3px; justify-content: flex-end; }
+  .msg-time { font-size: 0.68rem; color: var(--text2); margin-top: 3px; padding: 0 4px; display: flex; align-items: center; gap: 4px; justify-content: flex-end; }
   .read-check { display: inline-flex; align-items: center; }
   .read-check svg { width: 14px; height: 14px; }
   .read-check.read svg { stroke: var(--accent2); }
@@ -113,8 +109,6 @@
   .msg-media { max-width: 220px; border-radius: 12px; overflow: hidden; }
   .msg-media img { width: 100%; display: block; cursor: pointer; }
   .msg-media video { width: 100%; display: block; border-radius: 8px; }
-  
-  /* [버그 수정] 가로 가독성 가두기 보완 */
   .system-msg { text-align: center; color: var(--text2); font-size: 0.75rem; padding: 4px 0; width: 100%; box-sizing: border-box; }
   .chat-input-wrap { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px; padding-bottom: calc(10px + var(--safe-bottom)); background: var(--surface); border-top: 1px solid var(--border); flex-shrink: 0; }
   .chat-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 22px; color: var(--text); padding: 10px 16px; font-size: 0.95rem; outline: none; resize: none; max-height: 120px; min-height: 42px; line-height: 1.4; font-family: inherit; transition: border-color 0.2s; }
@@ -125,13 +119,31 @@
   .partner-status { font-size: 0.75rem; color: var(--text2); }
   .online-dot { width: 8px; height: 8px; border-radius: 50%; background: #4a7a4a; display: inline-block; margin-right: 6px; }
 
+  /* ── 북마크 버튼 ── */
+  .bookmark-btn { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 0.85rem; padding: 0 1px; line-height: 1; transition: color 0.15s; flex-shrink: 0; }
+  .bookmark-btn.bookmarked { color: var(--accent); }
+
   /* ── ALBUM ── */
   .album-grid { flex: 1; overflow-y: auto; padding: 2px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
   .album-item { aspect-ratio: 1; overflow: hidden; position: relative; cursor: pointer; background: var(--surface); }
-  .album-item img, .album-item video { width: 100%; height: 100%; object-fit: cover; }
-  .album-item .play-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); }
+  .album-item img, .album-item video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .album-item .play-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); z-index: 1; }
   .album-item .play-icon svg { width: 32px; height: 32px; fill: rgba(255,255,255,0.9); }
   .album-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text2); font-size: 0.9rem; }
+
+  /* ── 보관함 ── */
+  .bookmarks-list { flex: 1; overflow-y: auto; padding: 16px 12px; display: flex; flex-direction: column; gap: 10px; }
+  .bookmarks-list::-webkit-scrollbar { display: none; }
+  .bookmark-card { background: var(--surface); border-radius: 14px; padding: 14px; border: 1px solid var(--border); }
+  .bookmark-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .bookmark-card-sender { font-size: 0.78rem; color: var(--accent); font-weight: 500; }
+  .bookmark-card-time { font-size: 0.72rem; color: var(--text2); }
+  .bookmark-card-body { font-size: 0.9rem; color: var(--text); line-height: 1.5; word-break: break-word; }
+  .bookmark-card-img { max-width: 100%; border-radius: 8px; margin-top: 6px; cursor: pointer; display: block; }
+  .bookmark-card-footer { display: flex; justify-content: flex-end; margin-top: 10px; }
+  .bookmark-remove { background: none; border: 1px solid var(--border); border-radius: 8px; color: var(--text2); font-size: 0.78rem; cursor: pointer; padding: 4px 10px; transition: color 0.15s, border-color 0.15s; }
+  .bookmark-remove:active { color: var(--danger); border-color: var(--danger); }
+  .bookmarks-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text2); font-size: 0.9rem; }
 
   /* ── LIGHTBOX ── */
   #lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
@@ -144,12 +156,10 @@
   .call-avatar { width: 100px; height: 100px; border-radius: 50%; background: var(--surface2); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; overflow: hidden; }
   .call-avatar img { width: 100%; height: 100%; object-fit: cover; }
   .call-name { font-size: 1.3rem; font-weight: 300; color: var(--accent); }
-
   .call-controls { display: flex; gap: 20px; margin-top: 1rem; }
   .call-btn { width: 64px; height: 64px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s, transform 0.1s; }
   .call-btn:active { opacity: 0.7; transform: scale(0.93); }
   .call-btn svg { width: 26px; height: 26px; stroke: white; fill: none; stroke-width: 1.8; }
-
   .call-btn.start-audio { background: #4a7a4a; }
   .call-btn.start-video { background: var(--accent2); }
 
@@ -170,7 +180,6 @@
   .profile-avatar-lg { width: 88px; height: 88px; border-radius: 50%; background: var(--surface2); border: 2px solid var(--border); overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
   .profile-avatar-lg img { width: 100%; height: 100%; object-fit: cover; }
   .profile-section { background: var(--surface); border-radius: 16px; overflow: hidden; }
-  .profile-section { background: var(--surface); border-radius: 16px; overflow: hidden; }
   .profile-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); gap: 12px; }
   .profile-row:last-child { border-bottom: none; }
   .profile-row-label { font-size: 0.9rem; color: var(--text2); }
@@ -184,74 +193,32 @@
   .toggle-sw input:checked + .slider { background: rgba(200,169,126,0.2); border-color: var(--accent); }
   .toggle-sw input:checked + .slider::before { transform: translateX(20px); background: var(--accent); }
 
-  /* ── 테마 선택 UI ── */
+  /* ── 테마 선택 ── */
   .theme-row { display: flex; gap: 12px; padding: 4px 0; flex-wrap: wrap; }
-  .theme-dot {
-    width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
-    border: 3px solid transparent; transition: transform 0.15s, border-color 0.15s;
-    display: flex; align-items: center; justify-content: center; font-size: 1rem;
-    flex-shrink: 0;
-  }
+  .theme-dot { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: transform 0.15s, border-color 0.15s; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
   .theme-dot:active { transform: scale(0.88); }
   .theme-dot.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
 
   /* ── 답장 ── */
-  .reply-bar {
-    display: none; align-items: center; gap: 8px;
-    background: var(--surface2); border-left: 3px solid var(--accent);
-    padding: 8px 14px; font-size: 0.8rem; color: var(--text2);
-    flex-shrink: 0;
-  }
+  .reply-bar { display: none; align-items: center; gap: 8px; background: var(--surface2); border-left: 3px solid var(--accent); padding: 8px 14px; font-size: 0.8rem; color: var(--text2); flex-shrink: 0; }
   .reply-bar.show { display: flex; }
   .reply-bar-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .reply-bar-cancel { background: none; border: none; color: var(--text2); font-size: 1.1rem; cursor: pointer; padding: 0 4px; line-height: 1; }
-  .msg-quote {
-    background: var(--surface2); border-left: 3px solid var(--accent);
-    border-radius: 6px; padding: 5px 10px; margin-bottom: 5px;
-    font-size: 0.75rem; color: var(--text2);
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    max-width: 100%;
-  }
+  .msg-quote { background: var(--surface2); border-left: 3px solid var(--accent); border-radius: 6px; padding: 5px 10px; margin-bottom: 5px; font-size: 0.75rem; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
   .me .msg-quote { border-left: none; border-right: 3px solid var(--accent2); text-align: right; }
 
   /* ── 최신 메시지 버튼 ── */
-  .scroll-bottom-btn {
-    position: absolute; bottom: 12px; right: 12px;
-    width: 36px; height: 36px; border-radius: 50%;
-    background: var(--surface); border: 1px solid var(--border);
-    color: var(--text2); cursor: pointer;
-    display: none; align-items: center; justify-content: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3); z-index: 5;
-    transition: opacity 0.2s;
-    font-size: 1rem;
-  }
+  .scroll-bottom-btn { position: absolute; bottom: 12px; right: 12px; width: 36px; height: 36px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); color: var(--text2); cursor: pointer; display: none; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); z-index: 5; transition: opacity 0.2s; font-size: 1rem; }
   .scroll-bottom-btn.show { display: flex; }
 
   /* ── 날짜 구분선 ── */
-  /* [버그 수정] 플렉스 컨테이너 안에서 가로 한계를 넘지 않도록 구조 명시 */
-  .date-sep {
-    text-align: center; padding: 12px 0 4px;
-    font-size: 0.7rem; color: var(--text2);
-    display: flex; align-items: center; gap: 12px;
-    width: 100%; box-sizing: border-box;
-  }
-  .date-sep::before, .date-sep::after {
-    content: ''; flex: 1; height: 1px;
-    background: var(--border);
-  }
+  .date-sep { text-align: center; padding: 12px 0 4px; font-size: 0.7rem; color: var(--text2); display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; }
+  .date-sep::before, .date-sep::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
   /* ── 검색바 ── */
-  .search-bar {
-    display: none; gap: 8px; align-items: center;
-    padding: 8px 12px; background: var(--surface);
-    border-bottom: 1px solid var(--border); flex-shrink: 0;
-  }
+  .search-bar { display: none; gap: 8px; align-items: center; padding: 8px 12px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
   .search-bar.show { display: flex; }
-  .search-input {
-    flex: 1; background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 18px; color: var(--text); padding: 8px 14px;
-    font-size: 0.85rem; outline: none; font-family: inherit;
-  }
+  .search-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 18px; color: var(--text); padding: 8px 14px; font-size: 0.85rem; outline: none; font-family: inherit; }
   .search-input:focus { border-color: var(--accent); }
   .search-nav { background: none; border: none; color: var(--text2); font-size: 1.1rem; cursor: pointer; padding: 4px 6px; }
   .search-nav:active { color: var(--accent); }
@@ -300,9 +267,6 @@
           <button class="icon-btn" onclick="startJitsiCall('audio')">
             <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11.7 19.79 19.79 0 0115.9 3.07 2 2 0 0122 16.92z"/></svg>
           </button>
-          <button class="icon-btn" onclick="startJitsiCall('video')">
-            <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-          </button>
         </div>
       </div>
       <div class="search-bar" id="searchBar">
@@ -341,12 +305,18 @@
       </div>
     </div>
 
+    <div id="bookmarkPane" class="tab-pane hidden">
+      <div class="topbar"><div class="topbar-title">⭐ 보관함</div></div>
+      <div class="bookmarks-list" id="bookmarksList">
+        <div class="bookmarks-empty">보관된 메시지가 없어요</div>
+      </div>
+    </div>
+
     <div id="callTabPane" class="tab-pane hidden">
       <div class="topbar"><div class="topbar-title">📞 통화</div></div>
       <div id="callPane">
         <div class="call-avatar" id="callAvatar">🌸</div>
         <div class="call-name" id="callName">상대방</div>
-
         <div style="color:var(--text2);font-size:0.8rem;text-align:center;max-width:260px;line-height:1.6">
           Jitsi Meet으로 무료 통화를 시작합니다<br>가입 없이 바로 사용 가능해요
         </div>
@@ -369,7 +339,6 @@
           <div style="font-size:1.2rem;font-weight:400" id="myNameDisplay">-</div>
           <div style="font-size:0.8rem;color:var(--text2)" id="myEmailDisplay">-</div>
         </div>
-
         <div class="profile-section">
           <div class="profile-row" style="flex-direction:column;align-items:flex-start;gap:12px">
             <span class="profile-row-label">테마</span>
@@ -382,7 +351,6 @@
             </div>
           </div>
         </div>
-
         <div class="profile-section">
           <div class="profile-row">
             <span class="profile-row-label">메시지 푸시 알림</span>
@@ -419,6 +387,10 @@
     <button class="tab-btn" id="tab-album" onclick="switchTab('album')">
       <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
       앨범
+    </button>
+    <button class="tab-btn" id="tab-bookmark" onclick="switchTab('bookmark')">
+      <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      보관함
     </button>
     <button class="tab-btn" id="tab-call" onclick="switchTab('call')">
       <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11.7 19.79 19.79 0 0115.9 3.07 2 2 0 0122 16.92z"/></svg>
@@ -465,7 +437,8 @@ import { getAuth, GoogleAuthProvider, signInWithPopup,
          onAuthStateChanged, signOut }
                                                             from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getDatabase, ref, set, push, onValue, onChildAdded, onChildChanged,
-         onDisconnect, serverTimestamp }                    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+         onDisconnect, serverTimestamp, query, limitToLast }
+                                                            from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 import { getStorage, ref as sRef,
          uploadBytesResumable, getDownloadURL }             from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 import { getMessaging, getToken }                           from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
@@ -486,15 +459,18 @@ const ALLOWED = {
 };
 const ROOM_ID = 'memo_private_room';
 
-const app     = initializeApp(firebaseConfig);
-const auth    = getAuth(app);
-const db      = getDatabase(app);
-const storage = getStorage(app);
+const app       = initializeApp(firebaseConfig);
+const auth      = getAuth(app);
+const db        = getDatabase(app);
+const storage   = getStorage(app);
 const messaging = getMessaging(app);
 
 let me = null, partner = null;
 let myLang = 'ko', translateEnabled = true;
 let partnerLastRead = 0;
+let myBookmarks = new Set();
+let albumLoaded = false;
+
 const CHECK_SINGLE = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
 const CHECK_DOUBLE = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 6 7 17 2 12"/><polyline points="23 6 12 17"/></svg>`;
 
@@ -555,7 +531,7 @@ onAuthStateChanged(auth, async user => {
 });
 
 function enterRoom() {
-  const meRef = ref(db, `${ROOM_ID}/presence/${me.name}`);
+  const meRef  = ref(db, `${ROOM_ID}/presence/${me.name}`);
   const meData = { online: true, name: me.name, photoURL: me.photoURL || '', ts: serverTimestamp() };
   set(meRef, meData);
   onDisconnect(meRef).update({ online: false });
@@ -569,7 +545,7 @@ function enterRoom() {
 
   onValue(ref(db, `${ROOM_ID}/presence/${partner.name}`), snap => {
     const data = snap.val();
-    const el = document.getElementById('partnerStatus');
+    const el   = document.getElementById('partnerStatus');
     el.innerHTML = '';
     if (data?.online) {
       const dot = document.createElement('span'); dot.className = 'online-dot'; el.appendChild(dot);
@@ -587,10 +563,9 @@ function enterRoom() {
     } else { av.textContent = partner.emoji; }
   });
 
-  const seenKeys = new Set();
+  const seenKeys    = new Set();
   let latestTheirTs = 0;
   let lastReadTimer = null;
-  const container = document.getElementById('chatMessages');
 
   function updateMyLastRead(ts) {
     if (ts <= 0 || ts === window._myLastReadSent) return;
@@ -601,14 +576,13 @@ function enterRoom() {
     }, 500);
   }
 
-  onChildAdded(ref(db, `${ROOM_ID}/messages`), snap => {
+  // 최근 100개만 로드 (데이터 효율)
+  onChildAdded(query(ref(db, `${ROOM_ID}/messages`), limitToLast(100)), snap => {
     const key = snap.key;
     if (seenKeys.has(key)) return;
     seenKeys.add(key);
-
     const msg = snap.val();
     renderMessage(msg, key);
-
     if (msg.uid !== me.name && msg.ts > latestTheirTs) {
       latestTheirTs = msg.ts;
       updateMyLastRead(msg.ts);
@@ -619,12 +593,12 @@ function enterRoom() {
     }
   });
 
+  const container = document.getElementById('chatMessages');
   onChildChanged(ref(db, `${ROOM_ID}/messages`), snap => {
     const key = snap.key;
     const msg = snap.val();
-    const el = container.querySelector(`[data-key="${key}"]`);
+    const el  = container.querySelector(`[data-key="${key}"]`);
     if (!el || !msg.translation || !translateEnabled) return;
-
     let trEl = el.querySelector('.msg-translation');
     if (!trEl) {
       trEl = document.createElement('div');
@@ -647,7 +621,20 @@ function enterRoom() {
     });
   });
 
-  onValue(ref(db, `${ROOM_ID}/media`), snap => updateAlbum(snap.val()));
+  // 보관함 리스너
+  onValue(ref(db, `${ROOM_ID}/bookmarks/${me.name}`), snap => {
+    myBookmarks.clear();
+    const data = snap.val();
+    if (data) Object.keys(data).forEach(k => myBookmarks.add(k));
+    document.querySelectorAll('.bookmark-btn').forEach(btn => {
+      const isBookmarked = myBookmarks.has(btn.dataset.key);
+      btn.textContent = isBookmarked ? '★' : '☆';
+      btn.classList.toggle('bookmarked', isBookmarked);
+    });
+    renderBookmarks(data);
+  });
+
+  // 앨범은 탭 열 때 로드 (lazy)
   listenSignaling();
 
   const avatarEl = document.getElementById('myAvatarDisplay');
@@ -733,6 +720,77 @@ window.sendMessage = async function() {
 window.handleKey  = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } };
 window.autoResize = el => { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; };
 
+// ── 보관함 토글 ──
+window.toggleBookmark = function(msg, key) {
+  if (!key || !me) return;
+  const bmRef = ref(db, `${ROOM_ID}/bookmarks/${me.name}/${key}`);
+  if (myBookmarks.has(key)) {
+    set(bmRef, null);
+    showToast('보관 해제됐어요');
+  } else {
+    set(bmRef, {
+      name: msg.name,
+      type: msg.type,
+      text: msg.text || null,
+      url:  msg.url  || null,
+      ts:   msg.ts
+    });
+    showToast('보관함에 저장됐어요 ⭐');
+  }
+};
+
+// ── 보관함 렌더링 ──
+function renderBookmarks(data) {
+  const list = document.getElementById('bookmarksList');
+  list.innerHTML = '';
+  if (!data || Object.keys(data).length === 0) {
+    list.innerHTML = '<div class="bookmarks-empty">보관된 메시지가 없어요</div>';
+    return;
+  }
+  Object.entries(data).sort((a, b) => b[1].ts - a[1].ts).forEach(([key, bm]) => {
+    const card = document.createElement('div');
+    card.className = 'bookmark-card';
+
+    const header = document.createElement('div');
+    header.className = 'bookmark-card-header';
+    const sender = document.createElement('span');
+    sender.className = 'bookmark-card-sender';
+    sender.textContent = bm.name;
+    const d = new Date(bm.ts);
+    const timeEl = document.createElement('span');
+    timeEl.className = 'bookmark-card-time';
+    timeEl.textContent = `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    header.appendChild(sender);
+    header.appendChild(timeEl);
+    card.appendChild(header);
+
+    const body = document.createElement('div');
+    body.className = 'bookmark-card-body';
+    if (bm.type === 'text') {
+      body.textContent = bm.text;
+    } else if (bm.type === 'image' && bm.url) {
+      const img = document.createElement('img');
+      img.src = bm.url; img.className = 'bookmark-card-img';
+      img.onclick = () => openLightbox('image', bm.url);
+      body.appendChild(img);
+    } else if (bm.type === 'video') {
+      body.textContent = '🎥 영상 메시지';
+    }
+    card.appendChild(body);
+
+    const footer = document.createElement('div');
+    footer.className = 'bookmark-card-footer';
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'bookmark-remove';
+    removeBtn.textContent = '보관 해제';
+    removeBtn.onclick = () => set(ref(db, `${ROOM_ID}/bookmarks/${me.name}/${key}`), null);
+    footer.appendChild(removeBtn);
+    card.appendChild(footer);
+
+    list.appendChild(card);
+  });
+}
+
 function renderMessage(msg, key) {
   const container = document.getElementById('chatMessages');
   if (msg.type === 'system') {
@@ -773,9 +831,9 @@ function renderMessage(msg, key) {
   if (msg.type === 'text') {
     const escapedText = msg.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
     const urlRegex = /(https?:\/\/[^\s]+)/g;
-    bubble.innerHTML = escapedText.replace(urlRegex, (url) => {
-      return `<a href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="color:var(--accent2); text-decoration:underline; word-break:break-all;">${url}</a>`;
-    });
+    bubble.innerHTML = escapedText.replace(urlRegex, url =>
+      `<a href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="color:var(--accent2);text-decoration:underline;word-break:break-all;">${url}</a>`
+    );
   } else if (msg.type === 'image') {
     const d = document.createElement('div'); d.className = 'msg-media';
     const img = document.createElement('img'); img.src = msg.url; img.loading = 'lazy';
@@ -793,10 +851,22 @@ function renderMessage(msg, key) {
 
   const t = document.createElement('div'); t.className = 'msg-time';
   t.appendChild(document.createTextNode(fmt(msg.ts)));
+
+  // 보관 버튼
+  if (key) {
+    const bBtn = document.createElement('button');
+    bBtn.className = 'bookmark-btn' + (myBookmarks.has(key) ? ' bookmarked' : '');
+    bBtn.dataset.key = key;
+    bBtn.textContent = myBookmarks.has(key) ? '★' : '☆';
+    bBtn.title = '보관함에 저장';
+    bBtn.onclick = e => { e.stopPropagation(); toggleBookmark(msg, key); };
+    t.appendChild(bBtn);
+  }
+
   if (isMe) {
     const check = document.createElement('span');
     check.dataset.ts = msg.ts;
-    check.className = msg.ts <= partnerLastRead ? 'read-check read' : 'read-check unread';
+    check.className  = msg.ts <= partnerLastRead ? 'read-check read' : 'read-check unread';
     check.innerHTML  = msg.ts <= partnerLastRead ? CHECK_DOUBLE : CHECK_SINGLE;
     t.appendChild(check);
   }
@@ -853,12 +923,12 @@ window.openLightbox = (type, url) => {
 window.closeLightbox = () => { document.getElementById('lightbox').classList.remove('open'); document.getElementById('lightboxContent').innerHTML=''; };
 
 // ── Jitsi Meet 통화 ──
-const JITSI_DOMAIN = 'meet.jit.si';
+const JITSI_DOMAIN      = 'meet.jit.si';
 const JITSI_ROOM_PREFIX = 'memo-private-kv-mm';
 
 window.startJitsiCall = async function(type) {
   const roomName = `${JITSI_ROOM_PREFIX}-${Date.now()}`;
-  const config = type === 'audio' ? '#config.startWithVideoMuted=true' : '';
+  const config   = type === 'audio' ? '#config.startWithVideoMuted=true' : '';
   const jitsiUrl = `https://${JITSI_DOMAIN}/${roomName}${config}`;
 
   await set(ref(db, `${ROOM_ID}/signal/${partner.name}`), {
@@ -876,8 +946,7 @@ function listenSignaling() {
     const sig = snap.val();
     if (!sig) return;
     if (sig.ts && Date.now() - sig.ts > 30000) {
-      set(ref(db, `${ROOM_ID}/signal/${me.name}`), null);
-      return;
+      set(ref(db, `${ROOM_ID}/signal/${me.name}`), null); return;
     }
     if (sig.type === 'incoming') {
       showIncomingCall(sig);
@@ -900,6 +969,7 @@ function showIncomingCall(sig) {
   document.getElementById('incomingCall').classList.add('show');
   if (navigator.vibrate) navigator.vibrate([300,200,300]);
 }
+
 window.acceptCall = async () => {
   document.getElementById('incomingCall').classList.remove('show');
   await set(ref(db, `${ROOM_ID}/signal/${me.name}`), null);
@@ -915,12 +985,20 @@ window.rejectCall = async () => {
 };
 
 window.switchTab = tab => {
-  ['chat','album','call','profile'].forEach(t => {
-    document.getElementById(t==='call'?'callTabPane':`${t}Pane`).classList.add('hidden');
+  ['chat','album','bookmark','call','profile'].forEach(t => {
+    const paneId = t === 'call' ? 'callTabPane' : t === 'bookmark' ? 'bookmarkPane' : `${t}Pane`;
+    document.getElementById(paneId).classList.add('hidden');
     document.getElementById(`tab-${t}`).classList.remove('active');
   });
-  document.getElementById(tab==='call'?'callTabPane':`${tab}Pane`).classList.remove('hidden');
+  const activePaneId = tab === 'call' ? 'callTabPane' : tab === 'bookmark' ? 'bookmarkPane' : `${tab}Pane`;
+  document.getElementById(activePaneId).classList.remove('hidden');
   document.getElementById(`tab-${tab}`).classList.add('active');
+
+  // 앨범: 처음 열 때만 Firebase에서 로드
+  if (tab === 'album' && !albumLoaded) {
+    albumLoaded = true;
+    onValue(ref(db, `${ROOM_ID}/media`), snap => updateAlbum(snap.val()));
+  }
 };
 
 window.changeLang = () => { myLang=document.getElementById('langSelect').value; localStorage.setItem(`memo_lang_${me.email}`,myLang); };
@@ -931,9 +1009,9 @@ window.doLogout = async () => {
   await signOut(auth);
 };
 
-// ── FCM 푸시 알림 제어 부 ──
+// ── FCM 푸시 알림 ──
 let notifEnabled = false;
-let enterTime = 0;
+let enterTime    = 0;
 let swRegistration = null;
 
 if ('serviceWorker' in navigator) {
@@ -952,7 +1030,8 @@ window.toggleNotif = async function() {
     const perm = await Notification.requestPermission();
     if (perm === 'granted') {
       try {
-        const token = await getToken(messaging, { vapidKey: 'BKvA2crddS7igPxkQbnuVjN93065I97kfjX8AlQ7OJwkOZWzn8XO8yklEbjmSfsYYhz7lwdwiKFc7wxvXOpPNEE' });
+        const swReg  = swRegistration || await navigator.serviceWorker.getRegistration('./firebase-messaging-sw.js');
+        const token = await getToken(messaging, { vapidKey: 'BKvA2crddS7igPxkQbnuVjN93065I97kfjX8AlQ7OJwkOZWzn8XO8yklEbjmSfsYYhz7lwdwiKFc7wxvXOpPNEE', serviceWorkerRegistration: swReg });
         if (token) {
           await set(ref(db, `${ROOM_ID}/tokens/${me.name}`), token);
           notifEnabled = true;
@@ -980,34 +1059,30 @@ window.toggleNotif = async function() {
 };
 
 async function initNotif() {
-  const saved = localStorage.getItem('memo_notif');
+  const saved  = localStorage.getItem('memo_notif');
   const toggle = document.getElementById('notifToggle');
   if (saved === 'on' && 'Notification' in window && Notification.permission === 'granted') {
     notifEnabled = true;
     toggle.checked = true;
     try {
-      const token = await getToken(messaging, { vapidKey: 'BKvA2crddS7igPxkQbnuVjN93065I97kfjX8AlQ7OJwkOZWzn8XO8yklEbjmSfsYYhz7lwdwiKFc7wxvXOpPNEE' });
-      if (token && me) {
-        await set(ref(db, `${ROOM_ID}/tokens/${me.name}`), token);
-      }
+      const swReg = swRegistration || await navigator.serviceWorker.getRegistration('./firebase-messaging-sw.js');
+      const token = await getToken(messaging, { vapidKey: 'BKvA2crddS7igPxkQbnuVjN93065I97kfjX8AlQ7OJwkOZWzn8XO8yklEbjmSfsYYhz7lwdwiKFc7wxvXOpPNEE', serviceWorkerRegistration: swReg });
+      if (token && me) await set(ref(db, `${ROOM_ID}/tokens/${me.name}`), token);
     } catch {}
   }
 }
 
 let appHasFocus = true;
 document.addEventListener('visibilitychange', () => { appHasFocus = document.visibilityState === 'visible'; });
-window.addEventListener('blur', () => { appHasFocus = false; });
+window.addEventListener('blur',  () => { appHasFocus = false; });
 window.addEventListener('focus', () => { appHasFocus = true; });
 
 function sendLocalNotif(name, body) {
   if (!notifEnabled || appHasFocus) return;
   try {
     const tag = 'memo-' + Date.now();
-    if (swRegistration) {
-      swRegistration.showNotification('meMo — ' + name, { body, tag });
-    } else {
-      new Notification('meMo — ' + name, { body, tag });
-    }
+    if (swRegistration) swRegistration.showNotification('meMo — ' + name, { body, tag });
+    else new Notification('meMo — ' + name, { body, tag });
   } catch {}
 }
 
@@ -1032,7 +1107,7 @@ function insertDateSep(container, wrap, ts) {
 // ── 최신 메시지 버튼 ──
 window.scrollToLatest = function() { document.getElementById('chatMessages').scrollTop = 0; };
 document.addEventListener('DOMContentLoaded', () => {
-  const cm = document.getElementById('chatMessages');
+  const cm  = document.getElementById('chatMessages');
   const btn = document.getElementById('scrollBottomBtn');
   if (cm && btn) {
     cm.addEventListener('scroll', () => {
@@ -1045,7 +1120,7 @@ document.addEventListener('DOMContentLoaded', () => {
 let searchMatches = [];
 let searchIdx = -1;
 window.toggleSearch = function() {
-  const bar = document.getElementById('searchBar');
+  const bar    = document.getElementById('searchBar');
   const isOpen = bar.classList.toggle('show');
   if (isOpen) { document.getElementById('searchInput').focus(); } else { clearSearch(); }
 };
@@ -1082,9 +1157,10 @@ function clearSearch() {
   searchMatches = []; searchIdx = -1;
 }
 function clearSearchHighlights() { document.querySelectorAll('.msg-highlight').forEach(el => el.classList.remove('msg-highlight')); }
+
 window.showToast = msg => {
-  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
-  clearTimeout(window._tt); window._tt=setTimeout(()=>t.classList.remove('show'),2500);
+  const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(window._tt); window._tt = setTimeout(() => t.classList.remove('show'), 2500);
 };
 </script>
 </body>
