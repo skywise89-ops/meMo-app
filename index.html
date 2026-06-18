@@ -113,6 +113,30 @@
   .msg-media { max-width: 220px; border-radius: 12px; overflow: hidden; }
   .msg-media img { width: 100%; display: block; cursor: pointer; }
   .msg-media video { width: 100%; display: block; border-radius: 8px; }
+
+  /* ── 묶음 사진(여러장) 메시지: 좌우 스크롤 ── */
+  .msg-media-group {
+    display: flex; gap: 4px; max-width: 220px;
+    overflow-x: auto; overflow-y: hidden;
+    scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch;
+    border-radius: 4px;
+  }
+  .msg-media-group::-webkit-scrollbar { display: none; }
+  .msg-media-group-item {
+    flex: 0 0 auto; width: 130px; height: 140px;
+    border-radius: 10px; overflow: hidden; position: relative;
+    cursor: pointer; background: var(--surface2);
+    scroll-snap-align: start;
+  }
+  .msg-media-group-item img, .msg-media-group-item video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .msg-media-group-item .play-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); }
+  .msg-media-group-item .play-icon svg { width: 26px; height: 26px; fill: rgba(255,255,255,0.9); }
+  .msg-media-group-count {
+    position: absolute; bottom: 5px; right: 5px;
+    background: rgba(0,0,0,0.55); color: #fff;
+    font-size: 0.65rem; padding: 1px 6px; border-radius: 8px;
+    line-height: 1.4; pointer-events: none;
+  }
   
   /* [버그 수정] 가로 가독성 가두기 보완 */
   .system-msg { text-align: center; color: var(--text2); font-size: 0.75rem; padding: 4px 0; width: 100%; box-sizing: border-box; }
@@ -157,6 +181,22 @@
   #lightbox.open { opacity: 1; pointer-events: all; }
   #lightbox img, #lightbox video { max-width: 90vw; max-height: 85vh; object-fit: contain; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
   #lightbox .close-lb { position: absolute; top: 52px; right: 20px; background: none; border: none; color: white; font-size: 2rem; cursor: pointer; z-index: 101; padding: 8px; }
+  /* ── 묶음 사진 라이트박스 좌우 넘기기 ── */
+  #lightbox .lb-nav {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 46px; height: 46px; border-radius: 50%;
+    background: rgba(0,0,0,0.35); border: none; color: white;
+    font-size: 1.8rem; line-height: 1; cursor: pointer; z-index: 101;
+    display: none; align-items: center; justify-content: center;
+  }
+  #lightbox .lb-prev { left: 12px; }
+  #lightbox .lb-next { right: 12px; }
+  #lightbox .lb-counter {
+    position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
+    color: rgba(255,255,255,0.85); font-size: 0.78rem;
+    background: rgba(0,0,0,0.4); padding: 4px 12px; border-radius: 12px;
+    display: none; z-index: 101;
+  }
 
 
   /* ── INCOMING CALL ── */
@@ -378,7 +418,7 @@
           <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>
-      <input type="file" id="mediaInput" accept="image/*,video/*" style="display:none" onchange="sendMedia(event)">
+      <input type="file" id="mediaInput" accept="image/*,video/*" multiple style="display:none" onchange="sendMedia(event)">
     </div>
 
     <div id="albumPane" class="tab-pane hidden">
@@ -499,7 +539,10 @@
 
 <div id="lightbox">
   <button class="close-lb" onclick="closeLightbox()">✕</button>
+  <button class="lb-nav lb-prev" id="lbPrev" onclick="lightboxNav(-1)">‹</button>
+  <button class="lb-nav lb-next" id="lbNext" onclick="lightboxNav(1)">›</button>
   <div id="lightboxContent"></div>
+  <div class="lb-counter" id="lbCounter"></div>
 </div>
 
 <div id="toast"></div>
@@ -744,7 +787,7 @@ function enterRoom() {
       updateMyLastRead(msg.ts);
       if (msg.ts > enterTime) {
         if (msg.type === 'text') sendLocalNotif(msg.name, msg.text);
-        else sendLocalNotif(msg.name, msg.type === 'image' ? '📷 사진' : '🎥 영상');
+        else sendLocalNotif(msg.name, mediaLabel(msg));
       }
     }
   });
@@ -830,7 +873,7 @@ window.setReply = function(msg) {
   const bar = document.getElementById('replyBar');
   const txt = document.getElementById('replyBarText');
   bar.classList.add('show');
-  txt.textContent = msg.type === 'text' ? msg.text : (msg.type === 'image' ? '📷 사진' : '🎥 영상');
+  txt.textContent = msg.type === 'text' ? msg.text : mediaLabel(msg);
   document.getElementById('msgInput').focus();
 };
 
@@ -856,13 +899,25 @@ window.sendMessage = async function() {
     lang: myLang, text,
     translation: translation || null,
     type: 'text', ts: Date.now(),
-    ...(replyTo ? { replyTo: { text: replyTo.text, type: replyTo.type, name: replyTo.name } } : {})
+    ...(replyTo ? { replyTo: { text: replyTo.text, type: replyTo.type, name: replyTo.name, ...(replyTo.type === 'album' ? { count: (replyTo.items || []).length } : {}) } } : {})
   });
   cancelReply();
 };
 
 window.handleKey  = e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendMessage(); } };
 window.autoResize = el => { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; };
+
+// 미디어 메시지(사진/영상/묶음사진)의 대표 라벨 텍스트
+function mediaLabel(msg) {
+  if (!msg) return '';
+  if (msg.type === 'image') return '📷 사진';
+  if (msg.type === 'video') return '🎥 영상';
+  if (msg.type === 'album') {
+    const n = Array.isArray(msg.items) ? msg.items.length : (msg.count || 0);
+    return n ? `📷 사진 ${n}장` : '📷 사진';
+  }
+  return '';
+}
 
 function renderMessage(msg, key) {
   const container = document.getElementById('chatMessages');
@@ -898,7 +953,7 @@ function renderMessage(msg, key) {
   if (msg.replyTo) {
     const quote = document.createElement('div');
     quote.className = 'msg-quote';
-    quote.textContent = '↩ ' + (msg.replyTo.text || (msg.replyTo.type === 'image' ? '📷 사진' : '🎥 영상'));
+    quote.textContent = '↩ ' + (msg.replyTo.text || mediaLabel(msg.replyTo));
     wrap.appendChild(quote);
   }
 
@@ -917,6 +972,30 @@ function renderMessage(msg, key) {
     const d = document.createElement('div'); d.className = 'msg-media';
     const v = document.createElement('video'); v.src = msg.url; v.controls = true; v.playsinline = true;
     d.appendChild(v); bubble.appendChild(d);
+  } else if (msg.type === 'album') {
+    const items = Array.isArray(msg.items) ? msg.items : [];
+    const group = document.createElement('div'); group.className = 'msg-media-group';
+    items.forEach((item, idx) => {
+      const cell = document.createElement('div'); cell.className = 'msg-media-group-item';
+      if (item.type === 'video') {
+        const v = document.createElement('video'); v.src = item.url; v.preload = 'metadata'; v.muted = true; v.playsinline = true;
+        cell.appendChild(v);
+        const ic = document.createElement('div'); ic.className = 'play-icon';
+        ic.innerHTML = `<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
+        cell.appendChild(ic);
+      } else {
+        const img = document.createElement('img'); img.src = item.url; img.loading = 'lazy';
+        cell.appendChild(img);
+      }
+      if (items.length > 1) {
+        const badge = document.createElement('div'); badge.className = 'msg-media-group-count';
+        badge.textContent = `${idx + 1}/${items.length}`;
+        cell.appendChild(badge);
+      }
+      cell.onclick = () => openLightbox(item.type, item.url, items, idx);
+      group.appendChild(cell);
+    });
+    bubble.appendChild(group);
   }
   wrap.appendChild(bubble);
 
@@ -941,21 +1020,66 @@ function renderMessage(msg, key) {
 
 const fmt = ts => { const d = new Date(ts); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
 
-window.sendMedia = async function(e) {
-  const file = e.target.files[0]; if (!file) return; e.target.value = '';
-  const isVideo = file.type.startsWith('video/');
+// 파일 1개를 Storage에 업로드하고 {url, type}을 반환
+function uploadOneFile(file, progressPrefix) {
+  return new Promise((resolve, reject) => {
+    const isVideo = file.type.startsWith('video/');
+    const safeName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${file.name}`;
+    const task = uploadBytesResumable(sRef(storage, `${ROOM_ID}/${safeName}`), file);
+    task.on('state_changed',
+      s => showToast(`${progressPrefix}업로드 ${Math.round(s.bytesTransferred / s.totalBytes * 100)}%`),
+      err => reject(err),
+      async () => {
+        try {
+          const url = await getDownloadURL(task.snapshot.ref);
+          resolve({ url, type: isVideo ? 'video' : 'image' });
+        } catch (err) { reject(err); }
+      }
+    );
+  });
+}
+
+// 사진/영상 1개 전송 (기존 동작 그대로 유지)
+async function sendSingleMedia(file) {
   showToast('업로드 중...');
-  const task = uploadBytesResumable(sRef(storage, `${ROOM_ID}/${Date.now()}_${file.name}`), file);
-  task.on('state_changed',
-    s => showToast(`업로드 ${Math.round(s.bytesTransferred/s.totalBytes*100)}%`),
-    err => showToast('실패: ' + err.message),
-    async () => {
-      const url = await getDownloadURL(task.snapshot.ref);
-      push(ref(db, `${ROOM_ID}/messages`), { uid: me.name, name: me.name, photoURL: me.photoURL||'', type: isVideo?'video':'image', url, ts: Date.now() });
-      push(ref(db, `${ROOM_ID}/media`),    { uid: me.name, type: isVideo?'video':'image', url, ts: Date.now() });
-      showToast('공유 완료!');
+  try {
+    const { url, type } = await uploadOneFile(file, '');
+    const ts = Date.now();
+    push(ref(db, `${ROOM_ID}/messages`), { uid: me.name, name: me.name, photoURL: me.photoURL || '', type, url, ts });
+    push(ref(db, `${ROOM_ID}/media`),    { uid: me.name, type, url, ts });
+    showToast('공유 완료!');
+  } catch (err) {
+    showToast('실패: ' + err.message);
+  }
+}
+
+// 사진/영상 여러 개를 하나의 묶음(album) 메시지로 전송 (카카오톡/라인 식 묶어보내기)
+async function sendMediaGroup(files) {
+  const total = files.length;
+  const items = [];
+  const baseTs = Date.now();
+  try {
+    for (let i = 0; i < total; i++) {
+      const { url, type } = await uploadOneFile(files[i], `(${i + 1}/${total}) `);
+      items.push({ url, type });
+      push(ref(db, `${ROOM_ID}/media`), { uid: me.name, type, url, ts: baseTs + i });
     }
-  );
+    push(ref(db, `${ROOM_ID}/messages`), {
+      uid: me.name, name: me.name, photoURL: me.photoURL || '',
+      type: 'album', items, ts: baseTs + total
+    });
+    showToast(`사진 ${total}장 공유 완료!`);
+  } catch (err) {
+    showToast('실패: ' + err.message);
+  }
+}
+
+window.sendMedia = async function(e) {
+  const files = Array.from(e.target.files || []);
+  e.target.value = '';
+  if (files.length === 0) return;
+  if (files.length === 1) await sendSingleMedia(files[0]);
+  else await sendMediaGroup(files);
 };
 
 function updateAlbum(media) {
@@ -975,15 +1099,60 @@ function updateAlbum(media) {
   });
 }
 
-window.openLightbox = (type, url) => {
-  const c=document.getElementById('lightboxContent'); c.innerHTML='';
-  if (type==='image') { const i=document.createElement('img'); i.src=url; c.appendChild(i); }
-  else { const v=document.createElement('video'); v.src=url; v.controls=true; v.playsinline=true; v.autoplay=true; c.appendChild(v); }
+// items/index가 주어지면 묶음사진처럼 좌우로 넘겨볼 수 있는 갤러리 모드로 동작
+let lightboxGallery = null; // { items: [{type,url}], index }
+
+function renderLightboxItem(type, url) {
+  const c = document.getElementById('lightboxContent'); c.innerHTML = '';
+  if (type === 'image') { const i = document.createElement('img'); i.src = url; c.appendChild(i); }
+  else { const v = document.createElement('video'); v.src = url; v.controls = true; v.playsinline = true; v.autoplay = true; c.appendChild(v); }
+}
+
+function updateLightboxNav() {
+  const prevBtn = document.getElementById('lbPrev');
+  const nextBtn = document.getElementById('lbNext');
+  const counter = document.getElementById('lbCounter');
+  if (lightboxGallery && lightboxGallery.items.length > 1) {
+    prevBtn.style.display = 'flex'; nextBtn.style.display = 'flex';
+    counter.style.display = 'block';
+    counter.textContent = `${lightboxGallery.index + 1} / ${lightboxGallery.items.length}`;
+  } else {
+    prevBtn.style.display = 'none'; nextBtn.style.display = 'none';
+    counter.style.display = 'none';
+  }
+}
+
+window.lightboxNav = dir => {
+  if (!lightboxGallery) return;
+  const n = lightboxGallery.items.length;
+  lightboxGallery.index = (lightboxGallery.index + dir + n) % n;
+  const item = lightboxGallery.items[lightboxGallery.index];
+  renderLightboxItem(item.type, item.url);
+  updateLightboxNav();
+};
+
+window.openLightbox = (type, url, items, index) => {
+  lightboxGallery = (Array.isArray(items) && items.length > 1) ? { items, index: index || 0 } : null;
+  renderLightboxItem(type, url);
+  updateLightboxNav();
   const lb = document.getElementById('lightbox');
   lb.classList.add('open');
   lb.onclick = e => { if (e.target === lb) closeLightbox(); };
 };
-window.closeLightbox = () => { document.getElementById('lightbox').classList.remove('open'); document.getElementById('lightboxContent').innerHTML=''; };
+window.closeLightbox = () => {
+  document.getElementById('lightbox').classList.remove('open');
+  document.getElementById('lightboxContent').innerHTML = '';
+  lightboxGallery = null;
+};
+document.addEventListener('keydown', e => {
+  const lb = document.getElementById('lightbox');
+  if (!lb.classList.contains('open')) return;
+  if (e.key === 'Escape') { closeLightbox(); return; }
+  if (lightboxGallery) {
+    if (e.key === 'ArrowLeft') lightboxNav(-1);
+    else if (e.key === 'ArrowRight') lightboxNav(1);
+  }
+});
 
 // ── Jitsi Meet 통화 ──
 const JITSI_DOMAIN = 'meet.jit.si';
