@@ -961,9 +961,9 @@ function renderMessage(msg, key) {
   if (msg.type === 'text') {
     const escapedText = msg.text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
     const urlRegex = /(https?:\/\/[^\s]+)/g;
-    bubble.innerHTML = escapedText.replace(urlRegex, (url) => {
-      return `<a href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="color:var(--accent2); text-decoration:underline; word-break:break-all;">${url}</a>`;
-    });
+    bubble.innerHTML = escapedText
+      .replace(urlRegex, (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="color:var(--accent2); text-decoration:underline; word-break:break-all;">${url}</a>`)
+      .replace(/\n/g, '<br>');
   } else if (msg.type === 'image') {
     const d = document.createElement('div'); d.className = 'msg-media';
     const img = document.createElement('img'); img.src = msg.url; img.loading = 'lazy';
