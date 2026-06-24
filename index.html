@@ -664,7 +664,7 @@ let partnerLastRead = 0;
 const CHECK_SINGLE = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
 const CHECK_DOUBLE = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 6 7 17 2 12"/><polyline points="23 6 12 17"/></svg>`;
 
-// 무한 스크롤 및 상태 관리 전역 변수
+// 무한 스크롤 및 전역 상태 관리 변수
 window._loadedMessages = {};
 const seenKeys = new Set();
 let oldestKey = null;
@@ -672,6 +672,7 @@ let loadingOlder = false;
 let hasMoreOlder = true;
 let liveLastDateStr = '';
 let topObserver = null;
+let initialLoadTimer = null;
 
 function sanitize(str) {
   if (!str) return '';
@@ -697,6 +698,69 @@ window.setTheme = function(theme) {
 function loadTheme() {
   const saved = localStorage.getItem('memo_theme') || 'dark';
   setTheme(saved);
+}
+
+// ⭐️ 모든 모바일/데스크탑 환경에서 100% 안전하게 작동하는 이미지 압축 함수
+async function compressImageSafe(file, maxWidth = 1600) {
+  if (!file.type.startsWith('image/') || file.type.includes('gif')) {
+    return file; 
+  }
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.src = objectUrl;
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      
+      if (file.type !== 'image/png') {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, width, height);
+      }
+      
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const targetType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+      const quality = targetType === 'image/jpeg' ? 0.8 : undefined;
+
+      canvas.toBlob(blob => {
+        if (!blob) { resolve(file); return; } 
+        
+        const ext = targetType === 'image/png' ? '.png' : '.jpg';
+        const safeName = file.name.replace(/\.[^/.]+$/, "") + "_compressed" + ext;
+        
+        try {
+          const compressedFile = new File([blob], safeName, {
+            type: targetType,
+            lastModified: Date.now()
+          });
+          resolve(compressedFile);
+        } catch (e) {
+          blob.name = safeName;
+          resolve(blob);
+        }
+      }, targetType, quality);
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(file);
+    };
+  });
 }
 
 window.signInWithGoogle = async function() {
@@ -760,7 +824,7 @@ function enterRoom() {
   let lastReadTimer = null;
   const container = document.getElementById('chatMessages');
 
-  // 단 1개의 이벤트 위임으로 메모리 제로화 (업계 표준)
+  // 단 1개의 이벤트 위임으로 메모리 제로화
   let pressTimer;
   container.addEventListener('touchstart', e => {
     const wrap = e.target.closest('.msg-wrap');
@@ -813,10 +877,10 @@ function enterRoom() {
       }
     }
     
-    // 초기 로딩 후 센티널 옵저버 단 1회 세팅
+    // 초기 로딩 완료 후 센티널 옵저버 단 1회 세팅
     if (!initialLoadDone) {
-      clearTimeout(window._initObsTimer);
-      window._initObsTimer = setTimeout(() => {
+      clearTimeout(initialLoadTimer);
+      initialLoadTimer = setTimeout(() => {
         initialLoadDone = true;
         setupTopObserver();
       }, 500);
@@ -876,20 +940,18 @@ function enterRoom() {
   showScreen('mainScreen');
 }
 
-// ⭐️ 절대 실패하지 않는 영구 감시 센티널 패턴 (Observer)
+// ⭐️ 절대 실패하지 않는 영구 감시 센티널 패턴
 function setupTopObserver() {
   const sentinel = document.getElementById('topSentinel');
   if (!sentinel) return;
   
   if (!topObserver) {
     topObserver = new IntersectionObserver((entries) => {
-      // 센티널이 뷰포트에 들어오면 무조건 과거 데이터 로드 실행
       if (entries[0].isIntersecting && !loadingOlder && hasMoreOlder) {
         loadOlderMessages();
       }
     }, { root: document.getElementById('chatMessages'), rootMargin: '100px' });
   }
-  // 타겟을 해제하거나 바꿀 필요가 전혀 없음. 평생 센티널만 감시.
   topObserver.observe(sentinel);
 }
 
@@ -922,13 +984,11 @@ async function loadOlderMessages() {
     
     oldestKey = children[0].key;
     
-    // [경계선 복구 로직] 센티널 바로 이전 요소가 날짜 구분선이라면 임시 삭제 (날짜 병합을 위해)
     const currentOldestDOM = sentinel.previousElementSibling;
     if (currentOldestDOM && currentOldestDOM.classList.contains('date-sep')) {
       cm.removeChild(currentOldestDOM);
     }
     
-    // 남아있는 것 중 가장 오래된 메시지의 날짜 파악
     const wraps = cm.querySelectorAll('.msg-wrap');
     const currentOldestWrap = wraps.length > 0 ? wraps[wraps.length - 1] : null;
     let nextGroupDate = currentOldestWrap ? currentOldestWrap.dataset.date : '';
@@ -944,7 +1004,6 @@ async function loadOlderMessages() {
       const currentDateStr = getDateStr(msg.ts);
       wrap.dataset.date = currentDateStr;
       
-      // 구데이터와 신데이터 경계선 병합 판단
       if (i === children.length - 1 && nextGroupDate && currentDateStr !== nextGroupDate) {
         const sep = document.createElement('div');
         sep.className = 'date-sep';
@@ -954,7 +1013,6 @@ async function loadOlderMessages() {
       
       fragment.appendChild(wrap);
       
-      // 이번에 로드된 묶음 안에서의 날짜 구분 처리
       const nextMsg = children[i - 1];
       if (nextMsg) {
         const nextDateStr = getDateStr(nextMsg.val.ts);
@@ -965,7 +1023,6 @@ async function loadOlderMessages() {
           fragment.appendChild(sep);
         }
       } else {
-        // 가장 오래된 꼭대기 날짜 처리
         const sep = document.createElement('div');
         sep.className = 'date-sep';
         sep.textContent = currentDateStr;
@@ -973,13 +1030,12 @@ async function loadOlderMessages() {
       }
     }
     
-    // 센티널의 '앞'에 끼워넣기 -> 스크롤 유지 + 센티널은 언제나 최상단(DOM 마지막) 유지
+    // 센티널의 '앞'에 끼워넣기 -> 센티널은 언제나 최상단(DOM 마지막) 유지
     cm.insertBefore(fragment, sentinel);
     
   } catch (err) {
     console.error('과거 메시지 로드 실패:', err);
   } finally {
-    // 레이아웃이 완전히 그려질 시간을 주고 Lock 해제
     requestAnimationFrame(() => { loadingOlder = false; });
   }
 }
@@ -1025,7 +1081,7 @@ window.sendMessage = async function() {
   const text  = input.value.trim();
   if (!text) return;
   input.value = ''; input.style.height = '42px';
-  input._lastVal = ''; // 캐시 리셋
+  input._lastVal = ''; 
 
   let translation = null;
   if (translateEnabled) {
@@ -1045,7 +1101,7 @@ window.sendMessage = async function() {
 
 window.handleKey  = e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendMessage(); } };
 
-// ⭐️ 타이핑 렉(Layout Thrashing)을 원천 차단하는 requestAnimationFrame 디바운싱
+// ⭐️ 타이핑 렉(Layout Thrashing) 원천 차단
 window.autoResize = el => {
   if (el._lastVal === el.value) return; 
   el._lastVal = el.value;
@@ -1162,6 +1218,8 @@ function renderMessage(msg, key) {
 
   const wrap = createMessageElement(msg, key);
   wrap.dataset.date = getDateStr(msg.ts);
+  
+  // 새 메시지는 최신 위치(prepend)로 주입
   container.prepend(wrap);
 
   if (wrap.dataset.date !== liveLastDateStr) {
@@ -1175,21 +1233,30 @@ function renderMessage(msg, key) {
 
 const fmt = ts => { const d = new Date(ts); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
 
+// ⭐️ 파일 업로드 파이프라인 안전 압축 모듈 통과하도록 수정 완료
 function uploadOneFile(file, progressPrefix) {
-  return new Promise((resolve, reject) => {
-    const isVideo = file.type.startsWith('video/');
-    const safeName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${file.name}`;
-    const task = uploadBytesResumable(sRef(storage, `${ROOM_ID}/${safeName}`), file);
-    task.on('state_changed',
-      s => showToast(`${progressPrefix}업로드 ${Math.round(s.bytesTransferred / s.totalBytes * 100)}%`),
-      err => reject(err),
-      async () => {
-        try {
-          const url = await getDownloadURL(task.snapshot.ref);
-          resolve({ url, type: isVideo ? 'video' : 'image' });
-        } catch (err) { reject(err); }
-      }
-    );
+  return new Promise(async (resolve, reject) => {
+    try {
+      const targetFile = await compressImageSafe(file);
+      
+      const isVideo = targetFile.type.startsWith('video/');
+      const safeName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${targetFile.name || 'media'}`;
+      
+      const task = uploadBytesResumable(sRef(storage, `${ROOM_ID}/${safeName}`), targetFile);
+      
+      task.on('state_changed',
+        s => showToast(`${progressPrefix}업로드 ${Math.round(s.bytesTransferred / s.totalBytes * 100)}%`),
+        err => reject(err),
+        async () => {
+          try {
+            const url = await getDownloadURL(task.snapshot.ref);
+            resolve({ url, type: isVideo ? 'video' : 'image' });
+          } catch (err) { reject(err); }
+        }
+      );
+    } catch (e) {
+      reject(e);
+    }
   });
 }
 
