@@ -49,7 +49,6 @@
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: -apple-system, 'Noto Sans KR', sans-serif; }
   
-  /* [버그 수정] 모바일 환경에서의 기기별 사이드 터치 밀림 현상을 원천 차단 */
   .screen { position: fixed; inset: 0; display: flex; flex-direction: column; overflow-x: hidden; }
   .screen.hidden { display: none; }
 
@@ -93,7 +92,6 @@
   .tab-btn.active { color: var(--accent); }
 
   /* ── CHAT ── */
-  /* [버그 수정] flex-direction: column-reverse 리버싱 환경에서 발생하는 자식 마이크로 오버플로우 가로 스크롤 차단 */
   .chat-messages { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 16px 12px; display: flex; flex-direction: column-reverse; gap: 8px; width: 100%; }
   .chat-messages::-webkit-scrollbar { display: none; }
   .msg-wrap { display: flex; flex-direction: column; max-width: 78%; }
@@ -114,7 +112,7 @@
   .msg-media img { width: 100%; display: block; cursor: pointer; }
   .msg-media video { width: 100%; display: block; border-radius: 8px; }
 
-  /* ── 묶음 사진(여러장) 메시지: 좌우 스크롤 ── */
+  /* ── 묶음 사진 ── */
   .msg-media-group {
     display: flex; gap: 4px; max-width: 220px;
     overflow-x: auto; overflow-y: hidden;
@@ -138,7 +136,6 @@
     line-height: 1.4; pointer-events: none;
   }
   
-  /* [버그 수정] 가로 가독성 가두기 보완 */
   .system-msg { text-align: center; color: var(--text2); font-size: 0.75rem; padding: 4px 0; width: 100%; box-sizing: border-box; }
   .chat-input-wrap { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px; padding-bottom: calc(10px + var(--safe-bottom)); background: var(--surface); border-top: 1px solid var(--border); flex-shrink: 0; }
   .chat-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 22px; color: var(--text); padding: 10px 16px; font-size: 0.95rem; outline: none; resize: none; max-height: 120px; min-height: 42px; line-height: 1.4; font-family: inherit; transition: border-color 0.2s; }
@@ -181,7 +178,6 @@
   #lightbox.open { opacity: 1; pointer-events: all; }
   #lightbox img, #lightbox video { max-width: 90vw; max-height: 85vh; object-fit: contain; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
   #lightbox .close-lb { position: absolute; top: 52px; right: 20px; background: none; border: none; color: white; font-size: 2rem; cursor: pointer; z-index: 101; padding: 8px; }
-  /* ── 묶음 사진 라이트박스 좌우 넘기기 ── */
   #lightbox .lb-nav {
     position: absolute; top: 50%; transform: translateY(-50%);
     width: 46px; height: 46px; border-radius: 50%;
@@ -197,7 +193,6 @@
     background: rgba(0,0,0,0.4); padding: 4px 12px; border-radius: 12px;
     display: none; z-index: 101;
   }
-
 
   /* ── INCOMING CALL ── */
   #incomingCall { position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 200; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 1.5rem; }
@@ -216,7 +211,6 @@
   .profile-avatar-lg { width: 88px; height: 88px; border-radius: 50%; background: var(--surface2); border: 2px solid var(--border); overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
   .profile-avatar-lg img { width: 100%; height: 100%; object-fit: cover; }
   .profile-section { background: var(--surface); border-radius: 16px; overflow: hidden; }
-  .profile-section { background: var(--surface); border-radius: 16px; overflow: hidden; }
   .profile-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); gap: 12px; }
   .profile-row:last-child { border-bottom: none; }
   .profile-row-label { font-size: 0.9rem; color: var(--text2); }
@@ -230,7 +224,6 @@
   .toggle-sw input:checked + .slider { background: rgba(200,169,126,0.2); border-color: var(--accent); }
   .toggle-sw input:checked + .slider::before { transform: translateX(20px); background: var(--accent); }
 
-  /* ── 테마 선택 UI ── */
   .theme-row { display: flex; gap: 12px; padding: 4px 0; flex-wrap: wrap; }
   .theme-dot {
     width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
@@ -260,7 +253,6 @@
   }
   .me .msg-quote { border-left: none; border-right: 3px solid var(--accent2); text-align: right; }
 
-  /* ── 최신 메시지 버튼 ── */
   .scroll-bottom-btn {
     position: absolute; bottom: 12px; right: 12px;
     width: 36px; height: 36px; border-radius: 50%;
@@ -274,7 +266,6 @@
   .scroll-bottom-btn.show { display: flex; }
 
   /* ── 날짜 구분선 ── */
-  /* [버그 수정] 플렉스 컨테이너 안에서 가로 한계를 넘지 않도록 구조 명시 */
   .date-sep {
     text-align: center; padding: 12px 0 4px;
     font-size: 0.7rem; color: var(--text2);
@@ -304,7 +295,7 @@
   .search-count { font-size: 0.75rem; color: var(--text2); white-space: nowrap; }
   .msg-highlight { background: rgba(200,169,126,0.25); border-radius: 8px; }
 
-  /* ── 컨텍스트 메뉴 (길게 누름) ── */
+  /* ── 컨텍스트 메뉴 ── */
   #ctxMenu {
     position: fixed; z-index: 400;
     background: var(--surface); border: 1px solid var(--border);
@@ -324,7 +315,7 @@
   .ctx-item:active { background: var(--surface2); }
   .ctx-item svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; }
 
-  /* ── 보관함 탭 ── */
+  /* ── 보관함 ── */
   .archive-list { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
   .archive-list::-webkit-scrollbar { display: none; }
   .archive-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text2); font-size: 0.9rem; }
@@ -400,7 +391,9 @@
         <button class="search-nav" onclick="toggleSearch()">✕</button>
       </div>
       <div style="position:relative;flex:1;display:flex;flex-direction:column;overflow:hidden">
-        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-messages" id="chatMessages">
+          <div id="topSentinel" style="height: 10px; flex-shrink: 0; opacity: 0; pointer-events: none;"></div>
+        </div>
         <button class="scroll-bottom-btn" id="scrollBottomBtn" onclick="scrollToLatest()">↓</button>
       </div>
       <div class="reply-bar" id="replyBar">
@@ -548,12 +541,12 @@
 <div id="toast"></div>
 
 <script type="module">
-import { initializeApp }                                    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { initializeApp }                                     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup,
          onAuthStateChanged, signOut }
                                                             from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getDatabase, ref, set, push, onValue, onChildAdded, onChildChanged,
-         onDisconnect, serverTimestamp }                    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+         onDisconnect, serverTimestamp, query, orderByKey, limitToLast, endBefore, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 import { getStorage, ref as sRef,
          uploadBytesResumable, getDownloadURL }             from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 import { getMessaging, getToken }                           from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
@@ -580,7 +573,6 @@ const db      = getDatabase(app);
 const storage = getStorage(app);
 const messaging = getMessaging(app);
 
-// ── FCM 푸시 알림 상태 (모듈 스코프 안에서 관리) ──
 let notifEnabled = false;
 let enterTime = 0;
 let swRegistration = null;
@@ -590,7 +582,6 @@ document.addEventListener('visibilitychange', () => { appHasFocus = document.vis
 window.addEventListener('blur', () => { appHasFocus = false; });
 window.addEventListener('focus', () => { appHasFocus = true; });
 
-// SW 등록을 Promise로 관리 — getToken에 직접 넘겨서 FCM이 자체 등록 시도하지 않도록 함
 const swReadyPromise = ('serviceWorker' in navigator)
   ? navigator.serviceWorker.register('./firebase-messaging-sw.js')
       .then(reg => { swRegistration = reg; return reg; })
@@ -599,8 +590,6 @@ const swReadyPromise = ('serviceWorker' in navigator)
 
 const VAPID_KEY = 'BKvA2crddS7igPxkQbnuVjN93065I97kfjX8AlQ7OJwkOZWzn8XO8yklEbjmSfsYYhz7lwdwiKFc7wxvXOpPNEE';
 
-// SW 등록을 기다린 뒤 FCM 토큰 발급 — serviceWorkerRegistration을 명시해서
-// Firebase가 /firebase-messaging-sw.js 를 루트에서 재탐색하는 것을 막음
 async function getFCMToken() {
   const reg = await swReadyPromise;
   if (!reg) throw new Error('Service Worker 등록 실패 — firebase-messaging-sw.js를 확인하세요');
@@ -675,6 +664,15 @@ let partnerLastRead = 0;
 const CHECK_SINGLE = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
 const CHECK_DOUBLE = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 6 7 17 2 12"/><polyline points="23 6 12 17"/></svg>`;
 
+// 무한 스크롤 및 상태 관리 전역 변수
+window._loadedMessages = {};
+const seenKeys = new Set();
+let oldestKey = null;
+let loadingOlder = false;
+let hasMoreOlder = true;
+let liveLastDateStr = '';
+let topObserver = null;
+
 function sanitize(str) {
   if (!str) return '';
   if (str.startsWith('http://') || str.startsWith('https://')) return str;
@@ -686,7 +684,6 @@ function showScreen(id) {
   document.getElementById(id).classList.remove('hidden');
 }
 
-// ── 테마 ──
 const THEME_IDS = ['dark','rose','skyblue','purple','cream'];
 window.setTheme = function(theme) {
   document.body.className = theme === 'dark' ? '' : `theme-${theme}`;
@@ -757,13 +754,31 @@ function enterRoom() {
     } else {
       el.textContent = sanitize(partner.name) + ' 오프라인';
     }
-
   });
 
-  const seenKeys = new Set();
   let latestTheirTs = 0;
   let lastReadTimer = null;
   const container = document.getElementById('chatMessages');
+
+  // 단 1개의 이벤트 위임으로 메모리 제로화 (업계 표준)
+  let pressTimer;
+  container.addEventListener('touchstart', e => {
+    const wrap = e.target.closest('.msg-wrap');
+    if (!wrap || !wrap.dataset.key) return;
+    const key = wrap.dataset.key;
+    const msg = window._loadedMessages[key];
+    if (!msg || msg.type !== 'text') return;
+    pressTimer = setTimeout(() => showCtxMenu(msg, wrap), 500);
+  }, { passive: true });
+  container.addEventListener('touchend', () => clearTimeout(pressTimer), { passive: true });
+  container.addEventListener('touchmove', () => clearTimeout(pressTimer), { passive: true });
+  container.addEventListener('dblclick', e => {
+    const wrap = e.target.closest('.msg-wrap');
+    if (!wrap || !wrap.dataset.key) return;
+    const key = wrap.dataset.key;
+    const msg = window._loadedMessages[key];
+    if (msg && msg.type === 'text') setReply(msg);
+  });
 
   function updateMyLastRead(ts) {
     if (ts <= 0 || ts === window._myLastReadSent) return;
@@ -774,12 +789,19 @@ function enterRoom() {
     }, 500);
   }
 
-  onChildAdded(ref(db, `${ROOM_ID}/messages`), snap => {
+  const messagesRef = ref(db, `${ROOM_ID}/messages`);
+  const initialQuery = query(messagesRef, orderByKey(), limitToLast(50));
+
+  let initialLoadDone = false;
+  
+  onChildAdded(initialQuery, snap => {
     const key = snap.key;
     if (seenKeys.has(key)) return;
     seenKeys.add(key);
 
     const msg = snap.val();
+    if (!oldestKey) oldestKey = key; 
+
     renderMessage(msg, key);
 
     if (msg.uid !== me.name && msg.ts > latestTheirTs) {
@@ -790,11 +812,22 @@ function enterRoom() {
         else sendLocalNotif(msg.name, mediaLabel(msg));
       }
     }
+    
+    // 초기 로딩 후 센티널 옵저버 단 1회 세팅
+    if (!initialLoadDone) {
+      clearTimeout(window._initObsTimer);
+      window._initObsTimer = setTimeout(() => {
+        initialLoadDone = true;
+        setupTopObserver();
+      }, 500);
+    }
   });
 
-  onChildChanged(ref(db, `${ROOM_ID}/messages`), snap => {
+  onChildChanged(messagesRef, snap => {
     const key = snap.key;
     const msg = snap.val();
+    if (window._loadedMessages[key]) window._loadedMessages[key].translation = msg.translation;
+    
     const el = container.querySelector(`[data-key="${key}"]`);
     if (!el || !msg.translation || !translateEnabled) return;
 
@@ -843,8 +876,115 @@ function enterRoom() {
   showScreen('mainScreen');
 }
 
+// ⭐️ 절대 실패하지 않는 영구 감시 센티널 패턴 (Observer)
+function setupTopObserver() {
+  const sentinel = document.getElementById('topSentinel');
+  if (!sentinel) return;
+  
+  if (!topObserver) {
+    topObserver = new IntersectionObserver((entries) => {
+      // 센티널이 뷰포트에 들어오면 무조건 과거 데이터 로드 실행
+      if (entries[0].isIntersecting && !loadingOlder && hasMoreOlder) {
+        loadOlderMessages();
+      }
+    }, { root: document.getElementById('chatMessages'), rootMargin: '100px' });
+  }
+  // 타겟을 해제하거나 바꿀 필요가 전혀 없음. 평생 센티널만 감시.
+  topObserver.observe(sentinel);
+}
+
+// ⭐️ 스크롤 튕김 및 날짜 꼬임이 완벽하게 박멸된 역순 렌더링 엔진
+async function loadOlderMessages() {
+  if (loadingOlder || !hasMoreOlder || !oldestKey) return;
+  loadingOlder = true;
+  
+  const cm = document.getElementById('chatMessages');
+  const sentinel = document.getElementById('topSentinel');
+  
+  try {
+    const messagesRef = ref(db, `${ROOM_ID}/messages`);
+    const olderQuery = query(messagesRef, orderByKey(), endBefore(oldestKey), limitToLast(20));
+    const snapshot = await get(olderQuery);
+    
+    if (!snapshot.exists()) {
+      hasMoreOlder = false;
+      loadingOlder = false;
+      return;
+    }
+    
+    const children = [];
+    snapshot.forEach(child => {
+      children.push({ key: child.key, val: child.val() });
+    });
+    
+    if (children.length < 20) hasMoreOlder = false;
+    if (children.length === 0) { loadingOlder = false; return; }
+    
+    oldestKey = children[0].key;
+    
+    // [경계선 복구 로직] 센티널 바로 이전 요소가 날짜 구분선이라면 임시 삭제 (날짜 병합을 위해)
+    const currentOldestDOM = sentinel.previousElementSibling;
+    if (currentOldestDOM && currentOldestDOM.classList.contains('date-sep')) {
+      cm.removeChild(currentOldestDOM);
+    }
+    
+    // 남아있는 것 중 가장 오래된 메시지의 날짜 파악
+    const wraps = cm.querySelectorAll('.msg-wrap');
+    const currentOldestWrap = wraps.length > 0 ? wraps[wraps.length - 1] : null;
+    let nextGroupDate = currentOldestWrap ? currentOldestWrap.dataset.date : '';
+    
+    const fragment = document.createDocumentFragment();
+    
+    for (let i = children.length - 1; i >= 0; i--) {
+      const item = children[i];
+      const msg = item.val;
+      const key = item.key;
+      
+      const wrap = createMessageElement(msg, key);
+      const currentDateStr = getDateStr(msg.ts);
+      wrap.dataset.date = currentDateStr;
+      
+      // 구데이터와 신데이터 경계선 병합 판단
+      if (i === children.length - 1 && nextGroupDate && currentDateStr !== nextGroupDate) {
+        const sep = document.createElement('div');
+        sep.className = 'date-sep';
+        sep.textContent = nextGroupDate;
+        fragment.appendChild(sep);
+      }
+      
+      fragment.appendChild(wrap);
+      
+      // 이번에 로드된 묶음 안에서의 날짜 구분 처리
+      const nextMsg = children[i - 1];
+      if (nextMsg) {
+        const nextDateStr = getDateStr(nextMsg.val.ts);
+        if (currentDateStr !== nextDateStr) {
+          const sep = document.createElement('div');
+          sep.className = 'date-sep';
+          sep.textContent = currentDateStr;
+          fragment.appendChild(sep);
+        }
+      } else {
+        // 가장 오래된 꼭대기 날짜 처리
+        const sep = document.createElement('div');
+        sep.className = 'date-sep';
+        sep.textContent = currentDateStr;
+        fragment.appendChild(sep);
+      }
+    }
+    
+    // 센티널의 '앞'에 끼워넣기 -> 스크롤 유지 + 센티널은 언제나 최상단(DOM 마지막) 유지
+    cm.insertBefore(fragment, sentinel);
+    
+  } catch (err) {
+    console.error('과거 메시지 로드 실패:', err);
+  } finally {
+    // 레이아웃이 완전히 그려질 시간을 주고 Lock 해제
+    requestAnimationFrame(() => { loadingOlder = false; });
+  }
+}
+
 async function translate(text, src, tgt) {
-  // 1차: 비공식 Google Translate (품질 높음, 무료)
   try {
     const url  = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${src}&tl=${tgt}&dt=t&q=${encodeURIComponent(text)}`;
     const res  = await fetch(url);
@@ -855,7 +995,6 @@ async function translate(text, src, tgt) {
     }
   } catch {}
 
-  // 2차 폴백: MyMemory
   try {
     const res  = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${src}|${tgt}`);
     const data = await res.json();
@@ -865,7 +1004,6 @@ async function translate(text, src, tgt) {
   return null;
 }
 
-// ── 답장 ──
 let replyTo = null;
 
 window.setReply = function(msg) {
@@ -886,7 +1024,8 @@ window.sendMessage = async function() {
   const input = document.getElementById('msgInput');
   const text  = input.value.trim();
   if (!text) return;
-  input.value = ''; input.style.height = 'auto';
+  input.value = ''; input.style.height = '42px';
+  input._lastVal = ''; // 캐시 리셋
 
   let translation = null;
   if (translateEnabled) {
@@ -905,9 +1044,17 @@ window.sendMessage = async function() {
 };
 
 window.handleKey  = e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendMessage(); } };
-window.autoResize = el => { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; };
 
-// 미디어 메시지(사진/영상/묶음사진)의 대표 라벨 텍스트
+// ⭐️ 타이핑 렉(Layout Thrashing)을 원천 차단하는 requestAnimationFrame 디바운싱
+window.autoResize = el => {
+  if (el._lastVal === el.value) return; 
+  el._lastVal = el.value;
+  requestAnimationFrame(() => {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  });
+};
+
 function mediaLabel(msg) {
   if (!msg) return '';
   if (msg.type === 'image') return '📷 사진';
@@ -919,24 +1066,11 @@ function mediaLabel(msg) {
   return '';
 }
 
-function renderMessage(msg, key) {
-  const container = document.getElementById('chatMessages');
-  if (msg.type === 'system') {
-    const d = document.createElement('div'); d.className = 'system-msg'; d.textContent = msg.text; container.prepend(d); return;
-  }
+function createMessageElement(msg, key) {
   const isMe = msg.uid === me.name;
-  const wrap = document.createElement('div'); wrap.className = `msg-wrap ${isMe ? 'me' : 'them'}`;
+  const wrap = document.createElement('div');
+  wrap.className = `msg-wrap ${isMe ? 'me' : 'them'}`;
   if (key) wrap.dataset.key = key;
-
-  if (msg.type === 'text') {
-    let pressTimer;
-    wrap.addEventListener('touchstart', () => {
-      pressTimer = setTimeout(() => showCtxMenu(msg, wrap), 500);
-    }, { passive: true });
-    wrap.addEventListener('touchend',  () => clearTimeout(pressTimer), { passive: true });
-    wrap.addEventListener('touchmove', () => clearTimeout(pressTimer), { passive: true });
-    wrap.addEventListener('dblclick',  () => setReply(msg));
-  }
 
   if (!isMe) {
     const s = document.createElement('div'); s.className = 'msg-sender';
@@ -1013,14 +1147,34 @@ function renderMessage(msg, key) {
     t.appendChild(check);
   }
   wrap.appendChild(t);
+
+  window._loadedMessages[key] = msg;
+  return wrap;
+}
+
+function renderMessage(msg, key) {
+  const container = document.getElementById('chatMessages');
+  if (msg.type === 'system') {
+    const d = document.createElement('div'); d.className = 'system-msg'; d.textContent = msg.text; container.prepend(d); return;
+  }
+  
+  if (container.querySelector(`[data-key="${key}"]`)) return;
+
+  const wrap = createMessageElement(msg, key);
+  wrap.dataset.date = getDateStr(msg.ts);
   container.prepend(wrap);
 
-  insertDateSep(container, wrap, msg.ts);
+  if (wrap.dataset.date !== liveLastDateStr) {
+    liveLastDateStr = wrap.dataset.date;
+    const sep = document.createElement('div');
+    sep.className = 'date-sep';
+    sep.textContent = wrap.dataset.date;
+    wrap.after(sep);
+  }
 }
 
 const fmt = ts => { const d = new Date(ts); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
 
-// 파일 1개를 Storage에 업로드하고 {url, type}을 반환
 function uploadOneFile(file, progressPrefix) {
   return new Promise((resolve, reject) => {
     const isVideo = file.type.startsWith('video/');
@@ -1039,7 +1193,6 @@ function uploadOneFile(file, progressPrefix) {
   });
 }
 
-// 사진/영상 1개 전송 (기존 동작 그대로 유지)
 async function sendSingleMedia(file) {
   showToast('업로드 중...');
   try {
@@ -1053,7 +1206,6 @@ async function sendSingleMedia(file) {
   }
 }
 
-// 사진/영상 여러 개를 하나의 묶음(album) 메시지로 전송 (카카오톡/라인 식 묶어보내기)
 async function sendMediaGroup(files) {
   const total = files.length;
   const items = [];
@@ -1099,8 +1251,7 @@ function updateAlbum(media) {
   });
 }
 
-// items/index가 주어지면 묶음사진처럼 좌우로 넘겨볼 수 있는 갤러리 모드로 동작
-let lightboxGallery = null; // { items: [{type,url}], index }
+let lightboxGallery = null;
 
 function renderLightboxItem(type, url) {
   const c = document.getElementById('lightboxContent'); c.innerHTML = '';
@@ -1154,7 +1305,6 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// ── Jitsi Meet 통화 ──
 const JITSI_DOMAIN = 'meet.jit.si';
 const JITSI_ROOM_PREFIX = 'memo-private-kv-mm';
 
@@ -1233,26 +1383,14 @@ window.doLogout = async () => {
   await signOut(auth);
 };
 
-// ── 날짜 구분선 ──
-let lastDateStr = '';
 function getDateStr(ts) {
   const d = new Date(ts);
   const days = ['일','월','화','수','목','금','토'];
   return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 ${days[d.getDay()]}요일`;
 }
-function insertDateSep(container, wrap, ts) {
-  const dateStr = getDateStr(ts);
-  if (dateStr !== lastDateStr) {
-    lastDateStr = dateStr;
-    const sep = document.createElement('div');
-    sep.className = 'date-sep';
-    sep.textContent = dateStr;
-    wrap.after(sep);
-  }
-}
 
-// ── 최신 메시지 버튼 ──
 window.scrollToLatest = function() { document.getElementById('chatMessages').scrollTop = 0; };
+
 document.addEventListener('DOMContentLoaded', () => {
   const cm = document.getElementById('chatMessages');
   const btn = document.getElementById('scrollBottomBtn');
@@ -1263,7 +1401,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// ── 메시지 검색 ──
 let searchMatches = [];
 let searchIdx = -1;
 window.toggleSearch = function() {
@@ -1304,18 +1441,17 @@ function clearSearch() {
   searchMatches = []; searchIdx = -1;
 }
 function clearSearchHighlights() { document.querySelectorAll('.msg-highlight').forEach(el => el.classList.remove('msg-highlight')); }
-// ── 컨텍스트 메뉴 ──
+
 let ctxTargetMsg = null;
 const ctxMenu = document.getElementById('ctxMenu');
 
 function showCtxMenu(msg, wrap) {
   ctxTargetMsg = msg;
   const rect = wrap.getBoundingClientRect();
-  const menuH = 100; // 버튼 2개 예상 높이
+  const menuH = 100;
   let top = rect.bottom + 6;
   if (top + menuH > window.innerHeight - 20) top = rect.top - menuH - 6;
   ctxMenu.style.top  = `${top}px`;
-  // 말풍선 좌우 위치 맞춤
   const isMe = msg.uid === me.name;
   if (isMe) {
     ctxMenu.style.right = `${window.innerWidth - rect.right}px`;
@@ -1340,7 +1476,6 @@ document.getElementById('ctxArchive').addEventListener('click', () => {
   hideCtxMenu();
 });
 
-// 메뉴 바깥 터치 시 닫기
 document.addEventListener('touchstart', e => {
   if (ctxMenu.classList.contains('show') && !ctxMenu.contains(e.target)) hideCtxMenu();
 }, { passive: true });
@@ -1348,7 +1483,6 @@ document.addEventListener('click', e => {
   if (ctxMenu.classList.contains('show') && !ctxMenu.contains(e.target)) hideCtxMenu();
 });
 
-// ── 보관함 ──
 function archivePath() { return `${ROOM_ID}/archive/${me.name}`; }
 
 async function saveToArchive(msg) {
