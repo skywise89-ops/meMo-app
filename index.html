@@ -536,8 +536,8 @@ import { initializeApp }                                    from 'https://www.gs
 import { getAuth, GoogleAuthProvider, signInWithPopup,
          onAuthStateChanged, signOut }
                                                             from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getDatabase, ref, set, push, onValue, onChildAdded, onChildChanged,
-         onDisconnect, serverTimestamp, query, limitToLast } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+import { getDatabase, ref, set, push, get, onValue, onChildAdded, onChildChanged,
+         onDisconnect, serverTimestamp, query, limitToLast, orderByKey, endBefore } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 import { getStorage, ref as sRef,
          uploadBytesResumable, getDownloadURL }             from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
 import { getMessaging, getToken }                           from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
@@ -739,13 +739,21 @@ function enterRoom() {
     }, 500);
   }
 
-  // ── [최적화] limitToLast(MSG_LIMIT) — 최근 100개만 구독 ──
+  // ── [최적화] limitToLast(MSG_LIMIT) — 최근 100개만 실시간 구독 ──
+  // 페이지네이션 상태
+  let oldestKey = null;
+  let isLoadingMore = false;
+  let noMoreOldMessages = false;
+  const LOAD_MORE = 30;
+
   const msgsQuery = query(ref(db, `${ROOM_ID}/messages`), limitToLast(MSG_LIMIT));
 
   onChildAdded(msgsQuery, snap => {
     const key = snap.key;
     if (seenKeys.has(key)) return;
     seenKeys.add(key);
+    // onChildAdded는 오래된→최신 순으로 호출되므로 첫 번째 key가 가장 오래됨
+    if (oldestKey === null) oldestKey = key;
 
     const msg = snap.val();
     renderMessage(msg, key);
@@ -759,6 +767,49 @@ function enterRoom() {
       }
     }
   });
+
+  // ── 과거 메시지 추가 로드 ──
+  async function loadMoreMessages() {
+    if (isLoadingMore || noMoreOldMessages || !oldestKey) return;
+    isLoadingMore = true;
+    const olderQuery = query(
+      ref(db, `${ROOM_ID}/messages`),
+      orderByKey(),
+      endBefore(oldestKey),
+      limitToLast(LOAD_MORE)
+    );
+    try {
+      const snap = await get(olderQuery);
+      if (!snap.exists()) { noMoreOldMessages = true; isLoadingMore = false; return; }
+      const entries = [];
+      snap.forEach(child => entries.push({ key: child.key, val: child.val() }));
+      if (entries.length === 0) { noMoreOldMessages = true; isLoadingMore = false; return; }
+      if (entries.length < LOAD_MORE) noMoreOldMessages = true;
+
+      // 현재 DOM 가장 아래(가장 오래된) 메시지의 날짜로 lastRenderedDateStr 동기화
+      const currentOldestEl = container.querySelector(`.msg-wrap[data-key="${oldestKey}"]`);
+      if (currentOldestEl) {
+        const tsEl = currentOldestEl.querySelector('.msg-time[data-ts]');
+        if (tsEl) lastRenderedDateStr = getDateStr(parseInt(tsEl.dataset.ts));
+      }
+
+      // 오래된 순(entries[0]이 가장 오래됨)으로 prepend
+      for (const { key, val: msg } of entries) {
+        if (seenKeys.has(key)) continue;
+        seenKeys.add(key);
+        renderMessage(msg, key);
+      }
+      if (entries.length > 0) oldestKey = entries[0].key;
+    } catch (e) { console.warn('[loadMore]', e); }
+    isLoadingMore = false;
+  }
+
+  // column-reverse에서 상단 도달 감지:
+  // scrollHeight - clientHeight - |scrollTop| 가 0에 가까워지면 위쪽 끝(오래된 메시지 방향)
+  container.addEventListener('scroll', () => {
+    const distanceFromTop = container.scrollHeight + container.scrollTop - container.clientHeight;
+    if (distanceFromTop < 120) loadMoreMessages();
+  }, { passive: true });
 
   onChildChanged(msgsQuery, snap => {
     const key = snap.key;
@@ -892,26 +943,27 @@ function mediaLabel(msg) {
   return '';
 }
 
-// ── [최적화] 날짜 구분선: 삽입 전 기존 구분선 중복 체크 ──
-// column-reverse 환경에서 prepend는 시각적으로 아래에 오래된 것이 쌓임.
-// 날짜가 바뀌는 경계에만 구분선을 넣기 위해, 삽입 후 wrap의 nextSibling(시각상 위)의
-// 날짜와 현재 날짜가 다를 때만 구분선을 추가한다.
+// ── 날짜 구분선 ──
+// column-reverse + prepend 환경:
+//   - 메시지는 최신이 위(DOM 상단), 오래된 것이 아래(DOM 하단)로 쌓임
+//   - prepend할 때마다 "현재 렌더 중인 메시지"와 "직전에 렌더된 메시지(DOM상 nextSibling)"의
+//     날짜가 달라지는 순간 구분선을 wrap.after()로 삽입 (시각적으로 오래된 메시지 위에 표시)
+// lastRenderedDateStr: 가장 최근에 prepend된 메시지의 날짜를 추적
+// 초기 로드(오래된→최신 순으로 onChildAdded 호출) 시에는 매 호출마다 날짜가 바뀔 수 있으므로
+// 배치가 끝난 뒤의 날짜 문자열을 저장해두고, 다음 prepend 시 비교한다.
+let lastRenderedDateStr = '';
 function insertDateSep(container, wrap, ts) {
   const dateStr = getDateStr(ts);
-  // wrap 바로 뒤(DOM 순서상 다음 = 시간상 더 이전) 요소를 확인
-  const nextEl = wrap.nextElementSibling;
-  // 이미 같은 날짜의 구분선이 바로 뒤에 있으면 중복 삽입 안 함
-  if (nextEl && nextEl.classList.contains('date-sep') && nextEl.textContent === dateStr) return;
-  // 바로 뒤 메시지 wrap이 같은 날짜면 구분선 불필요
-  if (nextEl && nextEl.classList.contains('msg-wrap')) {
-    const nextTs = parseInt(nextEl.querySelector('[data-ts]')?.dataset?.ts || '0');
-    if (nextTs && getDateStr(nextTs) === dateStr) return;
+  if (dateStr !== lastRenderedDateStr) {
+    // 날짜가 바뀌었다 → 구분선을 현재 wrap 바로 뒤(시각상 아래, 즉 이전 날짜 쪽)에 삽입
+    const sep = document.createElement('div');
+    sep.className = 'date-sep';
+    sep.textContent = dateStr;
+    wrap.after(sep);
+    lastRenderedDateStr = dateStr;
   }
-  const sep = document.createElement('div');
-  sep.className = 'date-sep';
-  sep.textContent = dateStr;
-  wrap.after(sep);
 }
+function resetDateSep() { lastRenderedDateStr = ''; }
 
 function renderMessage(msg, key) {
   const container = document.getElementById('chatMessages');
@@ -997,7 +1049,7 @@ function renderMessage(msg, key) {
     const tr = document.createElement('div'); tr.className = 'msg-translation'; tr.textContent = msg.translation; wrap.appendChild(tr);
   }
 
-  const t = document.createElement('div'); t.className = 'msg-time';
+  const t = document.createElement('div'); t.className = 'msg-time'; t.dataset.ts = msg.ts;
   t.appendChild(document.createTextNode(fmt(msg.ts)));
   if (isMe) {
     const check = document.createElement('span');
