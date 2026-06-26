@@ -136,7 +136,7 @@
     line-height: 1.4; pointer-events: none;
   }
   
-  .system-msg { text-align: center; color: var(--text2); font-size: 0.75rem; padding: 4px 0; width: 100%; box-sizing: border-box; }
+  .system-msg { text-align: center; color: var(--text2); font-size: 0.75rem; padding: 12px 0; width: 100%; box-sizing: border-box; }
   .chat-input-wrap { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px; padding-bottom: calc(10px + var(--safe-bottom)); background: var(--surface); border-top: 1px solid var(--border); flex-shrink: 0; }
   .chat-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 22px; color: var(--text); padding: 10px 16px; font-size: 0.95rem; outline: none; resize: none; max-height: 120px; min-height: 42px; line-height: 1.4; font-family: inherit; transition: border-color 0.2s; }
   .chat-input:focus { border-color: var(--accent); }
@@ -156,22 +156,34 @@
     align-content: start;
   }
   @media (min-width: 600px) {
-    .album-grid {
-      grid-template-columns: repeat(4, 1fr);
-      grid-auto-rows: calc((100vw - 6px) / 4);
-    }
-  }
-  @media (min-width: 1024px) {
-    .album-grid {
-      grid-template-columns: repeat(5, 1fr);
-      grid-auto-rows: calc((100vw - 8px) / 5);
-    }
+    .album-grid { grid-template-columns: repeat(4, 1fr); grid-auto-rows: calc((100vw - 6px) / 4); }
   }
   .album-item { overflow: hidden; position: relative; cursor: pointer; background: var(--surface); }
   .album-item img, .album-item video { width: 100%; height: 100%; object-fit: cover; display: block; }
   .album-item .play-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); }
   .album-item .play-icon svg { width: 32px; height: 32px; fill: rgba(255,255,255,0.9); }
   .album-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text2); font-size: 0.9rem; }
+
+  /* ── TODO LIST ── */
+  .todo-container { flex: 1; overflow-y: auto; padding: 20px 16px; display: flex; flex-direction: column; gap: 24px; }
+  .todo-input-wrap { display: flex; gap: 8px; margin-bottom: 8px; }
+  .todo-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; color: var(--text); font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
+  .todo-input:focus { border-color: var(--accent); }
+  .todo-add-btn { background: var(--accent); color: var(--bg); border: none; border-radius: 12px; padding: 0 18px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: transform 0.1s; }
+  .todo-add-btn:active { transform: scale(0.95); }
+  .todo-section-title { font-size: 0.85rem; color: var(--text2); margin-bottom: 12px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+  .todo-section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .todo-list { display: flex; flex-direction: column; gap: 10px; }
+  .todo-item { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; display: flex; gap: 14px; align-items: flex-start; transition: opacity 0.2s; }
+  .todo-checkbox { width: 24px; height: 24px; border: 2px solid var(--text2); border-radius: 50%; flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .todo-item.done .todo-checkbox { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+  .todo-text { flex: 1; font-size: 0.95rem; line-height: 1.4; word-break: break-word; color: var(--text); transition: color 0.2s; }
+  .todo-item.done .todo-text { text-decoration: line-through; color: var(--text2); }
+  .todo-meta { font-size: 0.72rem; color: var(--text2); margin-top: 6px; }
+  .todo-proof-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); padding: 8px 14px; border-radius: 10px; font-size: 0.8rem; cursor: pointer; margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; transition: color 0.2s, border-color 0.2s; }
+  .todo-proof-btn:active { background: var(--surface); color: var(--accent); border-color: var(--accent); }
+  .todo-proof-media { width: 100%; max-height: 200px; border-radius: 10px; object-fit: cover; margin-top: 12px; cursor: pointer; border: 1px solid var(--border); display: block; }
+  .todo-empty { text-align: center; color: var(--text2); font-size: 0.85rem; padding: 20px 0; }
 
   /* ── LIGHTBOX ── */
   #lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
@@ -206,7 +218,7 @@
   .inc-btn.accept { background: #4a7a4a; }
   .inc-btn.reject { background: var(--danger); }
 
-  /* ── PROFILE ── */
+  /* ── PROFILE & OTHER ── */
   .profile-header { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 20px 0; }
   .profile-avatar-lg { width: 88px; height: 88px; border-radius: 50%; background: var(--surface2); border: 2px solid var(--border); overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
   .profile-avatar-lg img { width: 100%; height: 100%; object-fit: cover; }
@@ -225,115 +237,49 @@
   .toggle-sw input:checked + .slider::before { transform: translateX(20px); background: var(--accent); }
 
   .theme-row { display: flex; gap: 12px; padding: 4px 0; flex-wrap: wrap; }
-  .theme-dot {
-    width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
-    border: 3px solid transparent; transition: transform 0.15s, border-color 0.15s;
-    display: flex; align-items: center; justify-content: center; font-size: 1rem;
-    flex-shrink: 0;
-  }
+  .theme-dot { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: transform 0.15s, border-color 0.15s; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
   .theme-dot:active { transform: scale(0.88); }
   .theme-dot.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
 
-  /* ── 답장 ── */
-  .reply-bar {
-    display: none; align-items: center; gap: 8px;
-    background: var(--surface2); border-left: 3px solid var(--accent);
-    padding: 8px 14px; font-size: 0.8rem; color: var(--text2);
-    flex-shrink: 0;
-  }
+  .reply-bar { display: none; align-items: center; gap: 8px; background: var(--surface2); border-left: 3px solid var(--accent); padding: 8px 14px; font-size: 0.8rem; color: var(--text2); flex-shrink: 0; }
   .reply-bar.show { display: flex; }
   .reply-bar-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .reply-bar-cancel { background: none; border: none; color: var(--text2); font-size: 1.1rem; cursor: pointer; padding: 0 4px; line-height: 1; }
-  .msg-quote {
-    background: var(--surface2); border-left: 3px solid var(--accent);
-    border-radius: 6px; padding: 5px 10px; margin-bottom: 5px;
-    font-size: 0.75rem; color: var(--text2);
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    max-width: 100%;
-  }
+  .msg-quote { background: var(--surface2); border-left: 3px solid var(--accent); border-radius: 6px; padding: 5px 10px; margin-bottom: 5px; font-size: 0.75rem; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
   .me .msg-quote { border-left: none; border-right: 3px solid var(--accent2); text-align: right; }
 
-  .scroll-bottom-btn {
-    position: absolute; bottom: 12px; right: 12px;
-    width: 36px; height: 36px; border-radius: 50%;
-    background: var(--surface); border: 1px solid var(--border);
-    color: var(--text2); cursor: pointer;
-    display: none; align-items: center; justify-content: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3); z-index: 5;
-    transition: opacity 0.2s;
-    font-size: 1rem;
-  }
+  .scroll-bottom-btn { position: absolute; bottom: 12px; right: 12px; width: 36px; height: 36px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); color: var(--text2); cursor: pointer; display: none; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); z-index: 5; transition: opacity 0.2s; font-size: 1rem; }
   .scroll-bottom-btn.show { display: flex; }
 
-  /* ── 날짜 구분선 ── */
-  .date-sep {
-    text-align: center; padding: 12px 0 4px;
-    font-size: 0.7rem; color: var(--text2);
-    display: flex; align-items: center; gap: 12px;
-    width: 100%; box-sizing: border-box;
-  }
-  .date-sep::before, .date-sep::after {
-    content: ''; flex: 1; height: 1px;
-    background: var(--border);
-  }
+  .date-sep { text-align: center; padding: 12px 0 4px; font-size: 0.7rem; color: var(--text2); display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; }
+  .date-sep::before, .date-sep::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-  /* ── 검색바 ── */
-  .search-bar {
-    display: none; gap: 8px; align-items: center;
-    padding: 8px 12px; background: var(--surface);
-    border-bottom: 1px solid var(--border); flex-shrink: 0;
-  }
+  .search-bar { display: none; gap: 8px; align-items: center; padding: 8px 12px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
   .search-bar.show { display: flex; }
-  .search-input {
-    flex: 1; background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 18px; color: var(--text); padding: 8px 14px;
-    font-size: 0.85rem; outline: none; font-family: inherit;
-  }
+  .search-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 18px; color: var(--text); padding: 8px 14px; font-size: 0.85rem; outline: none; font-family: inherit; }
   .search-input:focus { border-color: var(--accent); }
   .search-nav { background: none; border: none; color: var(--text2); font-size: 1.1rem; cursor: pointer; padding: 4px 6px; }
   .search-nav:active { color: var(--accent); }
   .search-count { font-size: 0.75rem; color: var(--text2); white-space: nowrap; }
   .msg-highlight { background: rgba(200,169,126,0.25); border-radius: 8px; }
 
-  /* ── 컨텍스트 메뉴 ── */
-  #ctxMenu {
-    position: fixed; z-index: 400;
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 14px; overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-    display: none; flex-direction: column; min-width: 140px;
-  }
+  #ctxMenu { position: fixed; z-index: 400; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4); display: none; flex-direction: column; min-width: 140px; }
   #ctxMenu.show { display: flex; }
-  .ctx-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 14px 18px; background: none; border: none;
-    color: var(--text); font-size: 0.9rem; cursor: pointer;
-    text-align: left; border-bottom: 1px solid var(--border);
-    transition: background 0.15s;
-  }
+  .ctx-item { display: flex; align-items: center; gap: 10px; padding: 14px 18px; background: none; border: none; color: var(--text); font-size: 0.9rem; cursor: pointer; text-align: left; border-bottom: 1px solid var(--border); transition: background 0.15s; }
   .ctx-item:last-child { border-bottom: none; }
   .ctx-item:active { background: var(--surface2); }
   .ctx-item svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; }
 
-  /* ── 보관함 ── */
   .archive-list { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
   .archive-list::-webkit-scrollbar { display: none; }
   .archive-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text2); font-size: 0.9rem; }
-  .archive-item {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 14px; padding: 14px 16px;
-    display: flex; flex-direction: column; gap: 6px; position: relative;
-  }
+  .archive-item { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; position: relative; }
   .archive-item-meta { font-size: 0.72rem; color: var(--text2); display: flex; gap: 8px; align-items: center; }
   .archive-item-sender { color: var(--accent); font-weight: 500; }
   .archive-item-text { font-size: 0.92rem; color: var(--text); line-height: 1.5; word-break: break-word; }
   .archive-item-media { max-width: 180px; border-radius: 10px; overflow: hidden; }
   .archive-item-media img { width: 100%; display: block; cursor: pointer; }
-  .archive-del {
-    position: absolute; top: 10px; right: 12px;
-    background: none; border: none; color: var(--text2);
-    font-size: 1rem; cursor: pointer; padding: 4px; line-height: 1;
-  }
+  .archive-del { position: absolute; top: 10px; right: 12px; background: none; border: none; color: var(--text2); font-size: 1rem; cursor: pointer; padding: 4px; line-height: 1; }
   .archive-del:active { color: var(--danger); }
 
   #toast { position: fixed; bottom: calc(80px + var(--safe-bottom)); left: 50%; transform: translateX(-50%) translateY(10px); background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 20px; font-size: 0.85rem; color: var(--text); z-index: 300; opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; white-space: nowrap; }
@@ -384,7 +330,7 @@
         </div>
       </div>
       <div class="search-bar" id="searchBar">
-        <input class="search-input" id="searchInput" placeholder="메시지 검색..." oninput="doSearch()" onkeydown="if(event.key==='Enter')searchNext()">
+        <input class="search-input" id="searchInput" placeholder="메시지 검색..." oninput="doSearch()" onkeydown="if(event.key==='Enter' && !event.isComposing) searchNext()">
         <span class="search-count" id="searchCount"></span>
         <button class="search-nav" onclick="searchPrev()">▲</button>
         <button class="search-nav" onclick="searchNext()">▼</button>
@@ -412,6 +358,29 @@
         </button>
       </div>
       <input type="file" id="mediaInput" accept="image/*,video/*" multiple style="display:none" onchange="sendMedia(event)">
+    </div>
+
+    <div id="todoPane" class="tab-pane hidden">
+      <div class="topbar"><div class="topbar-title">📝 함께 할 일</div></div>
+      <div class="todo-container">
+        
+        <div class="todo-input-wrap">
+          <input type="text" class="todo-input" id="todoInput" placeholder="우리가 함께 하고 싶은 일은..." onkeydown="if(event.key==='Enter' && !event.isComposing) addTodo()">
+          <button class="todo-add-btn" onclick="addTodo()">추가</button>
+        </div>
+
+        <div>
+          <div class="todo-section-title">버킷 리스트</div>
+          <div class="todo-list" id="todoActiveList"></div>
+        </div>
+
+        <div style="margin-top: 10px;">
+          <div class="todo-section-title">우리가 해낸 일들</div>
+          <div class="todo-list" id="todoDoneList"></div>
+        </div>
+
+      </div>
+      <input type="file" id="todoProofInput" accept="image/*,video/*" style="display:none" onchange="uploadTodoProof(event)">
     </div>
 
     <div id="albumPane" class="tab-pane hidden">
@@ -483,6 +452,10 @@
       <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
       채팅
     </button>
+    <button class="tab-btn" id="tab-todo" onclick="switchTab('todo')">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      버킷
+    </button>
     <button class="tab-btn" id="tab-album" onclick="switchTab('album')">
       <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
       앨범
@@ -541,15 +514,14 @@
 <div id="toast"></div>
 
 <script type="module">
-import { initializeApp }                                     from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { initializeApp }                                       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup,
-         onAuthStateChanged, signOut }
-                                                            from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getDatabase, ref, set, push, onValue, onChildAdded, onChildChanged,
+         onAuthStateChanged, signOut }                         from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getDatabase, ref, set, push, update, onValue, onChildAdded, onChildChanged,
          onDisconnect, serverTimestamp, query, orderByKey, limitToLast, endBefore, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 import { getStorage, ref as sRef,
-         uploadBytesResumable, getDownloadURL }             from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
-import { getMessaging, getToken }                           from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
+         uploadBytesResumable, getDownloadURL }               from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
+import { getMessaging, getToken }                             from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
 
 const firebaseConfig = {
   apiKey:            "AIzaSyBSfAOkWJtk41iCLIWkCtG91Hn9Aa44UNA",
@@ -824,7 +796,6 @@ function enterRoom() {
   let lastReadTimer = null;
   const container = document.getElementById('chatMessages');
 
-  // 단 1개의 이벤트 위임으로 메모리 제로화
   let pressTimer;
   container.addEventListener('touchstart', e => {
     const wrap = e.target.closest('.msg-wrap');
@@ -877,7 +848,6 @@ function enterRoom() {
       }
     }
     
-    // 초기 로딩 완료 후 센티널 옵저버 단 1회 세팅
     if (!initialLoadDone) {
       clearTimeout(initialLoadTimer);
       initialLoadTimer = setTimeout(() => {
@@ -918,6 +888,10 @@ function enterRoom() {
   });
 
   onValue(ref(db, `${ROOM_ID}/media`), snap => updateAlbum(snap.val()));
+  
+  // TODO 리스너 등록
+  listenTodos();
+  
   listenSignaling();
   listenArchive();
 
@@ -940,7 +914,148 @@ function enterRoom() {
   showScreen('mainScreen');
 }
 
-// ⭐️ 절대 실패하지 않는 영구 감시 센티널 패턴
+// ── TODO LOGIC (버그 픽스 완료) ──
+let pendingProofKey = null;
+
+window.addTodo = function() {
+  const input = document.getElementById('todoInput');
+  const text = input.value.trim();
+  if(!text) return;
+  
+  push(ref(db, `${ROOM_ID}/todos`), {
+    text: text,
+    isDone: false,
+    creator: me.name,
+    createdAt: Date.now()
+  });
+  input.value = '';
+};
+
+window.toggleTodo = function(key, isCurrentlyDone, text) {
+  if (isCurrentlyDone) return; 
+  
+  const updates = { isDone: true, completedAt: Date.now() };
+  update(ref(db, `${ROOM_ID}/todos/${key}`), updates);
+  
+  push(ref(db, `${ROOM_ID}/messages`), {
+    uid: 'system', name: 'System', text: `${me.name}님이 '${text}' 버킷을 완료했어요! 🎉`, type: 'system', ts: Date.now()
+  });
+};
+
+window.clickAddProof = function(key) {
+  pendingProofKey = key;
+  document.getElementById('todoProofInput').click();
+};
+
+window.uploadTodoProof = async function(e) {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if(!file || !pendingProofKey) return;
+  
+  showToast('인증샷 업로드 중...');
+  try {
+    const { url, type } = await uploadOneFile(file, '');
+    
+    await update(ref(db, `${ROOM_ID}/todos/${pendingProofKey}`), { proofUrl: url, proofType: type });
+    push(ref(db, `${ROOM_ID}/media`), { uid: me.name, type, url, ts: Date.now() });
+    
+    showToast('인증샷 등록 완료! 📷');
+  } catch(err) {
+    showToast('업로드 실패: ' + err.message);
+  } finally {
+    pendingProofKey = null;
+  }
+};
+
+function listenTodos() {
+  onValue(ref(db, `${ROOM_ID}/todos`), snap => {
+    renderTodos(snap.val());
+  });
+}
+
+function renderTodos(data) {
+  const activeList = document.getElementById('todoActiveList');
+  const doneList = document.getElementById('todoDoneList');
+  activeList.innerHTML = '';
+  doneList.innerHTML = '';
+  
+  if(!data) {
+    activeList.innerHTML = '<div class="todo-empty">함께 하고 싶은 일을 추가해보세요!</div>';
+    doneList.innerHTML = '<div class="todo-empty">아직 해낸 일이 없어요</div>';
+    return;
+  }
+  
+  const arr = Object.entries(data).map(([key, val]) => ({ key, ...val }));
+  const active = arr.filter(t => !t.isDone).sort((a,b) => b.createdAt - a.createdAt);
+  const done = arr.filter(t => t.isDone).sort((a,b) => b.completedAt - a.completedAt);
+  
+  if(active.length === 0) activeList.innerHTML = '<div class="todo-empty">모든 버킷을 달성했어요!</div>';
+  else active.forEach(t => activeList.appendChild(createTodoEl(t)));
+  
+  if(done.length === 0) doneList.innerHTML = '<div class="todo-empty">아직 해낸 일이 없어요</div>';
+  else done.forEach(t => doneList.appendChild(createTodoEl(t)));
+}
+
+function createTodoEl(t) {
+  const div = document.createElement('div');
+  div.className = `todo-item ${t.isDone ? 'done' : ''}`;
+  
+  const check = document.createElement('div');
+  check.className = 'todo-checkbox';
+  if(t.isDone) {
+    check.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="3" fill="none"><polyline points="20 6 9 17 4 12"/></svg>';
+  } else {
+    check.onclick = (e) => {
+      // 버그 수정: 다중 클릭 방지 (Race Condition 원천 차단)
+      e.currentTarget.style.pointerEvents = 'none';
+      toggleTodo(t.key, t.isDone, t.text);
+    };
+  }
+  
+  const content = document.createElement('div');
+  content.style.flex = '1';
+  
+  const text = document.createElement('div');
+  text.className = 'todo-text';
+  text.textContent = t.text;
+  content.appendChild(text);
+  
+  if(t.isDone) {
+    const meta = document.createElement('div');
+    meta.className = 'todo-meta';
+    meta.textContent = fmtFull(t.completedAt) + ' 달성';
+    content.appendChild(meta);
+    
+    if(t.proofUrl) {
+      if(t.proofType === 'video') {
+        const v = document.createElement('video');
+        v.className = 'todo-proof-media';
+        v.src = t.proofUrl;
+        v.onclick = () => openLightbox('video', t.proofUrl);
+        content.appendChild(v);
+      } else {
+        const img = document.createElement('img');
+        img.className = 'todo-proof-media';
+        img.src = t.proofUrl;
+        img.loading = 'lazy';
+        img.onclick = () => openLightbox('image', t.proofUrl);
+        content.appendChild(img);
+      }
+    } else {
+      const btn = document.createElement('button');
+      btn.className = 'todo-proof-btn';
+      btn.innerHTML = '📷 인증샷 남기기';
+      btn.onclick = () => clickAddProof(t.key);
+      content.appendChild(btn);
+    }
+  }
+  
+  div.appendChild(check);
+  div.appendChild(content);
+  return div;
+}
+// ── END TODO LOGIC ──
+
 function setupTopObserver() {
   const sentinel = document.getElementById('topSentinel');
   if (!sentinel) return;
@@ -955,7 +1070,6 @@ function setupTopObserver() {
   topObserver.observe(sentinel);
 }
 
-// ⭐️ 스크롤 튕김 및 날짜 꼬임이 완벽하게 박멸된 역순 렌더링 엔진
 async function loadOlderMessages() {
   if (loadingOlder || !hasMoreOlder || !oldestKey) return;
   loadingOlder = true;
@@ -989,7 +1103,8 @@ async function loadOlderMessages() {
       cm.removeChild(currentOldestDOM);
     }
     
-    const wraps = cm.querySelectorAll('.msg-wrap');
+    // 버그 수정: 시스템 메시지도 감지하여 과거 날짜 꼬임 방지
+    const wraps = cm.querySelectorAll('.msg-wrap, .system-msg');
     const currentOldestWrap = wraps.length > 0 ? wraps[wraps.length - 1] : null;
     let nextGroupDate = currentOldestWrap ? currentOldestWrap.dataset.date : '';
     
@@ -1030,7 +1145,6 @@ async function loadOlderMessages() {
       }
     }
     
-    // 센티널의 '앞'에 끼워넣기 -> 센티널은 언제나 최상단(DOM 마지막) 유지
     cm.insertBefore(fragment, sentinel);
     
   } catch (err) {
@@ -1101,7 +1215,6 @@ window.sendMessage = async function() {
 
 window.handleKey  = e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendMessage(); } };
 
-// ⭐️ 타이핑 렉(Layout Thrashing) 원천 차단
 window.autoResize = el => {
   if (el._lastVal === el.value) return; 
   el._lastVal = el.value;
@@ -1122,7 +1235,17 @@ function mediaLabel(msg) {
   return '';
 }
 
+// 버그 수정: 시스템 메시지도 독립적인 엘리먼트로 반환하여 데이터 파싱 오류 원천 방지
 function createMessageElement(msg, key) {
+  if (msg.type === 'system') {
+    const wrap = document.createElement('div');
+    wrap.className = 'system-msg';
+    if (key) wrap.dataset.key = key;
+    wrap.textContent = msg.text;
+    window._loadedMessages[key] = msg;
+    return wrap;
+  }
+
   const isMe = msg.uid === me.name;
   const wrap = document.createElement('div');
   wrap.className = `msg-wrap ${isMe ? 'me' : 'them'}`;
@@ -1210,16 +1333,11 @@ function createMessageElement(msg, key) {
 
 function renderMessage(msg, key) {
   const container = document.getElementById('chatMessages');
-  if (msg.type === 'system') {
-    const d = document.createElement('div'); d.className = 'system-msg'; d.textContent = msg.text; container.prepend(d); return;
-  }
-  
   if (container.querySelector(`[data-key="${key}"]`)) return;
 
   const wrap = createMessageElement(msg, key);
   wrap.dataset.date = getDateStr(msg.ts);
   
-  // 새 메시지는 최신 위치(prepend)로 주입
   container.prepend(wrap);
 
   if (wrap.dataset.date !== liveLastDateStr) {
@@ -1233,7 +1351,6 @@ function renderMessage(msg, key) {
 
 const fmt = ts => { const d = new Date(ts); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
 
-// ⭐️ 파일 업로드 파이프라인 안전 압축 모듈 통과하도록 수정 완료
 function uploadOneFile(file, progressPrefix) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -1434,7 +1551,7 @@ window.rejectCall = async () => {
 };
 
 window.switchTab = tab => {
-  ['chat','album','archive','profile'].forEach(t => {
+  ['chat','todo','album','archive','profile'].forEach(t => {
     document.getElementById(`${t}Pane`).classList.add('hidden');
     document.getElementById(`tab-${t}`).classList.remove('active');
   });
