@@ -360,6 +360,20 @@
       <input type="file" id="mediaInput" accept="image/*,video/*" multiple style="display:none" onchange="sendMedia(event)">
     </div>
 
+    <div id="albumPane" class="tab-pane hidden">
+      <div class="topbar"><div class="topbar-title">📷 앨범</div></div>
+      <div class="album-grid" id="albumGrid">
+        <div class="album-empty" style="grid-column:1/-1;height:300px">아직 공유된 미디어가 없어요</div>
+      </div>
+    </div>
+
+    <div id="archivePane" class="tab-pane hidden">
+      <div class="topbar"><div class="topbar-title">🔖 보관함</div></div>
+      <div class="archive-list" id="archiveList">
+        <div class="archive-empty">보관된 메시지가 없어요</div>
+      </div>
+    </div>
+
     <div id="todoPane" class="tab-pane hidden">
       <div class="topbar"><div class="topbar-title">📝 함께 할 일</div></div>
       <div class="todo-container">
@@ -381,20 +395,6 @@
 
       </div>
       <input type="file" id="todoProofInput" accept="image/*,video/*" style="display:none" onchange="uploadTodoProof(event)">
-    </div>
-
-    <div id="albumPane" class="tab-pane hidden">
-      <div class="topbar"><div class="topbar-title">📷 앨범</div></div>
-      <div class="album-grid" id="albumGrid">
-        <div class="album-empty" style="grid-column:1/-1;height:300px">아직 공유된 미디어가 없어요</div>
-      </div>
-    </div>
-
-    <div id="archivePane" class="tab-pane hidden">
-      <div class="topbar"><div class="topbar-title">🔖 보관함</div></div>
-      <div class="archive-list" id="archiveList">
-        <div class="archive-empty">보관된 메시지가 없어요</div>
-      </div>
     </div>
 
     <div id="profilePane" class="tab-pane hidden">
@@ -447,14 +447,11 @@
     </div>
 
   </div>
+  
   <div class="tab-bar">
     <button class="tab-btn active" id="tab-chat" onclick="switchTab('chat')">
       <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
       채팅
-    </button>
-    <button class="tab-btn" id="tab-todo" onclick="switchTab('todo')">
-      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-      버킷
     </button>
     <button class="tab-btn" id="tab-album" onclick="switchTab('album')">
       <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -463,6 +460,10 @@
     <button class="tab-btn" id="tab-archive" onclick="switchTab('archive')">
       <svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
       보관함
+    </button>
+    <button class="tab-btn" id="tab-todo" onclick="switchTab('todo')">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      버킷
     </button>
     <button class="tab-btn" id="tab-profile" onclick="switchTab('profile')">
       <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -914,7 +915,7 @@ function enterRoom() {
   showScreen('mainScreen');
 }
 
-// ── TODO LOGIC (버그 픽스 완료) ──
+// ── TODO LOGIC ──
 let pendingProofKey = null;
 
 window.addTodo = function() {
@@ -1006,7 +1007,6 @@ function createTodoEl(t) {
     check.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="3" fill="none"><polyline points="20 6 9 17 4 12"/></svg>';
   } else {
     check.onclick = (e) => {
-      // 버그 수정: 다중 클릭 방지 (Race Condition 원천 차단)
       e.currentTarget.style.pointerEvents = 'none';
       toggleTodo(t.key, t.isDone, t.text);
     };
@@ -1103,7 +1103,6 @@ async function loadOlderMessages() {
       cm.removeChild(currentOldestDOM);
     }
     
-    // 버그 수정: 시스템 메시지도 감지하여 과거 날짜 꼬임 방지
     const wraps = cm.querySelectorAll('.msg-wrap, .system-msg');
     const currentOldestWrap = wraps.length > 0 ? wraps[wraps.length - 1] : null;
     let nextGroupDate = currentOldestWrap ? currentOldestWrap.dataset.date : '';
@@ -1235,7 +1234,6 @@ function mediaLabel(msg) {
   return '';
 }
 
-// 버그 수정: 시스템 메시지도 독립적인 엘리먼트로 반환하여 데이터 파싱 오류 원천 방지
 function createMessageElement(msg, key) {
   if (msg.type === 'system') {
     const wrap = document.createElement('div');
@@ -1550,8 +1548,9 @@ window.rejectCall = async () => {
   await set(ref(db, `${ROOM_ID}/signal/${me.name}`), null);
 };
 
+// ── 변경된 switchTab 배열 순서 ──
 window.switchTab = tab => {
-  ['chat','todo','album','archive','profile'].forEach(t => {
+  ['chat','album','archive','todo','profile'].forEach(t => {
     document.getElementById(`${t}Pane`).classList.add('hidden');
     document.getElementById(`tab-${t}`).classList.remove('active');
   });
