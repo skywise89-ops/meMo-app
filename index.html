@@ -12,397 +12,1409 @@
 <link rel="manifest" href="./manifest.json">
 <meta name="apple-mobile-web-app-title" content="meMo">
 <title>meMo</title>
+
 <style>
-  :root {
-    --bg: #0d0d0f; --surface: #18181c; --surface2: #222228;
-    --border: rgba(255,255,255,0.08); --accent: #c8a97e; --accent2: #8fa8c8;
-    --text: #f0ede8; --text2: #9a9590; --danger: #c87e7e;
-    --bubble-me: #2a2118; --bubble-them: #1a1e24;
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
-  }
-  .theme-rose {
-    --bg: #fff5f7; --surface: #ffffff; --surface2: #fce8ed;
-    --border: rgba(220,100,120,0.12); --accent: #d4607a; --accent2: #b07090;
-    --text: #2a1018; --text2: #906070; --danger: #c0392b;
-    --bubble-me: #fde8ee; --bubble-them: #f8f0f2;
-  }
-  .theme-skyblue {
-    --bg: #f0f6ff; --surface: #ffffff; --surface2: #e4eefa;
-    --border: rgba(80,130,220,0.12); --accent: #4a7fd4; --accent2: #6090b8;
-    --text: #101828; --text2: #607090; --danger: #c0392b;
-    --bubble-me: #ddeeff; --bubble-them: #eef4ff;
-  }
-  .theme-purple {
-    --bg: #f8f4ff; --surface: #ffffff; --surface2: #ede4ff;
-    --border: rgba(140,90,220,0.12); --accent: #8a5cd4; --accent2: #a070c8;
-    --text: #180e28; --text2: #806090; --danger: #c0392b;
-    --bubble-me: #ecdeff; --bubble-them: #f4f0ff;
-  }
-  .theme-cream {
-    --bg: #fdf8f0; --surface: #ffffff; --surface2: #f5ede0;
-    --border: rgba(180,140,80,0.12); --accent: #b8904a; --accent2: #8a7060;
-    --text: #1e160a; --text2: #806840; --danger: #c0392b;
-    --bubble-me: #fdf0d8; --bubble-them: #f8f0e8;
-  }
+:root {
+  --bg:#0d0d0f;
+  --surface:#18181c;
+  --surface2:#222228;
+  --border:rgba(255,255,255,.08);
+  --accent:#c8a97e;
+  --accent2:#8fa8c8;
+  --text:#f0ede8;
+  --text2:#9a9590;
+  --danger:#c87e7e;
+  --bubble-me:#2a2118;
+  --bubble-them:#1a1e24;
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: -apple-system, 'Noto Sans KR', sans-serif; }
-  
-  .screen { position: fixed; inset: 0; display: flex; flex-direction: column; overflow-x: hidden; }
-  .screen.hidden { display: none; }
+.theme-rose {
+  --bg:#fff5f7;
+  --surface:#fff;
+  --surface2:#fce8ed;
+  --border:rgba(220,100,120,.12);
+  --accent:#d4607a;
+  --accent2:#b07090;
+  --text:#2a1018;
+  --text2:#906070;
+  --danger:#c0392b;
+  --bubble-me:#fde8ee;
+  --bubble-them:#f8f0f2;
+}
 
-  /* ── LOGIN ── */
-  #loginScreen { background: var(--bg); align-items: center; justify-content: center; gap: 2.5rem; }
-  .login-logo { font-size: 3.4rem; font-weight: 200; color: var(--accent); letter-spacing: -2px; }
-  .login-logo span { color: var(--accent2); }
-  .login-sub { color: var(--text2); font-size: 0.8rem; letter-spacing: 0.15em; }
-  .google-btn {
-    display: flex; align-items: center; gap: 12px;
-    background: white; color: #1f1f1f; border: none; border-radius: 14px;
-    padding: 14px 28px; font-size: 1rem; font-weight: 500; cursor: pointer;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.3); transition: opacity 0.2s, transform 0.1s;
-  }
-  .google-btn:active { opacity: 0.85; transform: scale(0.97); }
-  .google-btn svg { width: 22px; height: 22px; flex-shrink: 0; }
-  .login-error { color: var(--danger); font-size: 0.82rem; text-align: center; max-width: 280px; line-height: 1.5; min-height: 1.2em; }
+.theme-skyblue {
+  --bg:#f0f6ff;
+  --surface:#fff;
+  --surface2:#e4eefa;
+  --border:rgba(80,130,220,.12);
+  --accent:#4a7fd4;
+  --accent2:#6090b8;
+  --text:#101828;
+  --text2:#607090;
+  --danger:#c0392b;
+  --bubble-me:#ddeeff;
+  --bubble-them:#eef4ff;
+}
 
-  /* ── LOADING ── */
-  #loadingScreen { background: var(--bg); align-items: center; justify-content: center; gap: 1rem; }
-  .spinner { width: 36px; height: 36px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text { color: var(--text2); font-size: 0.85rem; }
+.theme-purple {
+  --bg:#f8f4ff;
+  --surface:#fff;
+  --surface2:#ede4ff;
+  --border:rgba(140,90,220,.12);
+  --accent:#8a5cd4;
+  --accent2:#a070c8;
+  --text:#180e28;
+  --text2:#806090;
+  --danger:#c0392b;
+  --bubble-me:#ecdeff;
+  --bubble-them:#f4f0ff;
+}
 
-  /* ── TOPBAR ── */
-  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 52px 20px 12px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
-  .topbar-title { font-size: 1rem; font-weight: 500; }
-  .topbar-actions { display: flex; gap: 12px; }
-  .icon-btn { background: none; border: none; color: var(--text2); cursor: pointer; padding: 4px; display: flex; align-items: center; border-radius: 8px; transition: color 0.2s; }
-  .icon-btn:active { color: var(--accent); }
-  .icon-btn.active { color: var(--accent); }
-  .icon-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+.theme-cream {
+  --bg:#fdf8f0;
+  --surface:#fff;
+  --surface2:#f5ede0;
+  --border:rgba(180,140,80,.12);
+  --accent:#b8904a;
+  --accent2:#8a7060;
+  --text:#1e160a;
+  --text2:#806840;
+  --danger:#c0392b;
+  --bubble-me:#fdf0d8;
+  --bubble-them:#f8f0e8;
+}
 
-  /* ── MAIN ── */
-  #mainScreen { background: var(--bg); }
-  .tab-content { flex: 1; overflow: hidden; position: relative; }
-  .tab-pane { position: absolute; inset: 0; display: flex; flex-direction: column; overflow: hidden; }
-  .tab-pane.hidden { display: none; }
-  .tab-bar { display: flex; background: var(--surface); border-top: 1px solid var(--border); padding-bottom: var(--safe-bottom); flex-shrink: 0; }
-  .tab-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0 8px; background: none; border: none; color: var(--text2); font-size: 0.65rem; cursor: pointer; transition: color 0.2s; }
-  .tab-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5; }
-  .tab-btn.active { color: var(--accent); }
+* {
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+  -webkit-tap-highlight-color:transparent;
+}
 
-  /* ── CHAT ── */
-  .chat-messages { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 16px 12px; display: flex; flex-direction: column-reverse; gap: 8px; width: 100%; }
-  .chat-messages::-webkit-scrollbar { display: none; }
-  .msg-wrap { display: flex; flex-direction: column; max-width: 78%; }
-  .msg-wrap.me { align-self: flex-end; align-items: flex-end; }
-  .msg-wrap.them { align-self: flex-start; align-items: flex-start; }
-  .msg-bubble { padding: 10px 14px; border-radius: 18px; font-size: 0.95rem; line-height: 1.5; word-break: break-word; }
-  .me .msg-bubble { background: var(--bubble-me); border-bottom-right-radius: 4px; border: 1px solid rgba(200,169,126,0.15); }
-  .them .msg-bubble { background: var(--bubble-them); border-bottom-left-radius: 4px; border: 1px solid var(--border); }
-  .msg-translation { font-size: 0.78rem; color: var(--text2); margin-top: 4px; padding-left: 8px; border-left: 2px solid var(--accent); }
-  .me .msg-translation { border-left: none; border-right: 2px solid var(--accent2); padding-left: 0; padding-right: 8px; text-align: right; }
-  .msg-time { font-size: 0.68rem; color: var(--text2); margin-top: 3px; padding: 0 4px; display: flex; align-items: center; gap: 3px; justify-content: flex-end; }
-  .read-check { display: inline-flex; align-items: center; }
-  .read-check svg { width: 14px; height: 14px; }
-  .read-check.read svg { stroke: var(--accent2); }
-  .read-check.unread svg { stroke: var(--text2); opacity: 0.5; }
-  .msg-sender { font-size: 0.72rem; color: var(--text2); margin-bottom: 3px; padding: 0 4px; }
-  .msg-media { max-width: 220px; border-radius: 12px; overflow: hidden; }
-  .msg-media img { width: 100%; display: block; cursor: pointer; }
-  .msg-media video { width: 100%; display: block; border-radius: 8px; }
+html,
+body {
+  height:100%;
+  overflow:hidden;
+  background:var(--bg);
+  color:var(--text);
+  font-family:-apple-system,"Noto Sans KR",sans-serif;
+}
 
-  /* ── 스티커 메시지 버블 ── */
-  .msg-sticker-wrap {
-    /* 스티커는 배경 없이 이미지만 표시 */
-    background: transparent !important;
-    border: none !important;
-    padding: 4px !important;
-  }
-  .msg-sticker-img {
-    width: 120px;
-    height: 120px;
-    object-fit: contain;
-    display: block;
-    cursor: pointer;
-    border-radius: 8px;
-    /* 탭 하이라이트 애니메이션 */
-    transition: transform 0.12s ease;
-  }
-  .msg-sticker-img:active { transform: scale(0.92); }
+.screen {
+  position:fixed;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  overflow-x:hidden;
+}
 
+.screen.hidden {
+  display:none;
+}
 
-  /* ── 스티커 피커 패널 ── */
-  #stickerPanel {
-    /* chatPane의 flex 자식으로 입력창 바로 위에 위치 */
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    z-index: 10;
-    display: none;
-    flex-direction: column;
-    max-height: 300px;
-    flex-shrink: 0;
-    /* 슬라이드업 애니메이션 */
-    overflow: hidden;
-    transition: max-height 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  }
-  #stickerPanel.open {
-    display: flex;
-  }
-  /* animating: display:flex 전환용 (JS rAF와 함께 사용) */
-  #stickerPanel.animating {
-    display: flex;
-  }
-  .sticker-panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 14px 8px;
-    flex-shrink: 0;
-  }
-  .sticker-panel-title {
-    font-size: 0.78rem;
-    color: var(--text2);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .sticker-panel-title span { font-size: 1rem; }
+#loginScreen {
+  background:var(--bg);
+  align-items:center;
+  justify-content:center;
+  gap:2.5rem;
+}
 
-  .sticker-grid {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 6px 10px 14px;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    -webkit-overflow-scrolling: touch;
-  }
-  .sticker-grid::-webkit-scrollbar { display: none; }
-  .sticker-cell {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    cursor: pointer;
-    padding: 6px 4px;
-    border-radius: 12px;
-    transition: background 0.15s;
-    position: relative;
-  }
-  .sticker-cell:active { background: var(--surface2); }
-  .sticker-cell img {
-    width: 68px;
-    height: 68px;
-    object-fit: contain;
-    border-radius: 6px;
-    /* 로딩 전 placeholder */
-    background: var(--surface2);
-  }
+.login-logo {
+  font-size:3.4rem;
+  font-weight:200;
+  color:var(--accent);
+  letter-spacing:-2px;
+}
 
-  /* 스티커 로딩 상태 */
-  .sticker-cell .sticker-loading {
-    width: 68px;
-    height: 68px;
-    border-radius: 6px;
-    background: var(--surface2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.4rem;
-    animation: stickerPulse 1.2s ease-in-out infinite;
-  }
-  @keyframes stickerPulse {
-    0%, 100% { opacity: 0.6; }
-    50% { opacity: 1; }
-  }
-  /* 업로드 미완료 상태 오버레이 */
-  .sticker-cell .sticker-not-ready {
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.45);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-  }
+.login-logo span {
+  color:var(--accent2);
+}
 
-  /* ── 묶음 사진 ── */
-  .msg-media-group {
-    display: flex; gap: 4px; max-width: 220px;
-    overflow-x: auto; overflow-y: hidden;
-    scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch;
-    border-radius: 4px;
-  }
-  .msg-media-group::-webkit-scrollbar { display: none; }
-  .msg-media-group-item {
-    flex: 0 0 auto; width: 130px; height: 140px;
-    border-radius: 10px; overflow: hidden; position: relative;
-    cursor: pointer; background: var(--surface2);
-    scroll-snap-align: start;
-  }
-  .msg-media-group-item img, .msg-media-group-item video { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .msg-media-group-item .play-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); }
-  .msg-media-group-item .play-icon svg { width: 26px; height: 26px; fill: rgba(255,255,255,0.9); }
-  .msg-media-group-count {
-    position: absolute; bottom: 5px; right: 5px;
-    background: rgba(0,0,0,0.55); color: #fff;
-    font-size: 0.65rem; padding: 1px 6px; border-radius: 8px;
-    line-height: 1.4; pointer-events: none;
-  }
-  
-  .system-msg { text-align: center; color: var(--text2); font-size: 0.75rem; padding: 12px 0; width: 100%; box-sizing: border-box; }
-  .chat-input-wrap { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px; padding-bottom: calc(10px + var(--safe-bottom)); background: var(--surface); border-top: 1px solid var(--border); flex-shrink: 0; }
-  .chat-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 22px; color: var(--text); padding: 10px 16px; font-size: 0.95rem; outline: none; resize: none; max-height: 120px; min-height: 42px; line-height: 1.4; font-family: inherit; transition: border-color 0.2s; }
-  .chat-input:focus { border-color: var(--accent); }
-  .chat-send-btn { width: 42px; height: 42px; border-radius: 50%; background: var(--accent); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: opacity 0.2s, transform 0.1s; }
-  .chat-send-btn:active { opacity: 0.7; transform: scale(0.93); }
-  .chat-send-btn svg { width: 18px; height: 18px; stroke: #0d0d0f; fill: none; stroke-width: 2; }
-  .partner-status { font-size: 0.75rem; color: var(--text2); }
-  .online-dot { width: 8px; height: 8px; border-radius: 50%; background: #4a7a4a; display: inline-block; margin-right: 6px; }
+.login-sub {
+  color:var(--text2);
+  font-size:.8rem;
+  letter-spacing:.15em;
+}
 
-  /* ── ALBUM ── */
-  .album-grid {
-    flex: 1; min-height: 0; overflow-y: auto;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-auto-rows: calc((100vw - 4px) / 3);
-    gap: 2px; padding: 2px;
-    align-content: start;
-  }
-  @media (min-width: 600px) {
-    .album-grid { grid-template-columns: repeat(4, 1fr); grid-auto-rows: calc((100vw - 6px) / 4); }
-  }
-  .album-item { overflow: hidden; position: relative; cursor: pointer; background: var(--surface); }
-  .album-item img, .album-item video { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .album-item .play-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); }
-  .album-item .play-icon svg { width: 32px; height: 32px; fill: rgba(255,255,255,0.9); }
-  .album-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text2); font-size: 0.9rem; }
+.google-btn {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  background:#fff;
+  color:#1f1f1f;
+  border:none;
+  border-radius:14px;
+  padding:14px 28px;
+  font-size:1rem;
+  font-weight:500;
+  cursor:pointer;
+  box-shadow:0 2px 12px rgba(0,0,0,.3);
+  transition:opacity .2s,transform .1s;
+}
 
-  /* ── TODO LIST ── */
-  .todo-container { flex: 1; overflow-y: auto; padding: 20px 16px; display: flex; flex-direction: column; gap: 24px; }
-  .todo-input-wrap { display: flex; gap: 8px; margin-bottom: 8px; }
-  .todo-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; color: var(--text); font-size: 0.95rem; outline: none; transition: border-color 0.2s; }
-  .todo-input:focus { border-color: var(--accent); }
-  .todo-add-btn { background: var(--accent); color: var(--bg); border: none; border-radius: 12px; padding: 0 18px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: transform 0.1s; }
-  .todo-add-btn:active { transform: scale(0.95); }
-  .todo-section-title { font-size: 0.85rem; color: var(--text2); margin-bottom: 12px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
-  .todo-section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-  .todo-list { display: flex; flex-direction: column; gap: 10px; }
-  .todo-item { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; display: flex; gap: 14px; align-items: flex-start; transition: opacity 0.2s; }
-  .todo-checkbox { width: 24px; height: 24px; border: 2px solid var(--text2); border-radius: 50%; flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-  .todo-item.done .todo-checkbox { background: var(--accent); border-color: var(--accent); color: var(--bg); }
-  .todo-text { flex: 1; font-size: 0.95rem; line-height: 1.4; word-break: break-word; color: var(--text); transition: color 0.2s; }
-  .todo-item.done .todo-text { text-decoration: line-through; color: var(--text2); }
-  .todo-meta { font-size: 0.72rem; color: var(--text2); margin-top: 6px; }
-  .todo-proof-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); padding: 8px 14px; border-radius: 10px; font-size: 0.8rem; cursor: pointer; margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; transition: color 0.2s, border-color 0.2s; }
-  .todo-proof-btn:active { background: var(--surface); color: var(--accent); border-color: var(--accent); }
-  .todo-proof-media { width: 100%; max-height: 200px; border-radius: 10px; object-fit: cover; margin-top: 12px; cursor: pointer; border: 1px solid var(--border); display: block; }
-  .todo-empty { text-align: center; color: var(--text2); font-size: 0.85rem; padding: 20px 0; }
+.google-btn:active {
+  opacity:.85;
+  transform:scale(.97);
+}
 
-  /* ── LIGHTBOX ── */
-  #lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
-  #lightbox.open { opacity: 1; pointer-events: all; }
-  #lightbox img, #lightbox video { max-width: 90vw; max-height: 85vh; object-fit: contain; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
-  #lightbox .close-lb { position: absolute; top: 52px; right: 20px; background: none; border: none; color: white; font-size: 2rem; cursor: pointer; z-index: 101; padding: 8px; }
-  #lightbox .lb-nav {
-    position: absolute; top: 50%; transform: translateY(-50%);
-    width: 46px; height: 46px; border-radius: 50%;
-    background: rgba(0,0,0,0.35); border: none; color: white;
-    font-size: 1.8rem; line-height: 1; cursor: pointer; z-index: 101;
-    display: none; align-items: center; justify-content: center;
-  }
-  #lightbox .lb-prev { left: 12px; }
-  #lightbox .lb-next { right: 12px; }
-  #lightbox .lb-counter {
-    position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
-    color: rgba(255,255,255,0.85); font-size: 0.78rem;
-    background: rgba(0,0,0,0.4); padding: 4px 12px; border-radius: 12px;
-    display: none; z-index: 101;
-  }
+.google-btn svg {
+  width:22px;
+  height:22px;
+  flex-shrink:0;
+}
 
-  /* ── INCOMING CALL ── */
-  #incomingCall { position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 200; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 1.5rem; }
-  #incomingCall.show { display: flex; }
-  .incoming-name { font-size: 1.8rem; font-weight: 300; color: var(--accent); }
-  .incoming-type { font-size: 0.85rem; color: var(--text2); }
-  .incoming-btns { display: flex; gap: 40px; margin-top: 1rem; }
-  .inc-btn { width: 72px; height: 72px; border-radius: 50%; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
-  .inc-btn svg { width: 28px; height: 28px; stroke: white; fill: none; stroke-width: 1.8; }
-  .inc-btn span { font-size: 0.7rem; color: white; }
-  .inc-btn.accept { background: #4a7a4a; }
-  .inc-btn.reject { background: var(--danger); }
+.login-error {
+  color:var(--danger);
+  font-size:.82rem;
+  text-align:center;
+  max-width:280px;
+  line-height:1.5;
+  min-height:1.2em;
+}
 
-  /* ── PROFILE & OTHER ── */
-  .profile-header { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 20px 0; }
-  .profile-avatar-lg { width: 88px; height: 88px; border-radius: 50%; background: var(--surface2); border: 2px solid var(--border); overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
-  .profile-avatar-lg img { width: 100%; height: 100%; object-fit: cover; }
-  .profile-section { background: var(--surface); border-radius: 16px; overflow: hidden; }
-  .profile-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); gap: 12px; }
-  .profile-row:last-child { border-bottom: none; }
-  .profile-row-label { font-size: 0.9rem; color: var(--text2); }
-  .lang-select { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 6px 10px; font-size: 0.85rem; outline: none; cursor: pointer; }
-  .danger-btn { background: none; border: 1px solid var(--danger); border-radius: 12px; color: var(--danger); padding: 12px; font-size: 0.9rem; cursor: pointer; width: 100%; }
-  .danger-btn:active { background: rgba(200,126,126,0.1); }
-  .toggle-sw { position: relative; width: 44px; height: 24px; }
-  .toggle-sw input { opacity: 0; width: 0; height: 0; }
-  .toggle-sw .slider { position: absolute; inset: 0; background: var(--surface2); border-radius: 24px; border: 1px solid var(--border); cursor: pointer; transition: background 0.2s; }
-  .toggle-sw .slider::before { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: var(--text2); top: 2px; left: 2px; transition: transform 0.2s, background 0.2s; }
-  .toggle-sw input:checked + .slider { background: rgba(200,169,126,0.2); border-color: var(--accent); }
-  .toggle-sw input:checked + .slider::before { transform: translateX(20px); background: var(--accent); }
+#loadingScreen {
+  background:var(--bg);
+  align-items:center;
+  justify-content:center;
+  gap:1rem;
+}
 
-  .theme-row { display: flex; gap: 12px; padding: 4px 0; flex-wrap: wrap; }
-  .theme-dot { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: transform 0.15s, border-color 0.15s; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
-  .theme-dot:active { transform: scale(0.88); }
-  .theme-dot.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+.spinner {
+  width:36px;
+  height:36px;
+  border:2px solid var(--border);
+  border-top-color:var(--accent);
+  border-radius:50%;
+  animation:spin .8s linear infinite;
+}
 
-  .reply-bar { display: none; align-items: center; gap: 8px; background: var(--surface2); border-left: 3px solid var(--accent); padding: 8px 14px; font-size: 0.8rem; color: var(--text2); flex-shrink: 0; }
-  .reply-bar.show { display: flex; }
-  .reply-bar-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .reply-bar-cancel { background: none; border: none; color: var(--text2); font-size: 1.1rem; cursor: pointer; padding: 0 4px; line-height: 1; }
-  .msg-quote { background: var(--surface2); border-left: 3px solid var(--accent); border-radius: 6px; padding: 5px 10px; margin-bottom: 5px; font-size: 0.75rem; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
-  .me .msg-quote { border-left: none; border-right: 3px solid var(--accent2); text-align: right; }
+@keyframes spin {
+  to { transform:rotate(360deg); }
+}
 
-  .scroll-bottom-btn { position: absolute; bottom: 12px; right: 12px; width: 36px; height: 36px; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); color: var(--text2); cursor: pointer; display: none; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.3); z-index: 5; transition: opacity 0.2s; font-size: 1rem; }
-  .scroll-bottom-btn.show { display: flex; }
+.loading-text {
+  color:var(--text2);
+  font-size:.85rem;
+}
 
-  .date-sep { text-align: center; padding: 12px 0 4px; font-size: 0.7rem; color: var(--text2); display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; }
-  .date-sep::before, .date-sep::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.topbar {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:52px 20px 12px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
 
-  .search-bar { display: none; gap: 8px; align-items: center; padding: 8px 12px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
-  .search-bar.show { display: flex; }
-  .search-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 18px; color: var(--text); padding: 8px 14px; font-size: 0.85rem; outline: none; font-family: inherit; }
-  .search-input:focus { border-color: var(--accent); }
-  .search-nav { background: none; border: none; color: var(--text2); font-size: 1.1rem; cursor: pointer; padding: 4px 6px; }
-  .search-nav:active { color: var(--accent); }
-  .search-count { font-size: 0.75rem; color: var(--text2); white-space: nowrap; }
-  .msg-highlight { background: rgba(200,169,126,0.25); border-radius: 8px; }
+.topbar-title {
+  font-size:1rem;
+  font-weight:500;
+}
 
-  #ctxMenu { position: fixed; z-index: 400; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4); display: none; flex-direction: column; min-width: 140px; }
-  #ctxMenu.show { display: flex; }
-  .ctx-item { display: flex; align-items: center; gap: 10px; padding: 14px 18px; background: none; border: none; color: var(--text); font-size: 0.9rem; cursor: pointer; text-align: left; border-bottom: 1px solid var(--border); transition: background 0.15s; }
-  .ctx-item:last-child { border-bottom: none; }
-  .ctx-item:active { background: var(--surface2); }
-  .ctx-item svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; flex-shrink: 0; }
+.topbar-actions {
+  display:flex;
+  gap:12px;
+}
 
-  .archive-list { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
-  .archive-list::-webkit-scrollbar { display: none; }
-  .archive-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text2); font-size: 0.9rem; }
-  .archive-item { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; position: relative; }
-  .archive-item-meta { font-size: 0.72rem; color: var(--text2); display: flex; gap: 8px; align-items: center; }
-  .archive-item-sender { color: var(--accent); font-weight: 500; }
-  .archive-item-text { font-size: 0.92rem; color: var(--text); line-height: 1.5; word-break: break-word; }
-  .archive-item-media { max-width: 180px; border-radius: 10px; overflow: hidden; }
-  .archive-item-media img { width: 100%; display: block; cursor: pointer; }
-  .archive-del { position: absolute; top: 10px; right: 12px; background: none; border: none; color: var(--text2); font-size: 1rem; cursor: pointer; padding: 4px; line-height: 1; }
-  .archive-del:active { color: var(--danger); }
+.icon-btn {
+  background:none;
+  border:none;
+  color:var(--text2);
+  cursor:pointer;
+  padding:4px;
+  display:flex;
+  align-items:center;
+  border-radius:8px;
+  transition:color .2s;
+}
 
-  #toast { position: fixed; bottom: calc(80px + var(--safe-bottom)); left: 50%; transform: translateX(-50%) translateY(10px); background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 20px; font-size: 0.85rem; color: var(--text); z-index: 300; opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; white-space: nowrap; }
-  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.icon-btn:active,
+.icon-btn.active {
+  color:var(--accent);
+}
+
+.icon-btn svg {
+  width:22px;
+  height:22px;
+  stroke:currentColor;
+  fill:none;
+  stroke-width:1.5;
+}
+
+#mainScreen {
+  background:var(--bg);
+}
+
+.tab-content {
+  flex:1;
+  overflow:hidden;
+  position:relative;
+}
+
+.tab-pane {
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+.tab-pane.hidden {
+  display:none;
+}
+
+.tab-bar {
+  display:flex;
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  padding-bottom:var(--safe-bottom);
+  flex-shrink:0;
+}
+
+.tab-btn {
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+  padding:10px 0 8px;
+  background:none;
+  border:none;
+  color:var(--text2);
+  font-size:.65rem;
+  cursor:pointer;
+  transition:color .2s;
+}
+
+.tab-btn svg {
+  width:22px;
+  height:22px;
+  stroke:currentColor;
+  fill:none;
+  stroke-width:1.5;
+}
+
+.tab-btn.active {
+  color:var(--accent);
+}
+
+/* 핵심: column-reverse 제거 */
+.chat-messages {
+  flex:1;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding:16px 12px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  width:100%;
+  -webkit-overflow-scrolling:touch;
+}
+
+.chat-messages::-webkit-scrollbar {
+  display:none;
+}
+
+.msg-wrap {
+  display:flex;
+  flex-direction:column;
+  max-width:78%;
+}
+
+.msg-wrap.me {
+  align-self:flex-end;
+  align-items:flex-end;
+}
+
+.msg-wrap.them {
+  align-self:flex-start;
+  align-items:flex-start;
+}
+
+.msg-bubble {
+  padding:10px 14px;
+  border-radius:18px;
+  font-size:.95rem;
+  line-height:1.5;
+  word-break:break-word;
+}
+
+.me .msg-bubble {
+  background:var(--bubble-me);
+  border-bottom-right-radius:4px;
+  border:1px solid rgba(200,169,126,.15);
+}
+
+.them .msg-bubble {
+  background:var(--bubble-them);
+  border-bottom-left-radius:4px;
+  border:1px solid var(--border);
+}
+
+.msg-translation {
+  font-size:.78rem;
+  color:var(--text2);
+  margin-top:4px;
+  padding-left:8px;
+  border-left:2px solid var(--accent);
+}
+
+.me .msg-translation {
+  border-left:none;
+  border-right:2px solid var(--accent2);
+  padding-left:0;
+  padding-right:8px;
+  text-align:right;
+}
+
+.msg-time {
+  font-size:.68rem;
+  color:var(--text2);
+  margin-top:3px;
+  padding:0 4px;
+  display:flex;
+  align-items:center;
+  gap:3px;
+  justify-content:flex-end;
+}
+
+.read-check {
+  display:inline-flex;
+  align-items:center;
+}
+
+.read-check svg {
+  width:14px;
+  height:14px;
+}
+
+.read-check.read svg {
+  stroke:var(--accent2);
+}
+
+.read-check.unread svg {
+  stroke:var(--text2);
+  opacity:.5;
+}
+
+.msg-sender {
+  font-size:.72rem;
+  color:var(--text2);
+  margin-bottom:3px;
+  padding:0 4px;
+}
+
+.msg-media {
+  max-width:220px;
+  border-radius:12px;
+  overflow:hidden;
+}
+
+.msg-media img,
+.msg-media video {
+  width:100%;
+  display:block;
+}
+
+.msg-media img {
+  cursor:pointer;
+}
+
+.msg-sticker-wrap {
+  background:transparent !important;
+  border:none !important;
+  padding:4px !important;
+}
+
+.msg-sticker-img {
+  width:120px;
+  height:120px;
+  object-fit:contain;
+  display:block;
+  cursor:pointer;
+  border-radius:8px;
+  transition:transform .12s ease;
+}
+
+.msg-sticker-img:active {
+  transform:scale(.92);
+}
+
+#stickerPanel {
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  z-index:10;
+  display:none;
+  flex-direction:column;
+  max-height:300px;
+  flex-shrink:0;
+  overflow:hidden;
+  transition:max-height .22s cubic-bezier(.25,.46,.45,.94);
+}
+
+#stickerPanel.open,
+#stickerPanel.animating {
+  display:flex;
+}
+
+.sticker-panel-header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:10px 14px 8px;
+  flex-shrink:0;
+}
+
+.sticker-panel-title {
+  font-size:.78rem;
+  color:var(--text2);
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
+.sticker-panel-title span {
+  font-size:1rem;
+}
+
+.sticker-grid {
+  flex:1;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding:6px 10px 14px;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  -webkit-overflow-scrolling:touch;
+}
+
+.sticker-grid::-webkit-scrollbar {
+  display:none;
+}
+
+.sticker-cell {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+  cursor:pointer;
+  padding:6px 4px;
+  border-radius:12px;
+  transition:background .15s;
+  position:relative;
+}
+
+.sticker-cell:active {
+  background:var(--surface2);
+}
+
+.sticker-cell img {
+  width:68px;
+  height:68px;
+  object-fit:contain;
+  border-radius:6px;
+  background:var(--surface2);
+}
+
+.sticker-cell .sticker-loading {
+  width:68px;
+  height:68px;
+  border-radius:6px;
+  background:var(--surface2);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:1.4rem;
+  animation:stickerPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes stickerPulse {
+  0%,100% { opacity:.6; }
+  50% { opacity:1; }
+}
+
+.msg-media-group {
+  display:flex;
+  gap:4px;
+  max-width:220px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  scroll-snap-type:x proximity;
+  -webkit-overflow-scrolling:touch;
+  border-radius:4px;
+}
+
+.msg-media-group::-webkit-scrollbar {
+  display:none;
+}
+
+.msg-media-group-item {
+  flex:0 0 auto;
+  width:130px;
+  height:140px;
+  border-radius:10px;
+  overflow:hidden;
+  position:relative;
+  cursor:pointer;
+  background:var(--surface2);
+  scroll-snap-align:start;
+}
+
+.msg-media-group-item img,
+.msg-media-group-item video {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+.msg-media-group-item .play-icon {
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0,0,0,.3);
+}
+
+.msg-media-group-item .play-icon svg {
+  width:26px;
+  height:26px;
+  fill:rgba(255,255,255,.9);
+}
+
+.msg-media-group-count {
+  position:absolute;
+  bottom:5px;
+  right:5px;
+  background:rgba(0,0,0,.55);
+  color:#fff;
+  font-size:.65rem;
+  padding:1px 6px;
+  border-radius:8px;
+  line-height:1.4;
+  pointer-events:none;
+}
+
+.system-msg {
+  text-align:center;
+  color:var(--text2);
+  font-size:.75rem;
+  padding:12px 0;
+  width:100%;
+}
+
+.chat-input-wrap {
+  display:flex;
+  align-items:flex-end;
+  gap:8px;
+  padding:10px 12px;
+  padding-bottom:calc(10px + var(--safe-bottom));
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  flex-shrink:0;
+}
+
+.chat-input {
+  flex:1;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:22px;
+  color:var(--text);
+  padding:10px 16px;
+  font-size:.95rem;
+  outline:none;
+  resize:none;
+  max-height:120px;
+  min-height:42px;
+  line-height:1.4;
+  font-family:inherit;
+}
+
+.chat-input:focus {
+  border-color:var(--accent);
+}
+
+.chat-send-btn {
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  background:var(--accent);
+  border:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  flex-shrink:0;
+}
+
+.chat-send-btn svg {
+  width:18px;
+  height:18px;
+  stroke:#0d0d0f;
+  fill:none;
+  stroke-width:2;
+}
+
+.partner-status {
+  font-size:.75rem;
+  color:var(--text2);
+}
+
+.online-dot {
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#4a7a4a;
+  display:inline-block;
+  margin-right:6px;
+}
+
+.album-grid {
+  flex:1;
+  min-height:0;
+  overflow-y:auto;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  grid-auto-rows:calc((100vw - 4px)/3);
+  gap:2px;
+  padding:2px;
+  align-content:start;
+}
+
+.album-item {
+  overflow:hidden;
+  position:relative;
+  cursor:pointer;
+  background:var(--surface);
+}
+
+.album-item img,
+.album-item video {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+.album-item .play-icon {
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0,0,0,.3);
+}
+
+.album-item .play-icon svg {
+  width:32px;
+  height:32px;
+  fill:rgba(255,255,255,.9);
+}
+
+.album-empty {
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--text2);
+  font-size:.9rem;
+}
+
+.todo-container {
+  flex:1;
+  overflow-y:auto;
+  padding:20px 16px;
+  display:flex;
+  flex-direction:column;
+  gap:24px;
+}
+
+.todo-input-wrap {
+  display:flex;
+  gap:8px;
+  margin-bottom:8px;
+}
+
+.todo-input {
+  flex:1;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px 16px;
+  color:var(--text);
+  font-size:.95rem;
+  outline:none;
+}
+
+.todo-input:focus {
+  border-color:var(--accent);
+}
+
+.todo-add-btn {
+  background:var(--accent);
+  color:var(--bg);
+  border:none;
+  border-radius:12px;
+  padding:0 18px;
+  font-weight:600;
+  font-size:.9rem;
+  cursor:pointer;
+}
+
+.todo-section-title {
+  font-size:.85rem;
+  color:var(--text2);
+  margin-bottom:12px;
+  font-weight:500;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.todo-section-title::after {
+  content:"";
+  flex:1;
+  height:1px;
+  background:var(--border);
+}
+
+.todo-list {
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.todo-item {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:16px;
+  display:flex;
+  gap:14px;
+  align-items:flex-start;
+}
+
+.todo-checkbox {
+  width:24px;
+  height:24px;
+  border:2px solid var(--text2);
+  border-radius:50%;
+  flex-shrink:0;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.todo-item.done .todo-checkbox {
+  background:var(--accent);
+  border-color:var(--accent);
+  color:var(--bg);
+}
+
+.todo-text {
+  flex:1;
+  font-size:.95rem;
+  line-height:1.4;
+  word-break:break-word;
+  color:var(--text);
+}
+
+.todo-item.done .todo-text {
+  text-decoration:line-through;
+  color:var(--text2);
+}
+
+.todo-meta {
+  font-size:.72rem;
+  color:var(--text2);
+  margin-top:6px;
+}
+
+.todo-proof-btn {
+  background:var(--surface2);
+  border:1px solid var(--border);
+  color:var(--text2);
+  padding:8px 14px;
+  border-radius:10px;
+  font-size:.8rem;
+  cursor:pointer;
+  margin-top:12px;
+}
+
+.todo-proof-media {
+  width:100%;
+  max-height:200px;
+  border-radius:10px;
+  object-fit:cover;
+  margin-top:12px;
+  cursor:pointer;
+  border:1px solid var(--border);
+  display:block;
+}
+
+.todo-empty {
+  text-align:center;
+  color:var(--text2);
+  font-size:.85rem;
+  padding:20px 0;
+}
+
+#lightbox {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.95);
+  z-index:100;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .2s;
+}
+
+#lightbox.open {
+  opacity:1;
+  pointer-events:all;
+}
+
+#lightbox img,
+#lightbox video {
+  max-width:90vw;
+  max-height:85vh;
+  object-fit:contain;
+  border-radius:8px;
+}
+
+#lightbox .close-lb {
+  position:absolute;
+  top:52px;
+  right:20px;
+  background:none;
+  border:none;
+  color:#fff;
+  font-size:2rem;
+  cursor:pointer;
+  z-index:101;
+  padding:8px;
+}
+
+#lightbox .lb-nav {
+  position:absolute;
+  top:50%;
+  transform:translateY(-50%);
+  width:46px;
+  height:46px;
+  border-radius:50%;
+  background:rgba(0,0,0,.35);
+  border:none;
+  color:#fff;
+  font-size:1.8rem;
+  cursor:pointer;
+  z-index:101;
+  display:none;
+  align-items:center;
+  justify-content:center;
+}
+
+#lightbox .lb-prev { left:12px; }
+#lightbox .lb-next { right:12px; }
+
+#lightbox .lb-counter {
+  position:absolute;
+  bottom:28px;
+  left:50%;
+  transform:translateX(-50%);
+  color:rgba(255,255,255,.85);
+  font-size:.78rem;
+  background:rgba(0,0,0,.4);
+  padding:4px 12px;
+  border-radius:12px;
+  display:none;
+  z-index:101;
+}
+
+#incomingCall {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.88);
+  z-index:200;
+  display:none;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:1.5rem;
+}
+
+#incomingCall.show {
+  display:flex;
+}
+
+.incoming-name {
+  font-size:1.8rem;
+  font-weight:300;
+  color:var(--accent);
+}
+
+.incoming-type {
+  font-size:.85rem;
+  color:var(--text2);
+}
+
+.incoming-btns {
+  display:flex;
+  gap:40px;
+  margin-top:1rem;
+}
+
+.inc-btn {
+  width:72px;
+  height:72px;
+  border-radius:50%;
+  border:none;
+  cursor:pointer;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+}
+
+.inc-btn svg {
+  width:28px;
+  height:28px;
+  stroke:#fff;
+  fill:none;
+  stroke-width:1.8;
+}
+
+.inc-btn span {
+  font-size:.7rem;
+  color:#fff;
+}
+
+.inc-btn.accept { background:#4a7a4a; }
+.inc-btn.reject { background:var(--danger); }
+
+.profile-header {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:12px;
+  padding:20px 0;
+}
+
+.profile-avatar-lg {
+  width:88px;
+  height:88px;
+  border-radius:50%;
+  background:var(--surface2);
+  border:2px solid var(--border);
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:2rem;
+}
+
+.profile-avatar-lg img {
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.profile-section {
+  background:var(--surface);
+  border-radius:16px;
+  overflow:hidden;
+}
+
+.profile-row {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:14px 18px;
+  border-bottom:1px solid var(--border);
+  gap:12px;
+}
+
+.profile-row:last-child {
+  border-bottom:none;
+}
+
+.profile-row-label {
+  font-size:.9rem;
+  color:var(--text2);
+}
+
+.lang-select {
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  color:var(--text);
+  padding:6px 10px;
+  font-size:.85rem;
+  outline:none;
+}
+
+.danger-btn {
+  background:none;
+  border:1px solid var(--danger);
+  border-radius:12px;
+  color:var(--danger);
+  padding:12px;
+  font-size:.9rem;
+  cursor:pointer;
+  width:100%;
+}
+
+.toggle-sw {
+  position:relative;
+  width:44px;
+  height:24px;
+}
+
+.toggle-sw input {
+  opacity:0;
+  width:0;
+  height:0;
+}
+
+.toggle-sw .slider {
+  position:absolute;
+  inset:0;
+  background:var(--surface2);
+  border-radius:24px;
+  border:1px solid var(--border);
+  cursor:pointer;
+}
+
+.toggle-sw .slider::before {
+  content:"";
+  position:absolute;
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:var(--text2);
+  top:2px;
+  left:2px;
+  transition:transform .2s;
+}
+
+.toggle-sw input:checked + .slider {
+  background:rgba(200,169,126,.2);
+  border-color:var(--accent);
+}
+
+.toggle-sw input:checked + .slider::before {
+  transform:translateX(20px);
+  background:var(--accent);
+}
+
+.theme-row {
+  display:flex;
+  gap:12px;
+  padding:4px 0;
+  flex-wrap:wrap;
+}
+
+.theme-dot {
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  cursor:pointer;
+  border:3px solid transparent;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:1rem;
+}
+
+.theme-dot.active {
+  border-color:var(--accent);
+  box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--accent);
+}
+
+.reply-bar {
+  display:none;
+  align-items:center;
+  gap:8px;
+  background:var(--surface2);
+  border-left:3px solid var(--accent);
+  padding:8px 14px;
+  font-size:.8rem;
+  color:var(--text2);
+  flex-shrink:0;
+}
+
+.reply-bar.show {
+  display:flex;
+}
+
+.reply-bar-text {
+  flex:1;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.reply-bar-cancel {
+  background:none;
+  border:none;
+  color:var(--text2);
+  font-size:1.1rem;
+  cursor:pointer;
+}
+
+.msg-quote {
+  background:var(--surface2);
+  border-left:3px solid var(--accent);
+  border-radius:6px;
+  padding:5px 10px;
+  margin-bottom:5px;
+  font-size:.75rem;
+  color:var(--text2);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  max-width:100%;
+}
+
+.me .msg-quote {
+  border-left:none;
+  border-right:3px solid var(--accent2);
+  text-align:right;
+}
+
+.scroll-bottom-btn {
+  position:absolute;
+  bottom:12px;
+  right:12px;
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  background:var(--surface);
+  border:1px solid var(--border);
+  color:var(--text2);
+  cursor:pointer;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:5;
+  font-size:1rem;
+}
+
+.scroll-bottom-btn.show {
+  display:flex;
+}
+
+.date-sep {
+  text-align:center;
+  padding:12px 0 4px;
+  font-size:.7rem;
+  color:var(--text2);
+  display:flex;
+  align-items:center;
+  gap:12px;
+  width:100%;
+}
+
+.date-sep::before,
+.date-sep::after {
+  content:"";
+  flex:1;
+  height:1px;
+  background:var(--border);
+}
+
+.search-bar {
+  display:none;
+  gap:8px;
+  align-items:center;
+  padding:8px 12px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+
+.search-bar.show {
+  display:flex;
+}
+
+.search-input {
+  flex:1;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:18px;
+  color:var(--text);
+  padding:8px 14px;
+  font-size:.85rem;
+  outline:none;
+}
+
+.search-nav {
+  background:none;
+  border:none;
+  color:var(--text2);
+  font-size:1.1rem;
+  cursor:pointer;
+  padding:4px 6px;
+}
+
+.search-count {
+  font-size:.75rem;
+  color:var(--text2);
+  white-space:nowrap;
+}
+
+.msg-highlight {
+  background:rgba(200,169,126,.25);
+  border-radius:8px;
+}
+
+#ctxMenu {
+  position:fixed;
+  z-index:400;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  overflow:hidden;
+  display:none;
+  flex-direction:column;
+  min-width:140px;
+}
+
+#ctxMenu.show {
+  display:flex;
+}
+
+.ctx-item {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:14px 18px;
+  background:none;
+  border:none;
+  color:var(--text);
+  font-size:.9rem;
+  cursor:pointer;
+  text-align:left;
+  border-bottom:1px solid var(--border);
+}
+
+.ctx-item:last-child {
+  border-bottom:none;
+}
+
+.ctx-item svg {
+  width:18px;
+  height:18px;
+  stroke:currentColor;
+  fill:none;
+  stroke-width:1.8;
+}
+
+.archive-list {
+  flex:1;
+  overflow-y:auto;
+  padding:12px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.archive-empty {
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--text2);
+  font-size:.9rem;
+}
+
+.archive-item {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:14px 16px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  position:relative;
+}
+
+.archive-item-meta {
+  font-size:.72rem;
+  color:var(--text2);
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+
+.archive-item-sender {
+  color:var(--accent);
+  font-weight:500;
+}
+
+.archive-item-text {
+  font-size:.92rem;
+  color:var(--text);
+  line-height:1.5;
+  word-break:break-word;
+}
+
+.archive-item-media {
+  max-width:180px;
+  border-radius:10px;
+  overflow:hidden;
+}
+
+.archive-item-media img {
+  width:100%;
+  display:block;
+  cursor:pointer;
+}
+
+.archive-del {
+  position:absolute;
+  top:10px;
+  right:12px;
+  background:none;
+  border:none;
+  color:var(--text2);
+  font-size:1rem;
+  cursor:pointer;
+}
+
+#toast {
+  position:fixed;
+  bottom:calc(80px + var(--safe-bottom));
+  left:50%;
+  transform:translateX(-50%) translateY(10px);
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px 20px;
+  font-size:.85rem;
+  color:var(--text);
+  z-index:300;
+  opacity:0;
+  pointer-events:none;
+  white-space:nowrap;
+  transition:opacity .2s,transform .2s;
+}
+
+#toast.show {
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+}
 </style>
 </head>
+
 <body>
 
 <div id="loadingScreen" class="screen">
@@ -413,8 +1425,9 @@
 <div id="loginScreen" class="screen hidden">
   <div class="login-logo">me<span>M</span>o</div>
   <div class="login-sub">only for two</div>
+
   <button class="google-btn" onclick="signInWithGoogle()">
-    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox="0 0 24 24">
       <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
       <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
       <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
@@ -422,31 +1435,35 @@
     </svg>
     Google로 로그인
   </button>
+
   <div class="login-error" id="loginError"></div>
 </div>
 
 <div id="mainScreen" class="screen hidden">
   <div class="tab-content">
 
-    <!-- ── 채팅 탭 ── -->
     <div id="chatPane" class="tab-pane">
       <div class="topbar">
         <div>
           <div class="topbar-title">💬 채팅</div>
           <div class="partner-status" id="partnerStatus">상대방 대기 중...</div>
         </div>
+
         <div class="topbar-actions">
           <button class="icon-btn" onclick="toggleSearch()">
             <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </button>
+
           <button class="icon-btn" onclick="startJitsiCall('audio')">
             <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11.7 19.79 19.79 0 0115.9 3.07 2 2 0 0122 16.92z"/></svg>
           </button>
+
           <button class="icon-btn" onclick="startJitsiCall('video')">
             <svg viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
           </button>
         </div>
       </div>
+
       <div class="search-bar" id="searchBar">
         <input class="search-input" id="searchInput" placeholder="메시지 검색..." oninput="doSearch()" onkeydown="if(event.key==='Enter' && !event.isComposing) searchNext()">
         <span class="search-count" id="searchCount"></span>
@@ -454,36 +1471,36 @@
         <button class="search-nav" onclick="searchNext()">▼</button>
         <button class="search-nav" onclick="toggleSearch()">✕</button>
       </div>
+
       <div style="position:relative;flex:1;display:flex;flex-direction:column;overflow:hidden">
         <div class="chat-messages" id="chatMessages">
-          <div id="topSentinel" style="height: 10px; flex-shrink: 0; opacity: 0; pointer-events: none;"></div>
+          <div id="topSentinel" style="height:10px;flex-shrink:0;opacity:0;pointer-events:none"></div>
         </div>
+
         <button class="scroll-bottom-btn" id="scrollBottomBtn" onclick="scrollToLatest()">↓</button>
       </div>
 
       <div class="reply-bar" id="replyBar">
-        <span style="color:var(--accent);font-size:0.75rem;flex-shrink:0">↩ 답장</span>
+        <span style="color:var(--accent);font-size:.75rem;flex-shrink:0">↩ 답장</span>
         <span class="reply-bar-text" id="replyBarText"></span>
         <button class="reply-bar-cancel" onclick="cancelReply()">✕</button>
       </div>
 
-      <!-- ── 스티커 피커 패널: chatPane 직속 flex 자식 (입력창 바로 위) ── -->
       <div id="stickerPanel">
         <div class="sticker-panel-header">
           <div class="sticker-panel-title">
             <span>🍑</span> Peach 스티커
           </div>
         </div>
-        <div class="sticker-grid" id="stickerGrid">
-          <!-- JS로 채워짐 -->
-        </div>
+
+        <div class="sticker-grid" id="stickerGrid"></div>
       </div>
+
       <div class="chat-input-wrap">
-        <!-- 미디어 버튼 -->
         <button class="icon-btn" onclick="document.getElementById('mediaInput').click()">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         </button>
-        <!-- 스티커 버튼 (NEW) -->
+
         <button class="icon-btn" id="stickerToggleBtn" onclick="toggleStickerPanel()" title="스티커">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.85 0 3.58-.5 5.06-1.38"/>
@@ -493,12 +1510,14 @@
             <path d="M14.5 2.5C14.5 2.5 14 7 17 9.5s7 2 7 2"/>
           </svg>
         </button>
-        <textarea class="chat-input" id="msgInput" placeholder="메시지 입력..." rows="1"
-          oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
+
+        <textarea class="chat-input" id="msgInput" placeholder="메시지 입력..." rows="1" oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
+
         <button class="chat-send-btn" onclick="sendMessage()">
           <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>
+
       <input type="file" id="mediaInput" accept="image/*,video/*" multiple style="display:none" onchange="sendMedia(event)">
     </div>
 
@@ -518,41 +1537,47 @@
 
     <div id="todoPane" class="tab-pane hidden">
       <div class="topbar"><div class="topbar-title">📝 함께 할 일</div></div>
+
       <div class="todo-container">
         <div class="todo-input-wrap">
           <input type="text" class="todo-input" id="todoInput" placeholder="우리가 함께 하고 싶은 일은..." onkeydown="if(event.key==='Enter' && !event.isComposing) addTodo()">
           <button class="todo-add-btn" onclick="addTodo()">추가</button>
         </div>
+
         <div>
           <div class="todo-section-title">버킷 리스트</div>
           <div class="todo-list" id="todoActiveList"></div>
         </div>
-        <div style="margin-top: 10px;">
+
+        <div style="margin-top:10px">
           <div class="todo-section-title">우리가 해낸 일들</div>
           <div class="todo-list" id="todoDoneList"></div>
         </div>
       </div>
+
       <input type="file" id="todoProofInput" accept="image/*,video/*" style="display:none" onchange="uploadTodoProof(event)">
     </div>
 
     <div id="profilePane" class="tab-pane hidden">
       <div class="topbar"><div class="topbar-title">⚙️ 설정</div></div>
+
       <div style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px">
         <div class="profile-header">
           <div class="profile-avatar-lg" id="myAvatarDisplay">🙂</div>
           <div style="font-size:1.2rem;font-weight:400" id="myNameDisplay">-</div>
-          <div style="font-size:0.8rem;color:var(--text2)" id="myEmailDisplay">-</div>
+          <div style="font-size:.8rem;color:var(--text2)" id="myEmailDisplay">-</div>
         </div>
 
         <div class="profile-section">
           <div class="profile-row" style="flex-direction:column;align-items:flex-start;gap:12px">
             <span class="profile-row-label">테마</span>
+
             <div class="theme-row">
-              <div class="theme-dot active" id="tdark"    style="background:#0d0d0f;border:2px solid #555"    onclick="setTheme('dark')"    title="다크">🌑</div>
-              <div class="theme-dot"        id="trose"    style="background:#fff5f7;border:2px solid #d4607a" onclick="setTheme('rose')"    title="로즈">🌹</div>
-              <div class="theme-dot"        id="tskyblue" style="background:#f0f6ff;border:2px solid #4a7fd4" onclick="setTheme('skyblue')" title="스카이블루">🩵</div>
-              <div class="theme-dot"        id="tpurple"  style="background:#f8f4ff;border:2px solid #8a5cd4" onclick="setTheme('purple')"  title="퍼플">💜</div>
-              <div class="theme-dot"        id="tcream"   style="background:#fdf8f0;border:2px solid #b8904a" onclick="setTheme('cream')"   title="크림">🍞</div>
+              <div class="theme-dot active" id="tdark" style="background:#0d0d0f;border:2px solid #555" onclick="setTheme('dark')">🌑</div>
+              <div class="theme-dot" id="trose" style="background:#fff5f7;border:2px solid #d4607a" onclick="setTheme('rose')">🌹</div>
+              <div class="theme-dot" id="tskyblue" style="background:#f0f6ff;border:2px solid #4a7fd4" onclick="setTheme('skyblue')">🩵</div>
+              <div class="theme-dot" id="tpurple" style="background:#f8f4ff;border:2px solid #8a5cd4" onclick="setTheme('purple')">💜</div>
+              <div class="theme-dot" id="tcream" style="background:#fdf8f0;border:2px solid #b8904a" onclick="setTheme('cream')">🍞</div>
             </div>
           </div>
         </div>
@@ -565,6 +1590,7 @@
               <span class="slider"></span>
             </label>
           </div>
+
           <div class="profile-row">
             <span class="profile-row-label">자동 번역 (한↔일)</span>
             <label class="toggle-sw">
@@ -572,6 +1598,7 @@
               <span class="slider"></span>
             </label>
           </div>
+
           <div class="profile-row">
             <span class="profile-row-label">내 언어</span>
             <select class="lang-select" id="langSelect" onchange="changeLang()">
@@ -580,29 +1607,33 @@
             </select>
           </div>
         </div>
+
         <button class="danger-btn" onclick="doLogout()">로그아웃</button>
       </div>
     </div>
-
   </div>
-  
+
   <div class="tab-bar">
     <button class="tab-btn active" id="tab-chat" onclick="switchTab('chat')">
       <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
       채팅
     </button>
+
     <button class="tab-btn" id="tab-album" onclick="switchTab('album')">
       <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
       앨범
     </button>
+
     <button class="tab-btn" id="tab-archive" onclick="switchTab('archive')">
       <svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
       보관함
     </button>
+
     <button class="tab-btn" id="tab-todo" onclick="switchTab('todo')">
-      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
       버킷
     </button>
+
     <button class="tab-btn" id="tab-profile" onclick="switchTab('profile')">
       <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       설정
@@ -615,6 +1646,7 @@
     <svg viewBox="0 0 24 24"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/></svg>
     답장
   </button>
+
   <button class="ctx-item" id="ctxArchive">
     <svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
     보관
@@ -622,23 +1654,21 @@
 </div>
 
 <div id="incomingCall">
-  <div class="call-avatar" style="width:80px;height:80px;font-size:2rem" id="incomingAvatar">🌸</div>
-  <div style="color:var(--text2);font-size:0.9rem">전화가 왔어요</div>
+  <div style="width:80px;height:80px;font-size:2rem" id="incomingAvatar">🌸</div>
+  <div style="color:var(--text2);font-size:.9rem">전화가 왔어요</div>
   <div class="incoming-name" id="incomingName">-</div>
   <div class="incoming-type" id="incomingType">음성 통화</div>
+
   <div class="incoming-btns">
-    <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
-      <button class="inc-btn reject" onclick="rejectCall()">
-        <svg viewBox="0 0 24 24"><path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7 2 2 0 011.72 2v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07"/><path d="M6.67 6.67A19.5 19.5 0 003 15.9a2 2 0 01-2-2.18v-3a2 2 0 011.72-2 12.84 12.84 0 002.81-.7 2 2 0 012.11.45l1.27 1.27"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-        <span>거절</span>
-      </button>
-    </div>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
-      <button class="inc-btn accept" onclick="acceptCall()">
-        <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11.7 19.79 19.79 0 0115.9 3.07 2 2 0 0122 16.92z"/></svg>
-        <span>수락</span>
-      </button>
-    </div>
+    <button class="inc-btn reject" onclick="rejectCall()">
+      <svg viewBox="0 0 24 24"><path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7 2 2 0 011.72 2v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+      <span>거절</span>
+    </button>
+
+    <button class="inc-btn accept" onclick="acceptCall()">
+      <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 11.7 19.79 19.79 0 0115.9 3.07 2 2 0 0122 16.92z"/></svg>
+      <span>수락</span>
+    </button>
   </div>
 </div>
 
@@ -653,545 +1683,894 @@
 <div id="toast"></div>
 
 <script type="module">
-import { initializeApp }                                       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithPopup,
-         onAuthStateChanged, signOut }                         from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getDatabase, ref, set, push, update, onValue, onChildAdded, onChildChanged,
-         onDisconnect, serverTimestamp, query, orderByKey, limitToLast, endBefore, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
-import { getStorage, ref as sRef,
-         uploadBytesResumable, getDownloadURL, listAll }       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
-import { getMessaging, getToken }                             from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+import {
+  getDatabase,
+  ref,
+  set,
+  push,
+  update,
+  onValue,
+  onChildAdded,
+  onChildChanged,
+  onDisconnect,
+  serverTimestamp,
+  query,
+  orderByKey,
+  limitToLast,
+  endBefore,
+  get
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+import {
+  getStorage,
+  ref as sRef,
+  uploadBytesResumable,
+  getDownloadURL,
+  listAll
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
+import {
+  getMessaging,
+  getToken
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
 
 const firebaseConfig = {
-  apiKey:            "AIzaSyBSfAOkWJtk41iCLIWkCtG91Hn9Aa44UNA",
-  authDomain:        "memo-e366f.firebaseapp.com",
-  databaseURL:       "https://memo-e366f-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId:         "memo-e366f",
-  storageBucket:     "memo-e366f.firebasestorage.app",
+  apiKey: "AIzaSyBSfAOkWJtk41iCLIWkCtG91Hn9Aa44UNA",
+  authDomain: "memo-e366f.firebaseapp.com",
+  databaseURL: "https://memo-e366f-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "memo-e366f",
+  storageBucket: "memo-e366f.firebasestorage.app",
   messagingSenderId: "103854425677",
-  appId:             "1:103854425677:web:67e0b818c41b42bc3c7e04"
+  appId: "1:103854425677:web:67e0b818c41b42bc3c7e04"
 };
 
 const ALLOWED = {
-  'fromkevinjung@gmail.com': { name: 'Kevin', emoji: '🍀', lang: 'ko', partnerEmail: 'momo.021118@gmail.com' },
-  'momo.021118@gmail.com':   { name: 'Momo',  emoji: '🌸', lang: 'ja', partnerEmail: 'fromkevinjung@gmail.com' }
+  "fromkevinjung@gmail.com": {
+    name: "Kevin",
+    emoji: "🍀",
+    lang: "ko",
+    partnerEmail: "momo.021118@gmail.com"
+  },
+  "momo.021118@gmail.com": {
+    name: "Momo",
+    emoji: "🌸",
+    lang: "ja",
+    partnerEmail: "fromkevinjung@gmail.com"
+  }
 };
-const ROOM_ID = 'memo_private_room';
 
-// ══════════════════════════════════════════════════
-// ── 스티커 정의 (22장 peach 시리즈) ──
-// ══════════════════════════════════════════════════
+const ROOM_ID = "memo_private_room";
+
 const STICKER_DEFS = [
-  { file: '01_cute.png',              label: '귀여워' },
-  { file: '02_please.png',            label: '부탁해' },
-  { file: '03_lets_go_together.png',  label: '같이가자' },
-  { file: '04_i_miss_you.png',        label: '보고싶어' },
-  { file: '05_why_do_i_like_it.png',  label: '왜좋지' },
-  { file: '06_what_a_relief.png',     label: '다행이네' },
-  { file: '07_please_eat_a_lot.png',  label: '많이먹어' },
-  { file: '08_smile.png',             label: '방긋' },
-  { file: '09_shy_smile.png',         label: '부끄' },
-  { file: '10_crying.png',            label: '엉엉' },
-  { file: '11_surprised.png',         label: '깜짝' },
-  { file: '12_sleepy.png',            label: '졸려' },
-  { file: '13_heart_eyes.png',        label: '하트눈' },
-  { file: '14_hooray.png',            label: '신나' },
-  { file: '15_go_for_it.png',         label: '힘내' },
-  { file: '16_teehee.png',            label: '헤헤' },
-  { file: '17_pouting.png',           label: '볼록' },
-  { file: '18_hmm.png',               label: '음음' },
-  { file: '19_sorry.png',             label: '미안해' },
-  { file: '20_thank_you.png',         label: '고마워' },
-  { file: '21_yay.png',               label: '야호' },
-  { file: '22_good_work.png',         label: '수고' },
+  { file:"01_cute.png", label:"귀여워" },
+  { file:"02_please.png", label:"부탁해" },
+  { file:"03_lets_go_together.png", label:"같이가자" },
+  { file:"04_i_miss_you.png", label:"보고싶어" },
+  { file:"05_why_do_i_like_it.png", label:"왜좋지" },
+  { file:"06_what_a_relief.png", label:"다행이네" },
+  { file:"07_please_eat_a_lot.png", label:"많이먹어" },
+  { file:"08_smile.png", label:"방긋" },
+  { file:"09_shy_smile.png", label:"부끄" },
+  { file:"10_crying.png", label:"엉엉" },
+  { file:"11_surprised.png", label:"깜짝" },
+  { file:"12_sleepy.png", label:"졸려" },
+  { file:"13_heart_eyes.png", label:"하트눈" },
+  { file:"14_hooray.png", label:"신나" },
+  { file:"15_go_for_it.png", label:"힘내" },
+  { file:"16_teehee.png", label:"헤헤" },
+  { file:"17_pouting.png", label:"볼록" },
+  { file:"18_hmm.png", label:"음음" },
+  { file:"19_sorry.png", label:"미안해" },
+  { file:"20_thank_you.png", label:"고마워" },
+  { file:"21_yay.png", label:"야호" },
+  { file:"22_good_work.png", label:"수고" }
 ];
 
-// 스티커 Storage 경로 prefix
-const STICKER_STORAGE_PATH = 'stickers/peach/';
-
-// 런타임 URL 캐시 (Map: fileName → downloadURL)
-// ▸ 세션 내 중복 Storage 요청 방지
+const STICKER_STORAGE_PATH = "stickers/peach/";
 const stickerUrlCache = new Map();
 
-// 패널 열림 여부
-let stickerPanelOpen = false;
-
-const app     = initializeApp(firebaseConfig);
-const auth    = getAuth(app);
-const db      = getDatabase(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
 const storage = getStorage(app);
-const messaging = getMessaging(app);
 
+let messaging = null;
+try {
+  messaging = getMessaging(app);
+} catch (err) {
+  console.warn("[FCM] Messaging 미지원 환경:", err);
+}
+
+let me = null;
+let partner = null;
+let myLang = "ko";
+let translateEnabled = true;
 let notifEnabled = false;
-let enterTime = 0;
-let swRegistration = null;
 let appHasFocus = true;
+let swRegistration = null;
 
-document.addEventListener('visibilitychange', () => { appHasFocus = document.visibilityState === 'visible'; });
-window.addEventListener('blur', () => { appHasFocus = false; });
-window.addEventListener('focus', () => { appHasFocus = true; });
+let roomEntered = false;
+let stickerPanelOpen = false;
+let pendingProofKey = null;
+let replyTo = null;
+let partnerLastRead = 0;
+let enterTime = 0;
 
-const swReadyPromise = ('serviceWorker' in navigator)
-  ? navigator.serviceWorker.register('./firebase-messaging-sw.js')
-      .then(reg => { swRegistration = reg; return reg; })
-      .catch(err => { console.warn('[SW] 등록 실패:', err); return null; })
+let oldestKey = null;
+let loadingOlder = false;
+let hasMoreOlder = true;
+let initialLoadTimer = null;
+
+const seenKeys = new Set();
+window._loadedMessages = {};
+
+const CHECK_SINGLE = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+const CHECK_DOUBLE = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 6 7 17 2 12"/><polyline points="23 6 12 17"/></svg>`;
+
+document.addEventListener("visibilitychange", () => {
+  appHasFocus = document.visibilityState === "visible";
+});
+
+window.addEventListener("blur", () => {
+  appHasFocus = false;
+});
+
+window.addEventListener("focus", () => {
+  appHasFocus = true;
+});
+
+const swReadyPromise = ("serviceWorker" in navigator)
+  ? navigator.serviceWorker.register("./firebase-messaging-sw.js")
+      .then(reg => {
+        swRegistration = reg;
+        return reg;
+      })
+      .catch(err => {
+        console.warn("[SW] 등록 실패:", err);
+        return null;
+      })
   : Promise.resolve(null);
 
-const VAPID_KEY = 'BKvA2crddS7igPxkQbnuVjN93065I97kfjX8AlQ7OJwkOZWzn8XO8yklEbjmSfsYYhz7lwdwiKFc7wxvXOpPNEE';
+const VAPID_KEY = "BKvA2crddS7igPxkQbnuVjN93065I97kfjX8AlQ7OJwkOZWzn8XO8yklEbjmSfsYYhz7lwdwiKFc7wxvXOpPNEE";
+
+function sanitize(str) {
+  if (!str) return "";
+  if (String(str).startsWith("http://") || String(str).startsWith("https://")) return str;
+
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(el => el.classList.add("hidden"));
+  document.getElementById(id)?.classList.remove("hidden");
+}
+
+function getDateStr(ts) {
+  const d = new Date(ts || Date.now());
+  const days = ["일","월","화","수","목","금","토"];
+  return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 ${days[d.getDay()]}요일`;
+}
+
+function fmt(ts) {
+  const d = new Date(ts || Date.now());
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+function fmtFull(ts) {
+  const d = new Date(ts || Date.now());
+  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+function mediaLabel(msg) {
+  if (!msg) return "";
+  if (msg.type === "text") return msg.text || "";
+  if (msg.type === "image") return "📷 사진";
+  if (msg.type === "video") return "🎥 영상";
+  if (msg.type === "sticker") return `🍑 스티커 (${msg.stickerLabel || ""})`;
+
+  if (msg.type === "album") {
+    const count = Array.isArray(msg.items) ? msg.items.length : (msg.count || 0);
+    return count ? `📷 사진 ${count}장` : "📷 사진";
+  }
+
+  return "";
+}
+
+function isNearBottom(el, threshold = 120) {
+  return el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+}
+
+window.scrollToLatest = function() {
+  const el = document.getElementById("chatMessages");
+  if (!el) return;
+  el.scrollTop = el.scrollHeight;
+};
+
+const THEME_IDS = ["dark","rose","skyblue","purple","cream"];
+
+window.setTheme = function(theme) {
+  document.body.className = theme === "dark" ? "" : `theme-${theme}`;
+  localStorage.setItem("memo_theme", theme);
+
+  THEME_IDS.forEach(t => {
+    document.getElementById(`t${t}`)?.classList.toggle("active", t === theme);
+  });
+};
+
+function loadTheme() {
+  window.setTheme(localStorage.getItem("memo_theme") || "dark");
+}
 
 async function getFCMToken() {
+  if (!messaging) throw new Error("FCM Messaging 미지원 환경입니다.");
+
   const reg = await swReadyPromise;
-  if (!reg) throw new Error('Service Worker 등록 실패 — firebase-messaging-sw.js를 확인하세요');
-  return await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
+  if (!reg) throw new Error("Service Worker 등록 실패");
+
+  return getToken(messaging, {
+    vapidKey: VAPID_KEY,
+    serviceWorkerRegistration: reg
+  });
 }
 
 async function initNotif() {
-  const saved  = localStorage.getItem('memo_notif');
-  const toggle = document.getElementById('notifToggle');
-  if (saved === 'on' && 'Notification' in window && Notification.permission === 'granted') {
+  const saved = localStorage.getItem("memo_notif");
+  const toggle = document.getElementById("notifToggle");
+
+  if (
+    saved === "on" &&
+    "Notification" in window &&
+    Notification.permission === "granted"
+  ) {
     notifEnabled = true;
-    toggle.checked = true;
+    if (toggle) toggle.checked = true;
+
     try {
       const token = await getFCMToken();
-      if (token && me) await set(ref(db, `${ROOM_ID}/tokens/${me.name}`), token);
-    } catch (e) { console.warn('[FCM] 토큰 갱신 실패:', e); }
+      if (token && me) {
+        await set(ref(db, `${ROOM_ID}/tokens/${me.name}`), token);
+      }
+    } catch (err) {
+      console.warn("[FCM] 토큰 갱신 실패:", err);
+    }
   }
 }
 
 window.toggleNotif = async function() {
-  const toggle = document.getElementById('notifToggle');
-  if (toggle.checked) {
-    if (!('Notification' in window)) {
-      showToast('이 브라우저는 알림을 지원하지 않아요');
-      toggle.checked = false; return;
-    }
-    const perm = await Notification.requestPermission();
-    if (perm === 'granted') {
-      try {
-        const token = await getFCMToken();
-        if (token) {
-          await set(ref(db, `${ROOM_ID}/tokens/${me.name}`), token);
-          notifEnabled = true;
-          localStorage.setItem('memo_notif', 'on');
-          showToast('실시간 푸시 알림이 켜졌습니다.');
-        } else {
-          showToast('FCM 토큰을 생성할 수 없습니다.');
-          toggle.checked = false;
-        }
-      } catch (err) {
-        console.error('[FCM] Token Error:', err);
-        showToast('알림 연동에 실패했습니다: ' + (err.message || err));
-        toggle.checked = false;
-      }
-    } else {
-      toggle.checked = false;
-      showToast('브라우저 설정에서 알림 권한을 허용해주세요.');
-    }
-  } else {
+  const toggle = document.getElementById("notifToggle");
+  if (!toggle) return;
+
+  if (!toggle.checked) {
     notifEnabled = false;
-    localStorage.setItem('memo_notif', 'off');
-    if (me) await set(ref(db, `${ROOM_ID}/tokens/${me.name}`), null);
-    showToast('알림이 꺼졌습니다.');
+    localStorage.setItem("memo_notif", "off");
+
+    if (me) {
+      await set(ref(db, `${ROOM_ID}/tokens/${me.name}`), null);
+    }
+
+    showToast("알림이 꺼졌습니다.");
+    return;
+  }
+
+  if (!("Notification" in window)) {
+    showToast("이 브라우저는 알림을 지원하지 않아요");
+    toggle.checked = false;
+    return;
+  }
+
+  const permission = await Notification.requestPermission();
+
+  if (permission !== "granted") {
+    toggle.checked = false;
+    showToast("브라우저 설정에서 알림 권한을 허용해주세요.");
+    return;
+  }
+
+  try {
+    const token = await getFCMToken();
+
+    if (!token) {
+      toggle.checked = false;
+      showToast("FCM 토큰을 생성할 수 없습니다.");
+      return;
+    }
+
+    await set(ref(db, `${ROOM_ID}/tokens/${me.name}`), token);
+    notifEnabled = true;
+    localStorage.setItem("memo_notif", "on");
+    showToast("실시간 푸시 알림이 켜졌습니다.");
+  } catch (err) {
+    console.error("[FCM]", err);
+    toggle.checked = false;
+    showToast("알림 연동에 실패했습니다.");
   }
 };
 
 function sendLocalNotif(name, body) {
   if (!notifEnabled || appHasFocus) return;
+
   try {
-    const tag = 'memo-' + Date.now();
+    const title = `meMo — ${name}`;
+
     if (swRegistration) {
-      swRegistration.showNotification('meMo — ' + name, { body, tag });
+      swRegistration.showNotification(title, {
+        body,
+        tag: `memo-${Date.now()}`
+      });
     } else {
-      new Notification('meMo — ' + name, { body, tag });
+      new Notification(title, {
+        body,
+        tag: `memo-${Date.now()}`
+      });
     }
-  } catch (e) { console.warn('[Notif]', e); }
-}
-
-let me = null, partner = null;
-let myLang = 'ko', translateEnabled = true;
-let partnerLastRead = 0;
-const CHECK_SINGLE = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-const CHECK_DOUBLE = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 6 7 17 2 12"/><polyline points="23 6 12 17"/></svg>`;
-
-window._loadedMessages = {};
-const seenKeys = new Set();
-let oldestKey = null;
-let loadingOlder = false;
-let hasMoreOlder = true;
-let liveLastDateStr = '';
-let topObserver = null;
-let initialLoadTimer = null;
-
-function sanitize(str) {
-  if (!str) return '';
-  if (str.startsWith('http://') || str.startsWith('https://')) return str;
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
-}
-
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-  document.getElementById(id).classList.remove('hidden');
-}
-
-const THEME_IDS = ['dark','rose','skyblue','purple','cream'];
-window.setTheme = function(theme) {
-  document.body.className = theme === 'dark' ? '' : `theme-${theme}`;
-  localStorage.setItem('memo_theme', theme);
-  THEME_IDS.forEach(t => {
-    const el = document.getElementById(`t${t}`);
-    if (el) el.classList.toggle('active', t === theme);
-  });
-};
-
-function loadTheme() {
-  const saved = localStorage.getItem('memo_theme') || 'dark';
-  setTheme(saved);
+  } catch (err) {
+    console.warn("[Notif]", err);
+  }
 }
 
 async function compressImageSafe(file, maxWidth = 1600) {
-  if (!file.type.startsWith('image/') || file.type.includes('gif')) return file;
-  return new Promise((resolve) => {
+  if (!file.type.startsWith("image/") || file.type.includes("gif")) {
+    return file;
+  }
+
+  return new Promise(resolve => {
     const img = new Image();
     const objectUrl = URL.createObjectURL(file);
-    img.src = objectUrl;
+
     img.onload = () => {
       URL.revokeObjectURL(objectUrl);
-      let width = img.width, height = img.height;
-      if (width > maxWidth) { height = Math.round((height * maxWidth) / width); width = maxWidth; }
-      const canvas = document.createElement('canvas');
-      canvas.width = width; canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      if (file.type !== 'image/png') { ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, width, height); }
+
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext("2d");
+
+      if (file.type !== "image/png") {
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, width, height);
+      }
+
       ctx.drawImage(img, 0, 0, width, height);
-      const targetType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-      const quality = targetType === 'image/jpeg' ? 0.8 : undefined;
+
+      const targetType = file.type === "image/png" ? "image/png" : "image/jpeg";
+      const quality = targetType === "image/jpeg" ? .8 : undefined;
+
       canvas.toBlob(blob => {
-        if (!blob) { resolve(file); return; }
-        const ext = targetType === 'image/png' ? '.png' : '.jpg';
-        const safeName = file.name.replace(/\.[^/.]+$/, '') + '_compressed' + ext;
-        try { resolve(new File([blob], safeName, { type: targetType, lastModified: Date.now() })); }
-        catch (e) { blob.name = safeName; resolve(blob); }
+        if (!blob) {
+          resolve(file);
+          return;
+        }
+
+        const ext = targetType === "image/png" ? ".png" : ".jpg";
+        const safeName = `${file.name.replace(/\.[^/.]+$/, "")}_compressed${ext}`;
+
+        try {
+          resolve(new File([blob], safeName, {
+            type: targetType,
+            lastModified: Date.now()
+          }));
+        } catch {
+          blob.name = safeName;
+          resolve(blob);
+        }
       }, targetType, quality);
     };
-    img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(file); };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(file);
+    };
+
+    img.src = objectUrl;
   });
 }
 
 window.signInWithGoogle = async function() {
   const provider = new GoogleAuthProvider();
-  const errEl = document.getElementById('loginError');
-  errEl.textContent = '';
-  try { await signInWithPopup(auth, provider); }
-  catch(e) { if (e.code !== 'auth/popup-closed-by-user') errEl.textContent = '로그인 중 오류가 발생했습니다. 다시 시도해주세요.'; }
+  const errEl = document.getElementById("loginError");
+
+  if (errEl) errEl.textContent = "";
+
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (err) {
+    if (err.code !== "auth/popup-closed-by-user" && errEl) {
+      errEl.textContent = "로그인 중 오류가 발생했습니다. 다시 시도해주세요.";
+    }
+  }
 };
 
-let roomEntered = false;
 onAuthStateChanged(auth, async user => {
-  if (!user) { roomEntered = false; showScreen('loginScreen'); return; }
+  if (!user) {
+    roomEntered = false;
+    showScreen("loginScreen");
+    return;
+  }
+
   if (roomEntered) return;
-  const email = user.email;
-  const profile = ALLOWED[email];
+
+  const profile = ALLOWED[user.email];
+
   if (!profile) {
     await signOut(auth);
-    document.getElementById('loginError').textContent = `${email} 은 접근이 허용되지 않은 계정입니다.`;
-    showScreen('loginScreen'); return;
+
+    const errEl = document.getElementById("loginError");
+    if (errEl) {
+      errEl.textContent = `${user.email} 은 접근이 허용되지 않은 계정입니다.`;
+    }
+
+    showScreen("loginScreen");
+    return;
   }
-  me = { ...profile, email, photoURL: user.photoURL };
-  partner = { ...ALLOWED[profile.partnerEmail], email: profile.partnerEmail };
-  myLang = localStorage.getItem(`memo_lang_${email}`) || profile.lang;
-  translateEnabled = localStorage.getItem('memo_translate') !== 'false';
+
+  me = {
+    ...profile,
+    email: user.email,
+    photoURL: user.photoURL
+  };
+
+  partner = {
+    ...ALLOWED[profile.partnerEmail],
+    email: profile.partnerEmail
+  };
+
+  myLang = localStorage.getItem(`memo_lang_${user.email}`) || profile.lang;
+  translateEnabled = localStorage.getItem("memo_translate") !== "false";
+
   roomEntered = true;
   enterRoom();
 });
 
 function enterRoom() {
   const meRef = ref(db, `${ROOM_ID}/presence/${me.name}`);
-  set(meRef, { online: true, name: me.name, photoURL: me.photoURL || '', ts: serverTimestamp() });
+
+  set(meRef, {
+    online: true,
+    name: me.name,
+    photoURL: me.photoURL || "",
+    ts: serverTimestamp()
+  });
+
   onDisconnect(meRef).update({ online: false });
 
-  document.addEventListener('visibilitychange', () => {
-    set(ref(db, `${ROOM_ID}/presence/${me.name}/online`), document.visibilityState === 'visible');
+  document.addEventListener("visibilitychange", () => {
+    if (!me) return;
+
+    set(
+      ref(db, `${ROOM_ID}/presence/${me.name}/online`),
+      document.visibilityState === "visible"
+    );
   });
-  window.addEventListener('beforeunload', () => {
+
+  window.addEventListener("beforeunload", () => {
+    if (!me) return;
     set(ref(db, `${ROOM_ID}/presence/${me.name}/online`), false);
   });
 
   onValue(ref(db, `${ROOM_ID}/presence/${partner.name}`), snap => {
     const data = snap.val();
-    const el = document.getElementById('partnerStatus');
-    el.innerHTML = '';
+    const el = document.getElementById("partnerStatus");
+
+    if (!el) return;
+
+    el.innerHTML = "";
+
     if (data?.online) {
-      const dot = document.createElement('span'); dot.className = 'online-dot'; el.appendChild(dot);
-      el.appendChild(document.createTextNode(sanitize(partner.name) + ' 온라인'));
+      const dot = document.createElement("span");
+      dot.className = "online-dot";
+      el.appendChild(dot);
+      el.appendChild(document.createTextNode(`${partner.name} 온라인`));
     } else {
-      el.textContent = sanitize(partner.name) + ' 오프라인';
+      el.textContent = `${partner.name} 오프라인`;
     }
   });
 
+  const container = document.getElementById("chatMessages");
+  const messagesRef = ref(db, `${ROOM_ID}/messages`);
+
   let latestTheirTs = 0;
   let lastReadTimer = null;
-  const container = document.getElementById('chatMessages');
-
+  let initialLoadDone = false;
   let pressTimer;
-  container.addEventListener('touchstart', e => {
-    const wrap = e.target.closest('.msg-wrap');
-    if (!wrap || !wrap.dataset.key) return;
-    const key = wrap.dataset.key;
-    const msg = window._loadedMessages[key];
-    if (!msg || msg.type !== 'text') return;
-    pressTimer = setTimeout(() => showCtxMenu(msg, wrap), 500);
-  }, { passive: true });
-  container.addEventListener('touchend', () => clearTimeout(pressTimer), { passive: true });
-  container.addEventListener('touchmove', () => clearTimeout(pressTimer), { passive: true });
-  container.addEventListener('dblclick', e => {
-    const wrap = e.target.closest('.msg-wrap');
-    if (!wrap || !wrap.dataset.key) return;
-    const key = wrap.dataset.key;
-    const msg = window._loadedMessages[key];
-    if (msg && msg.type === 'text') setReply(msg);
-  });
 
   function updateMyLastRead(ts) {
-    if (ts <= 0 || ts === window._myLastReadSent) return;
+    if (!ts || ts === window._myLastReadSent) return;
+
     clearTimeout(lastReadTimer);
+
     lastReadTimer = setTimeout(() => {
       window._myLastReadSent = ts;
       set(ref(db, `${ROOM_ID}/lastRead/${me.name}`), ts);
     }, 500);
   }
 
-  const messagesRef = ref(db, `${ROOM_ID}/messages`);
-  const initialQuery = query(messagesRef, orderByKey(), limitToLast(50));
-  let initialLoadDone = false;
+  container.addEventListener("touchstart", event => {
+    const wrap = event.target.closest(".msg-wrap");
+    if (!wrap?.dataset.key) return;
+
+    const msg = window._loadedMessages[wrap.dataset.key];
+    if (!msg || msg.type !== "text") return;
+
+    pressTimer = setTimeout(() => {
+      showCtxMenu(msg, wrap);
+    }, 500);
+  }, { passive:true });
+
+  container.addEventListener("touchend", () => clearTimeout(pressTimer), { passive:true });
+  container.addEventListener("touchmove", () => clearTimeout(pressTimer), { passive:true });
+
+  container.addEventListener("dblclick", event => {
+    const wrap = event.target.closest(".msg-wrap");
+    if (!wrap?.dataset.key) return;
+
+    const msg = window._loadedMessages[wrap.dataset.key];
+    if (msg?.type === "text") window.setReply(msg);
+  });
+
+  const initialQuery = query(
+    messagesRef,
+    orderByKey(),
+    limitToLast(50)
+  );
 
   onChildAdded(initialQuery, snap => {
     const key = snap.key;
+
     if (seenKeys.has(key)) return;
-    seenKeys.add(key);
+
     const msg = snap.val();
-    if (!oldestKey) oldestKey = key;
-    renderMessage(msg, key);
+    const shouldStickToBottom = !initialLoadDone || isNearBottom(container);
+
+    seenKeys.add(key);
+
+    if (!oldestKey) {
+      oldestKey = key;
+    }
+
+    renderMessage(msg, key, shouldStickToBottom);
+
     if (msg.uid !== me.name && msg.ts > latestTheirTs) {
       latestTheirTs = msg.ts;
       updateMyLastRead(msg.ts);
+
       if (msg.ts > enterTime) {
         sendLocalNotif(msg.name, mediaLabel(msg));
       }
     }
-    if (!initialLoadDone) {
-      clearTimeout(initialLoadTimer);
-      initialLoadTimer = setTimeout(() => { initialLoadDone = true; setupTopObserver(); }, 500);
-    }
+
+    clearTimeout(initialLoadTimer);
+
+    initialLoadTimer = setTimeout(() => {
+      if (initialLoadDone) return;
+
+      initialLoadDone = true;
+      window.scrollToLatest();
+      setupHistoryScroll();
+    }, 250);
   });
 
   onChildChanged(messagesRef, snap => {
     const key = snap.key;
     const msg = snap.val();
-    if (window._loadedMessages[key]) window._loadedMessages[key].translation = msg.translation;
-    const el = container.querySelector(`[data-key="${key}"]`);
-    if (!el || !msg.translation || !translateEnabled) return;
-    let trEl = el.querySelector('.msg-translation');
-    if (!trEl) {
-      trEl = document.createElement('div');
-      trEl.className = 'msg-translation';
-      const isMe = msg.uid === me.name;
-      if (isMe) { trEl.style.cssText = 'border-left:none;border-right:2px solid var(--accent2);padding-left:0;padding-right:8px;text-align:right'; }
-      const timeEl = el.querySelector('.msg-time');
-      if (timeEl) el.insertBefore(trEl, timeEl); else el.appendChild(trEl);
+
+    if (window._loadedMessages[key]) {
+      window._loadedMessages[key].translation = msg.translation;
     }
-    trEl.textContent = msg.translation;
+
+    const el = container.querySelector(`[data-key="${key}"]`);
+
+    if (!el || !msg.translation || !translateEnabled) return;
+
+    let translationEl = el.querySelector(".msg-translation");
+
+    if (!translationEl) {
+      translationEl = document.createElement("div");
+      translationEl.className = "msg-translation";
+
+      if (msg.uid === me.name) {
+        translationEl.style.cssText = "border-left:none;border-right:2px solid var(--accent2);padding-left:0;padding-right:8px;text-align:right";
+      }
+
+      const timeEl = el.querySelector(".msg-time");
+
+      if (timeEl) {
+        el.insertBefore(translationEl, timeEl);
+      } else {
+        el.appendChild(translationEl);
+      }
+    }
+
+    translationEl.textContent = msg.translation;
   });
 
   onValue(ref(db, `${ROOM_ID}/lastRead/${partner.name}`), snap => {
     partnerLastRead = snap.val() || 0;
-    document.querySelectorAll('.read-check[data-ts]').forEach(el => {
-      if (parseInt(el.dataset.ts) <= partnerLastRead) {
-        el.className = 'read-check read'; el.innerHTML = CHECK_DOUBLE;
+
+    document.querySelectorAll(".read-check[data-ts]").forEach(el => {
+      if (Number(el.dataset.ts) <= partnerLastRead) {
+        el.className = "read-check read";
+        el.innerHTML = CHECK_DOUBLE;
       }
     });
   });
 
-  onValue(ref(db, `${ROOM_ID}/media`), snap => updateAlbum(snap.val()));
+  onValue(ref(db, `${ROOM_ID}/media`), snap => {
+    updateAlbum(snap.val());
+  });
+
   listenTodos();
   listenSignaling();
   listenArchive();
 
-  const avatarEl = document.getElementById('myAvatarDisplay');
-  if (me.photoURL) {
-    const myImg = document.createElement('img');
-    myImg.src = sanitize(me.photoURL);
-    myImg.style.cssText = 'width:100%;height:100%;object-fit:cover';
-    avatarEl.innerHTML = ''; avatarEl.appendChild(myImg);
-  } else { avatarEl.textContent = me.emoji; }
+  const avatarEl = document.getElementById("myAvatarDisplay");
 
-  document.getElementById('myNameDisplay').textContent  = me.name;
-  document.getElementById('myEmailDisplay').textContent = me.email;
-  document.getElementById('langSelect').value           = myLang;
-  document.getElementById('translateToggle').checked    = translateEnabled;
+  if (avatarEl) {
+    if (me.photoURL) {
+      const img = document.createElement("img");
+      img.src = me.photoURL;
+      avatarEl.innerHTML = "";
+      avatarEl.appendChild(img);
+    } else {
+      avatarEl.textContent = me.emoji;
+    }
+  }
+
+  document.getElementById("myNameDisplay").textContent = me.name;
+  document.getElementById("myEmailDisplay").textContent = me.email;
+  document.getElementById("langSelect").value = myLang;
+  document.getElementById("translateToggle").checked = translateEnabled;
 
   enterTime = Date.now();
+
   loadTheme();
   initNotif();
 
-  // 스티커 패널 초기화 (Storage URL 미리 로드 시작)
-  initStickerPanel();
+  initStickerPanel().catch(err => {
+    console.warn("[Sticker] 초기화 실패:", err);
+  });
 
-  showScreen('mainScreen');
+  showScreen("mainScreen");
 
-  // 패널 외부 클릭 시 닫기
-  document.addEventListener('click', e => {
+  document.addEventListener("click", event => {
     if (!stickerPanelOpen) return;
-    const panel = document.getElementById('stickerPanel');
-    const btn   = document.getElementById('stickerToggleBtn');
-    if (!panel.contains(e.target) && !btn.contains(e.target)) {
+
+    const panel = document.getElementById("stickerPanel");
+    const button = document.getElementById("stickerToggleBtn");
+
+    if (!panel.contains(event.target) && !button.contains(event.target)) {
       closeStickerPanel();
     }
   });
-  document.addEventListener('touchstart', e => {
-    if (!stickerPanelOpen) return;
-    const panel = document.getElementById('stickerPanel');
-    const btn   = document.getElementById('stickerToggleBtn');
-    if (!panel.contains(e.target) && !btn.contains(e.target)) {
-      closeStickerPanel();
+}
+
+function setupHistoryScroll() {
+  const cm = document.getElementById("chatMessages");
+
+  if (!cm || cm.dataset.historyScrollBound === "1") return;
+
+  cm.dataset.historyScrollBound = "1";
+
+  cm.addEventListener("scroll", () => {
+    if (cm.scrollTop <= 120 && !loadingOlder && hasMoreOlder) {
+      loadOlderMessages();
     }
-  }, { passive: true });
+  }, { passive:true });
+
+  requestAnimationFrame(() => {
+    if (cm.scrollHeight <= cm.clientHeight + 80 && hasMoreOlder) {
+      loadOlderMessages();
+    }
+  });
 }
 
-// ══════════════════════════════════════════════════
-// ── 스티커 패널 관련 함수 ──
-// ══════════════════════════════════════════════════
+async function loadOlderMessages() {
+  if (loadingOlder || !hasMoreOlder || !oldestKey) return;
 
-/**
- * 스티커 패널 초기화:
- * Firebase Storage에서 이미 업로드된 스티커 URL을 가져와 캐시에 저장,
- * 그리드 셀을 렌더링한다.
- */
-async function initStickerPanel() {
-  buildStickerGrid(); // 먼저 skeleton UI 렌더링
-  await loadStickerUrlsFromStorage(); // 그 다음 URL 채우기
-}
+  loadingOlder = true;
 
-/**
- * Storage에서 stickers/peach/ 폴더의 파일 목록을 조회해
- * stickerUrlCache를 채운다.
- * 실패해도 무시 (업로드 안 된 상태일 수 있음).
- */
-async function loadStickerUrlsFromStorage() {
+  const cm = document.getElementById("chatMessages");
+  const sentinel = document.getElementById("topSentinel");
+
+  const beforeHeight = cm.scrollHeight;
+  const beforeTop = cm.scrollTop;
+
   try {
-    const listRef = sRef(storage, STICKER_STORAGE_PATH);
-    const result  = await listAll(listRef);
+    const messagesRef = ref(db, `${ROOM_ID}/messages`);
 
-    // 병렬로 URL 가져오기
-    await Promise.all(result.items.map(async (itemRef) => {
-      const fileName = itemRef.name;
-      if (!stickerUrlCache.has(fileName)) {
-        try {
-          const url = await getDownloadURL(itemRef);
-          stickerUrlCache.set(fileName, url);
-        } catch (e) {
-          // 개별 파일 URL 실패는 무시
-          console.warn('[Sticker] URL 로드 실패:', fileName, e.code);
-        }
+    const olderQuery = query(
+      messagesRef,
+      orderByKey(),
+      endBefore(oldestKey),
+      limitToLast(20)
+    );
+
+    const snapshot = await get(olderQuery);
+
+    if (!snapshot.exists()) {
+      hasMoreOlder = false;
+      return;
+    }
+
+    const children = [];
+
+    snapshot.forEach(child => {
+      children.push({
+        key: child.key,
+        val: child.val()
+      });
+    });
+
+    if (!children.length) {
+      hasMoreOlder = false;
+      return;
+    }
+
+    if (children.length < 20) {
+      hasMoreOlder = false;
+    }
+
+    const fragment = document.createDocumentFragment();
+
+    let previousDate = sentinel.nextElementSibling?.dataset?.date || "";
+
+    for (const { key, val: msg } of children) {
+      if (seenKeys.has(key)) continue;
+
+      seenKeys.add(key);
+
+      const dateStr = getDateStr(msg.ts);
+
+      if (dateStr !== previousDate) {
+        const sep = document.createElement("div");
+        sep.className = "date-sep";
+        sep.dataset.date = dateStr;
+        sep.textContent = dateStr;
+        fragment.appendChild(sep);
+
+        previousDate = dateStr;
       }
-    }));
 
-    // 그리드 업데이트 (URL이 채워진 셀만 업데이트)
-    refreshStickerGrid();
-  } catch (e) {
-    // Storage 폴더가 없거나 권한 없을 경우 → 스티커 미표시
-    console.log('[Sticker] Storage 조회 실패:', e.code || e.message);
+      const wrap = createMessageElement(msg, key);
+      wrap.dataset.date = dateStr;
+      fragment.appendChild(wrap);
+    }
+
+    oldestKey = children[0].key;
+
+    if (fragment.childNodes.length) {
+      cm.insertBefore(fragment, sentinel.nextSibling);
+
+      requestAnimationFrame(() => {
+        cm.scrollTop = beforeTop + (cm.scrollHeight - beforeHeight);
+      });
+    }
+  } catch (err) {
+    console.error("과거 메시지 로드 실패:", err);
+    showToast("과거 메시지를 불러오지 못했습니다.");
+  } finally {
+    loadingOlder = false;
   }
 }
 
-/**
- * 스티커 그리드 DOM 생성 (skeleton)
- */
+async function initStickerPanel() {
+  buildStickerGrid();
+  await loadStickerUrlsFromStorage();
+}
+
 function buildStickerGrid() {
-  const grid = document.getElementById('stickerGrid');
-  grid.innerHTML = '';
+  const grid = document.getElementById("stickerGrid");
+
+  if (!grid) return;
+
+  grid.innerHTML = "";
+
   STICKER_DEFS.forEach(def => {
-    const cell = document.createElement('div');
-    cell.className = 'sticker-cell';
+    const cell = document.createElement("div");
+    cell.className = "sticker-cell";
     cell.dataset.file = def.file;
 
-    // placeholder
-    const placeholder = document.createElement('div');
-    placeholder.className = 'sticker-loading';
-    placeholder.textContent = '🍑';
-    cell.appendChild(placeholder);
+    const loading = document.createElement("div");
+    loading.className = "sticker-loading";
+    loading.textContent = "🍑";
 
-    // 클릭 이벤트
-    cell.addEventListener('click', () => onStickerCellClick(def));
+    cell.appendChild(loading);
+    cell.addEventListener("click", () => onStickerCellClick(def));
 
     grid.appendChild(cell);
   });
 }
 
-/**
- * 캐시된 URL로 그리드 셀 이미지 업데이트
- */
+async function loadStickerUrlsFromStorage() {
+  try {
+    const result = await listAll(sRef(storage, STICKER_STORAGE_PATH));
+
+    await Promise.all(result.items.map(async itemRef => {
+      if (stickerUrlCache.has(itemRef.name)) return;
+
+      try {
+        const url = await getDownloadURL(itemRef);
+        stickerUrlCache.set(itemRef.name, url);
+      } catch (err) {
+        console.warn("[Sticker] URL 로드 실패:", itemRef.name, err);
+      }
+    }));
+
+    refreshStickerGrid();
+  } catch (err) {
+    console.warn("[Sticker] Storage 조회 실패:", err);
+  }
+}
+
 function refreshStickerGrid() {
-  const grid = document.getElementById('stickerGrid');
+  const grid = document.getElementById("stickerGrid");
+  if (!grid) return;
+
   STICKER_DEFS.forEach(def => {
     const cell = grid.querySelector(`[data-file="${def.file}"]`);
-    if (!cell) return;
     const url = stickerUrlCache.get(def.file);
-    if (!url) return; // 아직 업로드 안 됨
 
-    // placeholder → img 교체
-    const existing = cell.querySelector('img');
-    if (existing) return; // 이미 img 있음
+    if (!cell || !url || cell.querySelector("img")) return;
 
-    const placeholder = cell.querySelector('.sticker-loading');
-    if (placeholder) placeholder.remove();
+    cell.querySelector(".sticker-loading")?.remove();
 
-    const img = document.createElement('img');
+    const img = document.createElement("img");
     img.src = url;
-    img.loading = 'lazy';
     img.alt = def.label;
+    img.loading = "lazy";
     img.draggable = false;
-    cell.insertBefore(img, cell.querySelector('.sticker-loading') || null);
 
-    // not-ready 오버레이 제거
-    const overlay = cell.querySelector('.sticker-not-ready');
-    if (overlay) overlay.remove();
+    cell.appendChild(img);
   });
 }
 
-/**
- * 스티커 셀 클릭 핸들러
- */
 function onStickerCellClick(def) {
   const url = stickerUrlCache.get(def.file);
+
   if (!url) {
-    showToast('스티커가 아직 업로드되지 않았어요. 업로드 버튼을 눌러주세요.');
+    showToast("스티커가 아직 준비되지 않았어요.");
     return;
   }
+
   sendSticker(def.file, def.label, url);
   closeStickerPanel();
 }
 
-/**
- * 스티커 메시지 전송
- */
 function sendSticker(fileName, label, url) {
-  const ts = Date.now();
   push(ref(db, `${ROOM_ID}/messages`), {
-    uid:    me.name,
-    name:   me.name,
-    photoURL: me.photoURL || '',
-    type:   'sticker',
+    uid: me.name,
+    name: me.name,
+    photoURL: me.photoURL || "",
+    type: "sticker",
     stickerFile: fileName,
     stickerLabel: label,
     url,
-    ts,
+    ts: Date.now()
   });
-  // 앨범에는 저장 안 함 (스티커는 사진이 아님)
 }
 
-/**
- * 스티커 피커 토글
- */
 window.toggleStickerPanel = function() {
   if (stickerPanelOpen) {
     closeStickerPanel();
@@ -1201,787 +2580,1102 @@ window.toggleStickerPanel = function() {
 };
 
 function openStickerPanel() {
-  const panel = document.getElementById('stickerPanel');
-  const btn   = document.getElementById('stickerToggleBtn');
-  stickerPanelOpen = true;
-  btn.classList.add('active');
+  const panel = document.getElementById("stickerPanel");
+  const button = document.getElementById("stickerToggleBtn");
 
-  // display:flex 먼저, 다음 프레임에 max-height 확장 (CSS transition 발동)
-  panel.style.display = 'flex';
-  panel.style.maxHeight = '0px';
-  panel.style.overflow  = 'hidden';
+  stickerPanelOpen = true;
+  button.classList.add("active");
+
+  panel.style.display = "flex";
+  panel.style.maxHeight = "0px";
+  panel.style.overflow = "hidden";
+
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      panel.style.transition = 'max-height 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-      panel.style.maxHeight  = '300px';
-      panel.classList.add('open');
+      panel.style.maxHeight = "300px";
+      panel.classList.add("open");
     });
   });
 
-  // 텍스트 인풋 blur (키보드 내리기)
-  document.getElementById('msgInput').blur();
+  document.getElementById("msgInput")?.blur();
 }
 
 function closeStickerPanel() {
-  const panel = document.getElementById('stickerPanel');
-  const btn   = document.getElementById('stickerToggleBtn');
+  const panel = document.getElementById("stickerPanel");
+  const button = document.getElementById("stickerToggleBtn");
+
   stickerPanelOpen = false;
-  btn.classList.remove('active');
+  button?.classList.remove("active");
 
-  panel.style.transition = 'max-height 0.18s ease-in';
-  panel.style.maxHeight  = '0px';
+  panel.style.maxHeight = "0px";
+
   setTimeout(() => {
-    panel.classList.remove('open', 'animating');
-    panel.style.display    = '';
-    panel.style.maxHeight  = '';
-    panel.style.transition = '';
-    panel.style.overflow   = '';
+    panel.classList.remove("open");
+    panel.style.display = "";
+    panel.style.maxHeight = "";
+    panel.style.overflow = "";
   }, 180);
-}
-
-// ══════════════════════════════════════════════════
-// ── TODO LOGIC ──
-// ══════════════════════════════════════════════════
-let pendingProofKey = null;
-
-window.addTodo = function() {
-  const input = document.getElementById('todoInput');
-  const text = input.value.trim();
-  if(!text) return;
-  push(ref(db, `${ROOM_ID}/todos`), {
-    text, isDone: false, creator: me.name, createdAt: Date.now()
-  });
-  input.value = '';
-};
-
-window.toggleTodo = function(key, isCurrentlyDone, text) {
-  if (isCurrentlyDone) return;
-  update(ref(db, `${ROOM_ID}/todos/${key}`), { isDone: true, completedAt: Date.now() });
-  push(ref(db, `${ROOM_ID}/messages`), {
-    uid: 'system', name: 'System',
-    text: `${me.name}님이 '${text}' 버킷을 완료했어요! 🎉`,
-    type: 'system', ts: Date.now()
-  });
-};
-
-window.clickAddProof = function(key) {
-  pendingProofKey = key;
-  document.getElementById('todoProofInput').click();
-};
-
-window.uploadTodoProof = async function(e) {
-  const file = e.target.files[0];
-  e.target.value = '';
-  if(!file || !pendingProofKey) return;
-  showToast('인증샷 업로드 중...');
-  try {
-    const { url, type } = await uploadOneFile(file, '');
-    await update(ref(db, `${ROOM_ID}/todos/${pendingProofKey}`), { proofUrl: url, proofType: type });
-    push(ref(db, `${ROOM_ID}/media`), { uid: me.name, type, url, ts: Date.now() });
-    showToast('인증샷 등록 완료! 📷');
-  } catch(err) {
-    showToast('업로드 실패: ' + err.message);
-  } finally {
-    pendingProofKey = null;
-  }
-};
-
-function listenTodos() {
-  onValue(ref(db, `${ROOM_ID}/todos`), snap => renderTodos(snap.val()));
-}
-
-function renderTodos(data) {
-  const activeList = document.getElementById('todoActiveList');
-  const doneList = document.getElementById('todoDoneList');
-  activeList.innerHTML = '';
-  doneList.innerHTML = '';
-  if(!data) {
-    activeList.innerHTML = '<div class="todo-empty">함께 하고 싶은 일을 추가해보세요!</div>';
-    doneList.innerHTML = '<div class="todo-empty">아직 해낸 일이 없어요</div>';
-    return;
-  }
-  const arr = Object.entries(data).map(([key, val]) => ({ key, ...val }));
-  const active = arr.filter(t => !t.isDone).sort((a,b) => b.createdAt - a.createdAt);
-  const done = arr.filter(t => t.isDone).sort((a,b) => b.completedAt - a.completedAt);
-  if(active.length === 0) activeList.innerHTML = '<div class="todo-empty">모든 버킷을 달성했어요!</div>';
-  else active.forEach(t => activeList.appendChild(createTodoEl(t)));
-  if(done.length === 0) doneList.innerHTML = '<div class="todo-empty">아직 해낸 일이 없어요</div>';
-  else done.forEach(t => doneList.appendChild(createTodoEl(t)));
-}
-
-function createTodoEl(t) {
-  const div = document.createElement('div');
-  div.className = `todo-item ${t.isDone ? 'done' : ''}`;
-  const check = document.createElement('div');
-  check.className = 'todo-checkbox';
-  if(t.isDone) {
-    check.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="3" fill="none"><polyline points="20 6 9 17 4 12"/></svg>';
-  } else {
-    check.onclick = (e) => { e.currentTarget.style.pointerEvents = 'none'; toggleTodo(t.key, t.isDone, t.text); };
-  }
-  const content = document.createElement('div');
-  content.style.flex = '1';
-  const text = document.createElement('div');
-  text.className = 'todo-text';
-  text.textContent = t.text;
-  content.appendChild(text);
-  if(t.isDone) {
-    const meta = document.createElement('div');
-    meta.className = 'todo-meta';
-    meta.textContent = fmtFull(t.completedAt) + ' 달성';
-    content.appendChild(meta);
-    if(t.proofUrl) {
-      if(t.proofType === 'video') {
-        const v = document.createElement('video');
-        v.className = 'todo-proof-media'; v.src = t.proofUrl;
-        v.onclick = () => openLightbox('video', t.proofUrl);
-        content.appendChild(v);
-      } else {
-        const img = document.createElement('img');
-        img.className = 'todo-proof-media'; img.src = t.proofUrl; img.loading = 'lazy';
-        img.onclick = () => openLightbox('image', t.proofUrl);
-        content.appendChild(img);
-      }
-    } else {
-      const btn = document.createElement('button');
-      btn.className = 'todo-proof-btn';
-      btn.innerHTML = '📷 인증샷 남기기';
-      btn.onclick = () => clickAddProof(t.key);
-      content.appendChild(btn);
-    }
-  }
-  div.appendChild(check);
-  div.appendChild(content);
-  return div;
-}
-
-// ══════════════════════════════════════════════════
-// ── 무한 스크롤 ──
-// ══════════════════════════════════════════════════
-function setupTopObserver() {
-  const sentinel = document.getElementById('topSentinel');
-  if (!sentinel) return;
-  if (!topObserver) {
-    topObserver = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && !loadingOlder && hasMoreOlder) loadOlderMessages();
-    }, { root: document.getElementById('chatMessages'), rootMargin: '100px' });
-  }
-  topObserver.observe(sentinel);
-}
-
-async function loadOlderMessages() {
-  if (loadingOlder || !hasMoreOlder || !oldestKey) return;
-  loadingOlder = true;
-  const cm = document.getElementById('chatMessages');
-  const sentinel = document.getElementById('topSentinel');
-  try {
-    const olderQuery = query(ref(db, `${ROOM_ID}/messages`), orderByKey(), endBefore(oldestKey), limitToLast(20));
-    const snapshot = await get(olderQuery);
-    if (!snapshot.exists()) { hasMoreOlder = false; loadingOlder = false; return; }
-    const children = [];
-    snapshot.forEach(child => children.push({ key: child.key, val: child.val() }));
-    if (children.length < 20) hasMoreOlder = false;
-    if (children.length === 0) { loadingOlder = false; return; }
-    oldestKey = children[0].key;
-    const currentOldestDOM = sentinel.previousElementSibling;
-    if (currentOldestDOM && currentOldestDOM.classList.contains('date-sep')) cm.removeChild(currentOldestDOM);
-    const wraps = cm.querySelectorAll('.msg-wrap, .system-msg');
-    const currentOldestWrap = wraps.length > 0 ? wraps[wraps.length - 1] : null;
-    let nextGroupDate = currentOldestWrap ? currentOldestWrap.dataset.date : '';
-    const fragment = document.createDocumentFragment();
-    for (let i = children.length - 1; i >= 0; i--) {
-      const item = children[i];
-      const wrap = createMessageElement(item.val, item.key);
-      const currentDateStr = getDateStr(item.val.ts);
-      wrap.dataset.date = currentDateStr;
-      if (i === children.length - 1 && nextGroupDate && currentDateStr !== nextGroupDate) {
-        const sep = document.createElement('div'); sep.className = 'date-sep'; sep.textContent = nextGroupDate;
-        fragment.appendChild(sep);
-      }
-      fragment.appendChild(wrap);
-      const nextMsg = children[i - 1];
-      if (nextMsg) {
-        if (currentDateStr !== getDateStr(nextMsg.val.ts)) {
-          const sep = document.createElement('div'); sep.className = 'date-sep'; sep.textContent = currentDateStr;
-          fragment.appendChild(sep);
-        }
-      } else {
-        const sep = document.createElement('div'); sep.className = 'date-sep'; sep.textContent = currentDateStr;
-        fragment.appendChild(sep);
-      }
-    }
-    cm.insertBefore(fragment, sentinel);
-  } catch (err) {
-    console.error('과거 메시지 로드 실패:', err);
-  } finally {
-    requestAnimationFrame(() => { loadingOlder = false; });
-  }
 }
 
 async function translate(text, src, tgt) {
   try {
-    const url  = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${src}&tl=${tgt}&dt=t&q=${encodeURIComponent(text)}`;
-    const res  = await fetch(url);
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${src}&tl=${tgt}&dt=t&q=${encodeURIComponent(text)}`;
+    const res = await fetch(url);
+
     if (res.ok) {
       const data = await res.json();
-      const translated = data?.[0]?.map(x => x?.[0]).filter(Boolean).join('');
+      const translated = data?.[0]?.map(item => item?.[0]).filter(Boolean).join("");
+
       if (translated) return translated;
     }
   } catch {}
-  try {
-    const res  = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${src}|${tgt}`);
-    const data = await res.json();
-    if (data?.responseStatus === 200 && data?.responseData?.translatedText) return data.responseData.translatedText;
-  } catch {}
+
   return null;
 }
 
-let replyTo = null;
+window.sendMessage = async function() {
+  const input = document.getElementById("msgInput");
+  const text = input.value.trim();
+
+  if (!text) return;
+
+  input.value = "";
+  input.style.height = "42px";
+  input._lastVal = "";
+
+  let translation = null;
+
+  if (translateEnabled) {
+    translation = await translate(
+      text,
+      myLang,
+      myLang === "ko" ? "ja" : "ko"
+    );
+  }
+
+  await push(ref(db, `${ROOM_ID}/messages`), {
+    uid: me.name,
+    name: me.name,
+    photoURL: me.photoURL || "",
+    lang: myLang,
+    text,
+    translation: translation || null,
+    type: "text",
+    ts: Date.now(),
+    ...(replyTo ? {
+      replyTo: {
+        text: replyTo.text,
+        type: replyTo.type,
+        name: replyTo.name,
+        ...(replyTo.type === "album"
+          ? { count: (replyTo.items || []).length }
+          : {})
+      }
+    } : {})
+  });
+
+  window.cancelReply();
+};
+
+window.handleKey = function(event) {
+  if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+    event.preventDefault();
+    window.sendMessage();
+  }
+};
+
+window.autoResize = function(el) {
+  requestAnimationFrame(() => {
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+  });
+};
 
 window.setReply = function(msg) {
   replyTo = msg;
-  const bar = document.getElementById('replyBar');
-  bar.classList.add('show');
-  document.getElementById('replyBarText').textContent = msg.type === 'text' ? msg.text : mediaLabel(msg);
-  document.getElementById('msgInput').focus();
+
+  document.getElementById("replyBar").classList.add("show");
+  document.getElementById("replyBarText").textContent =
+    msg.type === "text" ? msg.text : mediaLabel(msg);
+
+  document.getElementById("msgInput").focus();
 };
 
 window.cancelReply = function() {
   replyTo = null;
-  document.getElementById('replyBar').classList.remove('show');
+  document.getElementById("replyBar").classList.remove("show");
 };
 
-window.sendMessage = async function() {
-  const input = document.getElementById('msgInput');
-  const text  = input.value.trim();
-  if (!text) return;
-  input.value = ''; input.style.height = '42px';
-  input._lastVal = '';
-  let translation = null;
-  if (translateEnabled) {
-    const tgt = myLang === 'ko' ? 'ja' : 'ko';
-    translation = await translate(text, myLang, tgt);
-  }
-  push(ref(db, `${ROOM_ID}/messages`), {
-    uid: me.name, name: me.name, photoURL: me.photoURL || '',
-    lang: myLang, text, translation: translation || null,
-    type: 'text', ts: Date.now(),
-    ...(replyTo ? { replyTo: { text: replyTo.text, type: replyTo.type, name: replyTo.name, ...(replyTo.type === 'album' ? { count: (replyTo.items||[]).length } : {}) } } : {})
-  });
-  cancelReply();
-};
-
-window.handleKey  = e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); sendMessage(); } };
-window.autoResize = el => {
-  if (el._lastVal === el.value) return;
-  el._lastVal = el.value;
-  requestAnimationFrame(() => { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; });
-};
-
-/**
- * 메시지 타입별 레이블 (알림/인용 표시용)
- * sticker 타입 추가
- */
-function mediaLabel(msg) {
-  if (!msg) return '';
-  if (msg.type === 'text')    return msg.text || '';
-  if (msg.type === 'image')   return '📷 사진';
-  if (msg.type === 'video')   return '🎥 영상';
-  if (msg.type === 'sticker') return `🍑 스티커 (${msg.stickerLabel || ''})`;
-  if (msg.type === 'album') {
-    const n = Array.isArray(msg.items) ? msg.items.length : (msg.count || 0);
-    return n ? `📷 사진 ${n}장` : '📷 사진';
-  }
-  return '';
-}
-
-/**
- * 메시지 DOM 엘리먼트 생성
- * ── sticker 타입 케이스 추가 ──
- */
 function createMessageElement(msg, key) {
-  if (msg.type === 'system') {
-    const wrap = document.createElement('div');
-    wrap.className = 'system-msg';
-    if (key) wrap.dataset.key = key;
-    wrap.textContent = msg.text;
+  if (msg.type === "system") {
+    const wrap = document.createElement("div");
+    wrap.className = "system-msg";
+    wrap.dataset.key = key;
+    wrap.textContent = msg.text || "";
     window._loadedMessages[key] = msg;
     return wrap;
   }
 
   const isMe = msg.uid === me.name;
-  const wrap = document.createElement('div');
-  wrap.className = `msg-wrap ${isMe ? 'me' : 'them'}`;
-  if (key) wrap.dataset.key = key;
+
+  const wrap = document.createElement("div");
+  wrap.className = `msg-wrap ${isMe ? "me" : "them"}`;
+  wrap.dataset.key = key;
 
   if (!isMe) {
-    const s = document.createElement('div'); s.className = 'msg-sender';
+    const sender = document.createElement("div");
+    sender.className = "msg-sender";
+
     if (msg.photoURL) {
-      const img = document.createElement('img');
-      img.src = sanitize(msg.photoURL || '');
-      img.style.cssText = 'width:18px;height:18px;border-radius:50%;object-fit:cover;margin-right:4px;vertical-align:middle';
-      s.appendChild(img);
-      s.appendChild(document.createTextNode(' ' + sanitize(msg.name || '')));
-    } else { s.textContent = msg.name; }
-    wrap.appendChild(s);
+      const img = document.createElement("img");
+      img.src = msg.photoURL;
+      img.style.cssText = "width:18px;height:18px;border-radius:50%;object-fit:cover;margin-right:4px;vertical-align:middle";
+
+      sender.appendChild(img);
+      sender.appendChild(document.createTextNode(` ${msg.name || ""}`));
+    } else {
+      sender.textContent = msg.name || "";
+    }
+
+    wrap.appendChild(sender);
   }
 
   if (msg.replyTo) {
-    const quote = document.createElement('div');
-    quote.className = 'msg-quote';
-    quote.textContent = '↩ ' + (msg.replyTo.text || mediaLabel(msg.replyTo));
+    const quote = document.createElement("div");
+    quote.className = "msg-quote";
+    quote.textContent = `↩ ${msg.replyTo.text || mediaLabel(msg.replyTo)}`;
     wrap.appendChild(quote);
   }
 
-  const bubble = document.createElement('div');
-  bubble.className = 'msg-bubble';
+  const bubble = document.createElement("div");
+  bubble.className = "msg-bubble";
 
-  if (msg.type === 'text') {
-    const escapedText = msg.text
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
+  if (msg.type === "text") {
+    const escapedText = String(msg.text || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#x27;");
+
     const urlRegex = /(https?:\/\/[^\s]+)/g;
-    bubble.innerHTML = escapedText
-      .replace(urlRegex, (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" style="color:var(--accent2);text-decoration:underline;word-break:break-all;">${url}</a>`)
-      .replace(/\n/g, '<br>');
-  }
-  else if (msg.type === 'sticker') {
-    // ── 스티커 버블: 배경 없이 이미지만 ──
-    bubble.classList.add('msg-sticker-wrap');
-    const img = document.createElement('img');
-    img.className = 'msg-sticker-img';
-    img.alt = msg.stickerLabel || '스티커';
-    img.loading = 'lazy';
 
-    // URL 결정: 메시지에 저장된 url 우선, 없으면 캐시 조회
-    const stickerUrl = msg.url || stickerUrlCache.get(msg.stickerFile) || '';
-    if (stickerUrl) {
-      // URL 있을 때만 src 할당 (빈 src 금지 → 브라우저 페이지 재요청 방지)
-      img.src = stickerUrl;
-      img.onclick = () => openLightbox('image', stickerUrl);
-    } else {
-      // URL 없음 = 아직 미업로드 상태 → placeholder 표시
-      img.style.cssText = 'width:120px;height:120px;background:var(--surface2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:2rem;';
-      img.alt = '🍑';
+    bubble.innerHTML = escapedText
+      .replace(urlRegex, url =>
+        `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:var(--accent2);text-decoration:underline;word-break:break-all">${url}</a>`
+      )
+      .replace(/\n/g, "<br>");
+  }
+
+  if (msg.type === "sticker") {
+    bubble.classList.add("msg-sticker-wrap");
+
+    const img = document.createElement("img");
+    img.className = "msg-sticker-img";
+    img.alt = msg.stickerLabel || "스티커";
+    img.loading = "lazy";
+    img.src = msg.url || stickerUrlCache.get(msg.stickerFile) || "";
+
+    if (img.src) {
+      img.onclick = () => window.openLightbox("image", img.src);
     }
 
     bubble.appendChild(img);
   }
-  else if (msg.type === 'image') {
-    const d = document.createElement('div'); d.className = 'msg-media';
-    const img = document.createElement('img'); img.src = msg.url; img.loading = 'lazy';
-    img.onclick = () => openLightbox('image', msg.url); d.appendChild(img); bubble.appendChild(d);
+
+  if (msg.type === "image") {
+    const media = document.createElement("div");
+    media.className = "msg-media";
+
+    const img = document.createElement("img");
+    img.src = msg.url;
+    img.loading = "lazy";
+    img.onclick = () => window.openLightbox("image", msg.url);
+
+    media.appendChild(img);
+    bubble.appendChild(media);
   }
-  else if (msg.type === 'video') {
-    const d = document.createElement('div'); d.className = 'msg-media';
-    const v = document.createElement('video'); v.src = msg.url; v.controls = true; v.playsinline = true;
-    d.appendChild(v); bubble.appendChild(d);
+
+  if (msg.type === "video") {
+    const media = document.createElement("div");
+    media.className = "msg-media";
+
+    const video = document.createElement("video");
+    video.src = msg.url;
+    video.controls = true;
+    video.playsInline = true;
+
+    media.appendChild(video);
+    bubble.appendChild(media);
   }
-  else if (msg.type === 'album') {
+
+  if (msg.type === "album") {
+    const group = document.createElement("div");
+    group.className = "msg-media-group";
+
     const items = Array.isArray(msg.items) ? msg.items : [];
-    const group = document.createElement('div'); group.className = 'msg-media-group';
-    items.forEach((item, idx) => {
-      const cell = document.createElement('div'); cell.className = 'msg-media-group-item';
-      if (item.type === 'video') {
-        const v = document.createElement('video'); v.src = item.url; v.preload = 'metadata'; v.muted = true; v.playsinline = true;
-        cell.appendChild(v);
-        const ic = document.createElement('div'); ic.className = 'play-icon';
-        ic.innerHTML = `<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
-        cell.appendChild(ic);
+
+    items.forEach((item, index) => {
+      const cell = document.createElement("div");
+      cell.className = "msg-media-group-item";
+
+      if (item.type === "video") {
+        const video = document.createElement("video");
+        video.src = item.url;
+        video.preload = "metadata";
+        video.muted = true;
+        video.playsInline = true;
+        cell.appendChild(video);
       } else {
-        const img = document.createElement('img'); img.src = item.url; img.loading = 'lazy'; cell.appendChild(img);
+        const img = document.createElement("img");
+        img.src = item.url;
+        img.loading = "lazy";
+        cell.appendChild(img);
       }
+
       if (items.length > 1) {
-        const badge = document.createElement('div'); badge.className = 'msg-media-group-count';
-        badge.textContent = `${idx + 1}/${items.length}`;
+        const badge = document.createElement("div");
+        badge.className = "msg-media-group-count";
+        badge.textContent = `${index + 1}/${items.length}`;
         cell.appendChild(badge);
       }
-      cell.onclick = () => openLightbox(item.type, item.url, items, idx);
+
+      cell.onclick = () => {
+        window.openLightbox(item.type, item.url, items, index);
+      };
+
       group.appendChild(cell);
     });
+
     bubble.appendChild(group);
   }
 
   wrap.appendChild(bubble);
 
-  // 번역 (스티커는 번역 없음)
-  if (msg.translation && translateEnabled && msg.type !== 'sticker') {
-    const tr = document.createElement('div'); tr.className = 'msg-translation'; tr.textContent = msg.translation; wrap.appendChild(tr);
+  if (msg.translation && translateEnabled && msg.type !== "sticker") {
+    const translation = document.createElement("div");
+    translation.className = "msg-translation";
+    translation.textContent = msg.translation;
+    wrap.appendChild(translation);
   }
 
-  const t = document.createElement('div'); t.className = 'msg-time';
-  t.appendChild(document.createTextNode(fmt(msg.ts)));
+  const time = document.createElement("div");
+  time.className = "msg-time";
+  time.appendChild(document.createTextNode(fmt(msg.ts)));
+
   if (isMe) {
-    const check = document.createElement('span');
+    const check = document.createElement("span");
     check.dataset.ts = msg.ts;
-    check.className = msg.ts <= partnerLastRead ? 'read-check read' : 'read-check unread';
-    check.innerHTML  = msg.ts <= partnerLastRead ? CHECK_DOUBLE : CHECK_SINGLE;
-    t.appendChild(check);
+    check.className = msg.ts <= partnerLastRead ? "read-check read" : "read-check unread";
+    check.innerHTML = msg.ts <= partnerLastRead ? CHECK_DOUBLE : CHECK_SINGLE;
+    time.appendChild(check);
   }
-  wrap.appendChild(t);
+
+  wrap.appendChild(time);
 
   window._loadedMessages[key] = msg;
+
   return wrap;
 }
 
-function renderMessage(msg, key) {
-  const container = document.getElementById('chatMessages');
+function renderMessage(msg, key, stickToBottom = false) {
+  const container = document.getElementById("chatMessages");
+
   if (container.querySelector(`[data-key="${key}"]`)) return;
+
   const wrap = createMessageElement(msg, key);
-  wrap.dataset.date = getDateStr(msg.ts);
-  container.prepend(wrap);
-  if (wrap.dataset.date !== liveLastDateStr) {
-    liveLastDateStr = wrap.dataset.date;
-    const sep = document.createElement('div');
-    sep.className = 'date-sep';
-    sep.textContent = wrap.dataset.date;
-    wrap.after(sep);
+  const dateStr = getDateStr(msg.ts);
+
+  wrap.dataset.date = dateStr;
+
+  const messages = container.querySelectorAll(".msg-wrap,.system-msg");
+  const lastMessage = messages.length ? messages[messages.length - 1] : null;
+
+  if (!lastMessage || lastMessage.dataset.date !== dateStr) {
+    const sep = document.createElement("div");
+    sep.className = "date-sep";
+    sep.dataset.date = dateStr;
+    sep.textContent = dateStr;
+    container.appendChild(sep);
+  }
+
+  container.appendChild(wrap);
+
+  if (stickToBottom) {
+    requestAnimationFrame(() => window.scrollToLatest());
   }
 }
 
-const fmt = ts => { const d = new Date(ts); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
-
-function uploadOneFile(file, progressPrefix) {
+function uploadOneFile(file, progressPrefix = "") {
   return new Promise(async (resolve, reject) => {
     try {
       const targetFile = await compressImageSafe(file);
-      const isVideo = targetFile.type.startsWith('video/');
-      const safeName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${targetFile.name || 'media'}`;
-      const task = uploadBytesResumable(sRef(storage, `${ROOM_ID}/${safeName}`), targetFile);
-      task.on('state_changed',
-        s => showToast(`${progressPrefix}업로드 ${Math.round(s.bytesTransferred / s.totalBytes * 100)}%`),
-        err => reject(err),
+      const isVideo = targetFile.type.startsWith("video/");
+      const safeName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${targetFile.name || "media"}`;
+
+      const task = uploadBytesResumable(
+        sRef(storage, `${ROOM_ID}/${safeName}`),
+        targetFile
+      );
+
+      task.on(
+        "state_changed",
+        snap => {
+          showToast(`${progressPrefix}업로드 ${Math.round(snap.bytesTransferred / snap.totalBytes * 100)}%`);
+        },
+        reject,
         async () => {
           try {
             const url = await getDownloadURL(task.snapshot.ref);
-            resolve({ url, type: isVideo ? 'video' : 'image' });
-          } catch (err) { reject(err); }
+            resolve({
+              url,
+              type: isVideo ? "video" : "image"
+            });
+          } catch (err) {
+            reject(err);
+          }
         }
       );
-    } catch (e) { reject(e); }
+    } catch (err) {
+      reject(err);
+    }
   });
 }
 
 async function sendSingleMedia(file) {
-  showToast('업로드 중...');
+  showToast("업로드 중...");
+
   try {
-    const { url, type } = await uploadOneFile(file, '');
+    const { url, type } = await uploadOneFile(file);
     const ts = Date.now();
-    push(ref(db, `${ROOM_ID}/messages`), { uid: me.name, name: me.name, photoURL: me.photoURL || '', type, url, ts });
-    push(ref(db, `${ROOM_ID}/media`),    { uid: me.name, type, url, ts });
-    showToast('공유 완료!');
-  } catch (err) { showToast('실패: ' + err.message); }
+
+    await push(ref(db, `${ROOM_ID}/messages`), {
+      uid: me.name,
+      name: me.name,
+      photoURL: me.photoURL || "",
+      type,
+      url,
+      ts
+    });
+
+    await push(ref(db, `${ROOM_ID}/media`), {
+      uid: me.name,
+      type,
+      url,
+      ts
+    });
+
+    showToast("공유 완료!");
+  } catch (err) {
+    showToast(`실패: ${err.message}`);
+  }
 }
 
 async function sendMediaGroup(files) {
-  const total = files.length;
   const items = [];
   const baseTs = Date.now();
+
   try {
-    for (let i = 0; i < total; i++) {
-      const { url, type } = await uploadOneFile(files[i], `(${i + 1}/${total}) `);
+    for (let i = 0; i < files.length; i++) {
+      const { url, type } = await uploadOneFile(files[i], `(${i + 1}/${files.length}) `);
+
       items.push({ url, type });
-      push(ref(db, `${ROOM_ID}/media`), { uid: me.name, type, url, ts: baseTs + i });
+
+      await push(ref(db, `${ROOM_ID}/media`), {
+        uid: me.name,
+        type,
+        url,
+        ts: baseTs + i
+      });
     }
-    push(ref(db, `${ROOM_ID}/messages`), { uid: me.name, name: me.name, photoURL: me.photoURL || '', type: 'album', items, ts: baseTs + total });
-    showToast(`사진 ${total}장 공유 완료!`);
-  } catch (err) { showToast('실패: ' + err.message); }
+
+    await push(ref(db, `${ROOM_ID}/messages`), {
+      uid: me.name,
+      name: me.name,
+      photoURL: me.photoURL || "",
+      type: "album",
+      items,
+      ts: baseTs + files.length
+    });
+
+    showToast(`사진 ${files.length}장 공유 완료!`);
+  } catch (err) {
+    showToast(`실패: ${err.message}`);
+  }
 }
 
-window.sendMedia = async function(e) {
-  const files = Array.from(e.target.files || []);
-  e.target.value = '';
-  if (files.length === 0) return;
-  if (files.length === 1) await sendSingleMedia(files[0]);
-  else await sendMediaGroup(files);
+window.sendMedia = async function(event) {
+  const files = Array.from(event.target.files || []);
+  event.target.value = "";
+
+  if (!files.length) return;
+
+  if (files.length === 1) {
+    await sendSingleMedia(files[0]);
+  } else {
+    await sendMediaGroup(files);
+  }
 };
 
 function updateAlbum(media) {
-  const grid = document.getElementById('albumGrid'); grid.innerHTML = '';
-  if (!media) { grid.innerHTML = '<div class="album-empty" style="grid-column:1/-1;height:300px">아직 공유된 미디어가 없어요</div>'; return; }
-  Object.values(media).sort((a,b)=>b.ts-a.ts).forEach(item => {
-    const div = document.createElement('div'); div.className = 'album-item';
-    if (item.type==='video') {
-      const v=document.createElement('video'); v.src=item.url; v.preload='metadata'; div.appendChild(v);
-      const ic=document.createElement('div'); ic.className='play-icon'; ic.innerHTML=`<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>`; div.appendChild(ic);
-      div.onclick=()=>openLightbox('video',item.url);
-    } else {
-      const img=document.createElement('img'); img.src=item.url; img.loading='lazy'; div.appendChild(img);
-      div.onclick=()=>openLightbox('image',item.url);
-    }
-    grid.appendChild(div);
-  });
+  const grid = document.getElementById("albumGrid");
+  grid.innerHTML = "";
+
+  if (!media) {
+    grid.innerHTML = `<div class="album-empty" style="grid-column:1/-1;height:300px">아직 공유된 미디어가 없어요</div>`;
+    return;
+  }
+
+  Object.values(media)
+    .sort((a, b) => b.ts - a.ts)
+    .forEach(item => {
+      const div = document.createElement("div");
+      div.className = "album-item";
+
+      if (item.type === "video") {
+        const video = document.createElement("video");
+        video.src = item.url;
+        video.preload = "metadata";
+        div.appendChild(video);
+        div.onclick = () => window.openLightbox("video", item.url);
+      } else {
+        const img = document.createElement("img");
+        img.src = item.url;
+        img.loading = "lazy";
+        div.appendChild(img);
+        div.onclick = () => window.openLightbox("image", item.url);
+      }
+
+      grid.appendChild(div);
+    });
 }
 
 let lightboxGallery = null;
 
 function renderLightboxItem(type, url) {
-  const c = document.getElementById('lightboxContent'); c.innerHTML = '';
-  if (type === 'image') { const i = document.createElement('img'); i.src = url; c.appendChild(i); }
-  else { const v = document.createElement('video'); v.src = url; v.controls = true; v.playsinline = true; v.autoplay = true; c.appendChild(v); }
-}
+  const content = document.getElementById("lightboxContent");
+  content.innerHTML = "";
 
-function updateLightboxNav() {
-  const prevBtn = document.getElementById('lbPrev');
-  const nextBtn = document.getElementById('lbNext');
-  const counter = document.getElementById('lbCounter');
-  if (lightboxGallery && lightboxGallery.items.length > 1) {
-    prevBtn.style.display = 'flex'; nextBtn.style.display = 'flex';
-    counter.style.display = 'block';
-    counter.textContent = `${lightboxGallery.index + 1} / ${lightboxGallery.items.length}`;
+  if (type === "image") {
+    const img = document.createElement("img");
+    img.src = url;
+    content.appendChild(img);
   } else {
-    prevBtn.style.display = 'none'; nextBtn.style.display = 'none';
-    counter.style.display = 'none';
+    const video = document.createElement("video");
+    video.src = url;
+    video.controls = true;
+    video.playsInline = true;
+    video.autoplay = true;
+    content.appendChild(video);
   }
 }
 
-window.lightboxNav = dir => {
+function updateLightboxNav() {
+  const prev = document.getElementById("lbPrev");
+  const next = document.getElementById("lbNext");
+  const counter = document.getElementById("lbCounter");
+
+  if (lightboxGallery && lightboxGallery.items.length > 1) {
+    prev.style.display = "flex";
+    next.style.display = "flex";
+    counter.style.display = "block";
+    counter.textContent = `${lightboxGallery.index + 1} / ${lightboxGallery.items.length}`;
+  } else {
+    prev.style.display = "none";
+    next.style.display = "none";
+    counter.style.display = "none";
+  }
+}
+
+window.openLightbox = function(type, url, items, index = 0) {
+  lightboxGallery =
+    Array.isArray(items) && items.length > 1
+      ? { items, index }
+      : null;
+
+  renderLightboxItem(type, url);
+  updateLightboxNav();
+
+  const lb = document.getElementById("lightbox");
+  lb.classList.add("open");
+
+  lb.onclick = event => {
+    if (event.target === lb) window.closeLightbox();
+  };
+};
+
+window.closeLightbox = function() {
+  document.getElementById("lightbox").classList.remove("open");
+  document.getElementById("lightboxContent").innerHTML = "";
+  lightboxGallery = null;
+};
+
+window.lightboxNav = function(direction) {
   if (!lightboxGallery) return;
-  const n = lightboxGallery.items.length;
-  lightboxGallery.index = (lightboxGallery.index + dir + n) % n;
+
+  const length = lightboxGallery.items.length;
+
+  lightboxGallery.index =
+    (lightboxGallery.index + direction + length) % length;
+
   const item = lightboxGallery.items[lightboxGallery.index];
+
   renderLightboxItem(item.type, item.url);
   updateLightboxNav();
 };
 
-window.openLightbox = (type, url, items, index) => {
-  lightboxGallery = (Array.isArray(items) && items.length > 1) ? { items, index: index || 0 } : null;
-  renderLightboxItem(type, url);
-  updateLightboxNav();
-  const lb = document.getElementById('lightbox');
-  lb.classList.add('open');
-  lb.onclick = e => { if (e.target === lb) closeLightbox(); };
-};
-window.closeLightbox = () => {
-  document.getElementById('lightbox').classList.remove('open');
-  document.getElementById('lightboxContent').innerHTML = '';
-  lightboxGallery = null;
-};
-document.addEventListener('keydown', e => {
-  const lb = document.getElementById('lightbox');
-  if (!lb.classList.contains('open')) return;
-  if (e.key === 'Escape') { closeLightbox(); return; }
-  if (lightboxGallery) {
-    if (e.key === 'ArrowLeft') lightboxNav(-1);
-    else if (e.key === 'ArrowRight') lightboxNav(1);
+document.addEventListener("keydown", event => {
+  const lb = document.getElementById("lightbox");
+
+  if (!lb.classList.contains("open")) return;
+
+  if (event.key === "Escape") {
+    window.closeLightbox();
+  }
+
+  if (lightboxGallery && event.key === "ArrowLeft") {
+    window.lightboxNav(-1);
+  }
+
+  if (lightboxGallery && event.key === "ArrowRight") {
+    window.lightboxNav(1);
   }
 });
 
-const JITSI_DOMAIN = 'meet.jit.si';
-const JITSI_ROOM_PREFIX = 'memo-private-kv-mm';
+function listenTodos() {
+  onValue(ref(db, `${ROOM_ID}/todos`), snap => {
+    renderTodos(snap.val());
+  });
+}
+
+function renderTodos(data) {
+  const activeList = document.getElementById("todoActiveList");
+  const doneList = document.getElementById("todoDoneList");
+
+  activeList.innerHTML = "";
+  doneList.innerHTML = "";
+
+  if (!data) {
+    activeList.innerHTML = `<div class="todo-empty">함께 하고 싶은 일을 추가해보세요!</div>`;
+    doneList.innerHTML = `<div class="todo-empty">아직 해낸 일이 없어요</div>`;
+    return;
+  }
+
+  const todos = Object.entries(data).map(([key, val]) => ({ key, ...val }));
+
+  const active = todos
+    .filter(item => !item.isDone)
+    .sort((a, b) => b.createdAt - a.createdAt);
+
+  const done = todos
+    .filter(item => item.isDone)
+    .sort((a, b) => b.completedAt - a.completedAt);
+
+  if (!active.length) {
+    activeList.innerHTML = `<div class="todo-empty">모든 버킷을 달성했어요!</div>`;
+  } else {
+    active.forEach(item => activeList.appendChild(createTodoEl(item)));
+  }
+
+  if (!done.length) {
+    doneList.innerHTML = `<div class="todo-empty">아직 해낸 일이 없어요</div>`;
+  } else {
+    done.forEach(item => doneList.appendChild(createTodoEl(item)));
+  }
+}
+
+function createTodoEl(todo) {
+  const div = document.createElement("div");
+  div.className = `todo-item ${todo.isDone ? "done" : ""}`;
+
+  const check = document.createElement("div");
+  check.className = "todo-checkbox";
+
+  if (todo.isDone) {
+    check.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="3" fill="none"><polyline points="20 6 9 17 4 12"/></svg>`;
+  } else {
+    check.onclick = event => {
+      event.currentTarget.style.pointerEvents = "none";
+      window.toggleTodo(todo.key, todo.isDone, todo.text);
+    };
+  }
+
+  const content = document.createElement("div");
+  content.style.flex = "1";
+
+  const text = document.createElement("div");
+  text.className = "todo-text";
+  text.textContent = todo.text;
+  content.appendChild(text);
+
+  if (todo.isDone) {
+    const meta = document.createElement("div");
+    meta.className = "todo-meta";
+    meta.textContent = `${fmtFull(todo.completedAt)} 달성`;
+    content.appendChild(meta);
+
+    if (todo.proofUrl) {
+      if (todo.proofType === "video") {
+        const video = document.createElement("video");
+        video.className = "todo-proof-media";
+        video.src = todo.proofUrl;
+        video.onclick = () => window.openLightbox("video", todo.proofUrl);
+        content.appendChild(video);
+      } else {
+        const img = document.createElement("img");
+        img.className = "todo-proof-media";
+        img.src = todo.proofUrl;
+        img.loading = "lazy";
+        img.onclick = () => window.openLightbox("image", todo.proofUrl);
+        content.appendChild(img);
+      }
+    } else {
+      const btn = document.createElement("button");
+      btn.className = "todo-proof-btn";
+      btn.textContent = "📷 인증샷 남기기";
+      btn.onclick = () => window.clickAddProof(todo.key);
+      content.appendChild(btn);
+    }
+  }
+
+  div.appendChild(check);
+  div.appendChild(content);
+
+  return div;
+}
+
+window.addTodo = function() {
+  const input = document.getElementById("todoInput");
+  const text = input.value.trim();
+
+  if (!text) return;
+
+  push(ref(db, `${ROOM_ID}/todos`), {
+    text,
+    isDone:false,
+    creator:me.name,
+    createdAt:Date.now()
+  });
+
+  input.value = "";
+};
+
+window.toggleTodo = function(key, isCurrentlyDone, text) {
+  if (isCurrentlyDone) return;
+
+  update(ref(db, `${ROOM_ID}/todos/${key}`), {
+    isDone:true,
+    completedAt:Date.now()
+  });
+
+  push(ref(db, `${ROOM_ID}/messages`), {
+    uid:"system",
+    name:"System",
+    text:`${me.name}님이 '${text}' 버킷을 완료했어요! 🎉`,
+    type:"system",
+    ts:Date.now()
+  });
+};
+
+window.clickAddProof = function(key) {
+  pendingProofKey = key;
+  document.getElementById("todoProofInput").click();
+};
+
+window.uploadTodoProof = async function(event) {
+  const file = event.target.files[0];
+  event.target.value = "";
+
+  if (!file || !pendingProofKey) return;
+
+  showToast("인증샷 업로드 중...");
+
+  try {
+    const { url, type } = await uploadOneFile(file);
+
+    await update(ref(db, `${ROOM_ID}/todos/${pendingProofKey}`), {
+      proofUrl:url,
+      proofType:type
+    });
+
+    await push(ref(db, `${ROOM_ID}/media`), {
+      uid:me.name,
+      type,
+      url,
+      ts:Date.now()
+    });
+
+    showToast("인증샷 등록 완료! 📷");
+  } catch (err) {
+    showToast(`업로드 실패: ${err.message}`);
+  } finally {
+    pendingProofKey = null;
+  }
+};
+
+const JITSI_DOMAIN = "meet.jit.si";
+const JITSI_ROOM_PREFIX = "memo-private-kv-mm";
 
 window.startJitsiCall = async function(type) {
   const roomName = `${JITSI_ROOM_PREFIX}-${Date.now()}`;
-  const config = type === 'audio' ? '#config.startWithVideoMuted=true' : '';
+  const config = type === "audio" ? "#config.startWithVideoMuted=true" : "";
   const jitsiUrl = `https://${JITSI_DOMAIN}/${roomName}${config}`;
+
   await set(ref(db, `${ROOM_ID}/signal/${partner.name}`), {
-    type: 'incoming', from: me.name, name: me.name,
-    photoURL: me.photoURL || '', callType: type,
-    jitsiUrl, ts: Date.now()
+    type:"incoming",
+    from:me.name,
+    name:me.name,
+    photoURL:me.photoURL || "",
+    callType:type,
+    jitsiUrl,
+    ts:Date.now()
   });
-  window.open(jitsiUrl, '_blank');
-  showToast(type === 'audio' ? '음성통화 시작...' : '영상통화 시작...');
+
+  window.open(jitsiUrl, "_blank");
+  showToast(type === "audio" ? "음성통화 시작..." : "영상통화 시작...");
 };
 
 function listenSignaling() {
   onValue(ref(db, `${ROOM_ID}/signal/${me.name}`), snap => {
     const sig = snap.val();
+
     if (!sig) return;
-    if (sig.ts && Date.now() - sig.ts > 30000) { set(ref(db, `${ROOM_ID}/signal/${me.name}`), null); return; }
-    if (sig.type === 'incoming') { showIncomingCall(sig); window._incomingJitsiUrl = sig.jitsiUrl; }
+
+    if (sig.ts && Date.now() - sig.ts > 30000) {
+      set(ref(db, `${ROOM_ID}/signal/${me.name}`), null);
+      return;
+    }
+
+    if (sig.type === "incoming") {
+      showIncomingCall(sig);
+      window._incomingJitsiUrl = sig.jitsiUrl;
+    }
   });
 }
 
 function showIncomingCall(sig) {
-  const av = document.getElementById('incomingAvatar');
-  av.innerHTML = '';
+  const avatar = document.getElementById("incomingAvatar");
+  avatar.innerHTML = "";
+
   if (sig.photoURL) {
-    const incImg = document.createElement('img');
-    incImg.src = sanitize(sig.photoURL);
-    incImg.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%';
-    av.appendChild(incImg);
-  } else { av.textContent = partner.emoji || '🌸'; }
-  document.getElementById('incomingName').textContent = sig.name||'상대방';
-  document.getElementById('incomingType').textContent = sig.callType==='video'?'📹 영상 통화':'📞 음성 통화';
-  document.getElementById('incomingCall').classList.add('show');
-  if (navigator.vibrate) navigator.vibrate([300,200,300]);
+    const img = document.createElement("img");
+    img.src = sig.photoURL;
+    img.style.cssText = "width:80px;height:80px;border-radius:50%;object-fit:cover";
+    avatar.appendChild(img);
+  } else {
+    avatar.textContent = partner.emoji || "🌸";
+  }
+
+  document.getElementById("incomingName").textContent = sig.name || "상대방";
+  document.getElementById("incomingType").textContent =
+    sig.callType === "video" ? "📹 영상 통화" : "📞 음성 통화";
+
+  document.getElementById("incomingCall").classList.add("show");
+
+  if (navigator.vibrate) {
+    navigator.vibrate([300, 200, 300]);
+  }
 }
-window.acceptCall = async () => {
-  document.getElementById('incomingCall').classList.remove('show');
+
+window.acceptCall = async function() {
+  document.getElementById("incomingCall").classList.remove("show");
+
   await set(ref(db, `${ROOM_ID}/signal/${me.name}`), null);
-  if (window._incomingJitsiUrl) { window.open(window._incomingJitsiUrl, '_blank'); window._incomingJitsiUrl = null; }
+
+  if (window._incomingJitsiUrl) {
+    window.open(window._incomingJitsiUrl, "_blank");
+    window._incomingJitsiUrl = null;
+  }
 };
-window.rejectCall = async () => {
-  document.getElementById('incomingCall').classList.remove('show');
+
+window.rejectCall = async function() {
+  document.getElementById("incomingCall").classList.remove("show");
   window._incomingJitsiUrl = null;
+
   await set(ref(db, `${ROOM_ID}/signal/${me.name}`), null);
 };
 
-window.switchTab = tab => {
-  ['chat','album','archive','todo','profile'].forEach(t => {
-    document.getElementById(`${t}Pane`).classList.add('hidden');
-    document.getElementById(`tab-${t}`).classList.remove('active');
+window.switchTab = function(tab) {
+  ["chat","album","archive","todo","profile"].forEach(name => {
+    document.getElementById(`${name}Pane`).classList.add("hidden");
+    document.getElementById(`tab-${name}`).classList.remove("active");
   });
-  document.getElementById(`${tab}Pane`).classList.remove('hidden');
-  document.getElementById(`tab-${tab}`).classList.add('active');
-  // 탭 전환 시 스티커 패널 닫기
-  if (tab !== 'chat' && stickerPanelOpen) closeStickerPanel();
+
+  document.getElementById(`${tab}Pane`).classList.remove("hidden");
+  document.getElementById(`tab-${tab}`).classList.add("active");
+
+  if (tab !== "chat" && stickerPanelOpen) {
+    closeStickerPanel();
+  }
 };
 
-window.changeLang = () => { myLang=document.getElementById('langSelect').value; localStorage.setItem(`memo_lang_${me.email}`,myLang); };
-window.saveTranslatePref = () => { translateEnabled=document.getElementById('translateToggle').checked; localStorage.setItem('memo_translate',translateEnabled); };
-window.doLogout = async () => {
-  if (!confirm('로그아웃 할까요?')) return;
-  await set(ref(db,`${ROOM_ID}/presence/${me.name}`), { online:false });
+window.changeLang = function() {
+  myLang = document.getElementById("langSelect").value;
+  localStorage.setItem(`memo_lang_${me.email}`, myLang);
+};
+
+window.saveTranslatePref = function() {
+  translateEnabled = document.getElementById("translateToggle").checked;
+  localStorage.setItem("memo_translate", translateEnabled);
+};
+
+window.doLogout = async function() {
+  if (!confirm("로그아웃 할까요?")) return;
+
+  await set(ref(db, `${ROOM_ID}/presence/${me.name}`), {
+    online:false
+  });
+
   await signOut(auth);
 };
 
-function getDateStr(ts) {
-  const d = new Date(ts);
-  const days = ['일','월','화','수','목','금','토'];
-  return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 ${days[d.getDay()]}요일`;
-}
+let searchMatches = [];
+let searchIdx = -1;
 
-window.scrollToLatest = function() { document.getElementById('chatMessages').scrollTop = 0; };
-
-document.addEventListener('DOMContentLoaded', () => {
-  const cm = document.getElementById('chatMessages');
-  const btn = document.getElementById('scrollBottomBtn');
-  if (cm && btn) {
-    cm.addEventListener('scroll', () => {
-      btn.classList.toggle('show', Math.abs(cm.scrollTop) > 100);
-    }, { passive: true });
-  }
-});
-
-let searchMatches = [], searchIdx = -1;
 window.toggleSearch = function() {
-  const bar = document.getElementById('searchBar');
-  const isOpen = bar.classList.toggle('show');
-  if (isOpen) { document.getElementById('searchInput').focus(); } else { clearSearch(); }
+  const bar = document.getElementById("searchBar");
+  const isOpen = bar.classList.toggle("show");
+
+  if (isOpen) {
+    document.getElementById("searchInput").focus();
+  } else {
+    clearSearch();
+  }
 };
+
 window.doSearch = function() {
   clearSearchHighlights();
-  const q = document.getElementById('searchInput').value.trim().toLowerCase();
-  if (!q) { document.getElementById('searchCount').textContent = ''; searchMatches = []; return; }
-  const bubbles = document.querySelectorAll('#chatMessages .msg-bubble');
+
+  const q = document.getElementById("searchInput").value.trim().toLowerCase();
+
+  if (!q) {
+    document.getElementById("searchCount").textContent = "";
+    searchMatches = [];
+    return;
+  }
+
   searchMatches = [];
-  bubbles.forEach(b => { if (b.textContent.toLowerCase().includes(q)) { b.classList.add('msg-highlight'); searchMatches.push(b); } });
-  searchMatches.reverse();
-  searchIdx = searchMatches.length > 0 ? 0 : -1;
-  document.getElementById('searchCount').textContent = searchMatches.length > 0 ? `${searchIdx+1}/${searchMatches.length}` : '0건';
-  if (searchMatches.length > 0) searchMatches[0].scrollIntoView({ block: 'center' });
-};
-window.searchNext = function() {
-  if (searchMatches.length === 0) return;
-  searchIdx = (searchIdx + 1) % searchMatches.length;
-  searchMatches[searchIdx].scrollIntoView({ block: 'center' });
-  document.getElementById('searchCount').textContent = `${searchIdx+1}/${searchMatches.length}`;
-};
-window.searchPrev = function() {
-  if (searchMatches.length === 0) return;
-  searchIdx = (searchIdx - 1 + searchMatches.length) % searchMatches.length;
-  searchMatches[searchIdx].scrollIntoView({ block: 'center' });
-  document.getElementById('searchCount').textContent = `${searchIdx+1}/${searchMatches.length}`;
-};
-function clearSearch() {
-  document.getElementById('searchInput').value = '';
-  document.getElementById('searchCount').textContent = '';
-  clearSearchHighlights();
-  searchMatches = []; searchIdx = -1;
-}
-function clearSearchHighlights() { document.querySelectorAll('.msg-highlight').forEach(el => el.classList.remove('msg-highlight')); }
 
-let ctxTargetMsg = null;
-const ctxMenu = document.getElementById('ctxMenu');
-
-function showCtxMenu(msg, wrap) {
-  ctxTargetMsg = msg;
-  const rect = wrap.getBoundingClientRect();
-  const menuH = 100;
-  let top = rect.bottom + 6;
-  if (top + menuH > window.innerHeight - 20) top = rect.top - menuH - 6;
-  ctxMenu.style.top  = `${top}px`;
-  const isMe = msg.uid === me.name;
-  if (isMe) { ctxMenu.style.right = `${window.innerWidth - rect.right}px`; ctxMenu.style.left = 'auto'; }
-  else       { ctxMenu.style.left = `${rect.left}px`; ctxMenu.style.right = 'auto'; }
-  ctxMenu.classList.add('show');
-  if (navigator.vibrate) navigator.vibrate(30);
-}
-function hideCtxMenu() { ctxMenu.classList.remove('show'); ctxTargetMsg = null; }
-
-document.getElementById('ctxReply').addEventListener('click', () => { if (ctxTargetMsg) setReply(ctxTargetMsg); hideCtxMenu(); });
-document.getElementById('ctxArchive').addEventListener('click', () => { if (ctxTargetMsg) saveToArchive(ctxTargetMsg); hideCtxMenu(); });
-document.addEventListener('touchstart', e => { if (ctxMenu.classList.contains('show') && !ctxMenu.contains(e.target)) hideCtxMenu(); }, { passive: true });
-document.addEventListener('click', e => { if (ctxMenu.classList.contains('show') && !ctxMenu.contains(e.target)) hideCtxMenu(); });
-
-function archivePath() { return `${ROOM_ID}/archive/${me.name}`; }
-
-async function saveToArchive(msg) {
-  const item = {
-    text:    msg.type === 'sticker' ? `🍑 ${msg.stickerLabel||'스티커'}` : (msg.text || null),
-    type:    msg.type || 'text',
-    url:     msg.url  || null,
-    name:    msg.name || '',
-    uid:     msg.uid  || '',
-    ts:      msg.ts   || Date.now(),
-    savedAt: Date.now()
-  };
-  await push(ref(db, archivePath()), item);
-  showToast('보관함에 저장됐어요 🔖');
-}
-
-async function deleteFromArchive(archiveKey) {
-  await set(ref(db, `${archivePath()}/${archiveKey}`), null);
-}
-
-function renderArchiveList(data) {
-  const list = document.getElementById('archiveList');
-  list.innerHTML = '';
-  if (!data) { list.innerHTML = '<div class="archive-empty">보관된 메시지가 없어요</div>'; return; }
-  const items = Object.entries(data).sort((a,b) => b[1].savedAt - a[1].savedAt);
-  items.forEach(([key, item]) => {
-    const div = document.createElement('div'); div.className = 'archive-item';
-    const meta = document.createElement('div'); meta.className = 'archive-item-meta';
-    const senderSpan = document.createElement('span'); senderSpan.className = 'archive-item-sender'; senderSpan.textContent = sanitize(item.name) || '알 수 없음';
-    const timeSpan = document.createElement('span'); timeSpan.textContent = fmtFull(item.ts);
-    meta.appendChild(senderSpan); meta.appendChild(timeSpan); div.appendChild(meta);
-    if (item.type === 'text' && item.text) {
-      const p = document.createElement('div'); p.className = 'archive-item-text'; p.textContent = item.text; div.appendChild(p);
-    } else if (item.type === 'sticker' && item.text) {
-      const p = document.createElement('div'); p.className = 'archive-item-text'; p.textContent = item.text; div.appendChild(p);
-      if (item.url) {
-        const wrap2 = document.createElement('div'); wrap2.className = 'archive-item-media';
-        const img = document.createElement('img'); img.src = item.url; img.loading = 'lazy';
-        img.onclick = () => openLightbox('image', item.url); wrap2.appendChild(img); div.appendChild(wrap2);
-      }
-    } else if ((item.type === 'image' || item.type === 'video') && item.url) {
-      const wrap2 = document.createElement('div'); wrap2.className = 'archive-item-media';
-      if (item.type === 'image') {
-        const img = document.createElement('img'); img.src = item.url; img.loading = 'lazy';
-        img.onclick = () => openLightbox('image', item.url); wrap2.appendChild(img);
-      } else {
-        const v = document.createElement('video'); v.src = item.url; v.controls = true; v.playsinline = true; wrap2.appendChild(v);
-      }
-      div.appendChild(wrap2);
+  document.querySelectorAll("#chatMessages .msg-bubble").forEach(el => {
+    if (el.textContent.toLowerCase().includes(q)) {
+      el.classList.add("msg-highlight");
+      searchMatches.push(el);
     }
-    const delBtn = document.createElement('button'); delBtn.className = 'archive-del'; delBtn.textContent = '✕';
-    delBtn.onclick = () => deleteFromArchive(key); div.appendChild(delBtn);
-    list.appendChild(div);
+  });
+
+  searchMatches.reverse();
+  searchIdx = searchMatches.length ? 0 : -1;
+
+  document.getElementById("searchCount").textContent =
+    searchMatches.length ? `${searchIdx + 1}/${searchMatches.length}` : "0건";
+
+  searchMatches[0]?.scrollIntoView({ block:"center" });
+};
+
+window.searchNext = function() {
+  if (!searchMatches.length) return;
+
+  searchIdx = (searchIdx + 1) % searchMatches.length;
+  searchMatches[searchIdx].scrollIntoView({ block:"center" });
+
+  document.getElementById("searchCount").textContent =
+    `${searchIdx + 1}/${searchMatches.length}`;
+};
+
+window.searchPrev = function() {
+  if (!searchMatches.length) return;
+
+  searchIdx = (searchIdx - 1 + searchMatches.length) % searchMatches.length;
+  searchMatches[searchIdx].scrollIntoView({ block:"center" });
+
+  document.getElementById("searchCount").textContent =
+    `${searchIdx + 1}/${searchMatches.length}`;
+};
+
+function clearSearch() {
+  document.getElementById("searchInput").value = "";
+  document.getElementById("searchCount").textContent = "";
+  clearSearchHighlights();
+  searchMatches = [];
+  searchIdx = -1;
+}
+
+function clearSearchHighlights() {
+  document.querySelectorAll(".msg-highlight").forEach(el => {
+    el.classList.remove("msg-highlight");
   });
 }
 
-function fmtFull(ts) {
-  const d = new Date(ts);
-  return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+let ctxTargetMsg = null;
+const ctxMenu = document.getElementById("ctxMenu");
+
+function showCtxMenu(msg, wrap) {
+  ctxTargetMsg = msg;
+
+  const rect = wrap.getBoundingClientRect();
+  const menuH = 100;
+
+  let top = rect.bottom + 6;
+
+  if (top + menuH > window.innerHeight - 20) {
+    top = rect.top - menuH - 6;
+  }
+
+  ctxMenu.style.top = `${top}px`;
+
+  if (msg.uid === me.name) {
+    ctxMenu.style.right = `${window.innerWidth - rect.right}px`;
+    ctxMenu.style.left = "auto";
+  } else {
+    ctxMenu.style.left = `${rect.left}px`;
+    ctxMenu.style.right = "auto";
+  }
+
+  ctxMenu.classList.add("show");
+
+  if (navigator.vibrate) {
+    navigator.vibrate(30);
+  }
 }
 
-function listenArchive() { onValue(ref(db, archivePath()), snap => renderArchiveList(snap.val())); }
+function hideCtxMenu() {
+  ctxMenu.classList.remove("show");
+  ctxTargetMsg = null;
+}
 
-window.showToast = msg => {
-  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
-  clearTimeout(window._tt); window._tt=setTimeout(()=>t.classList.remove('show'),2500);
+document.getElementById("ctxReply").addEventListener("click", () => {
+  if (ctxTargetMsg) window.setReply(ctxTargetMsg);
+  hideCtxMenu();
+});
+
+document.getElementById("ctxArchive").addEventListener("click", () => {
+  if (ctxTargetMsg) saveToArchive(ctxTargetMsg);
+  hideCtxMenu();
+});
+
+document.addEventListener("click", event => {
+  if (ctxMenu.classList.contains("show") && !ctxMenu.contains(event.target)) {
+    hideCtxMenu();
+  }
+});
+
+function archivePath() {
+  return `${ROOM_ID}/archive/${me.name}`;
+}
+
+async function saveToArchive(msg) {
+  await push(ref(db, archivePath()), {
+    text:msg.type === "sticker" ? `🍑 ${msg.stickerLabel || "스티커"}` : (msg.text || null),
+    type:msg.type || "text",
+    url:msg.url || null,
+    name:msg.name || "",
+    uid:msg.uid || "",
+    ts:msg.ts || Date.now(),
+    savedAt:Date.now()
+  });
+
+  showToast("보관함에 저장됐어요 🔖");
+}
+
+async function deleteFromArchive(key) {
+  await set(ref(db, `${archivePath()}/${key}`), null);
+}
+
+function listenArchive() {
+  onValue(ref(db, archivePath()), snap => {
+    renderArchiveList(snap.val());
+  });
+}
+
+function renderArchiveList(data) {
+  const list = document.getElementById("archiveList");
+  list.innerHTML = "";
+
+  if (!data) {
+    list.innerHTML = `<div class="archive-empty">보관된 메시지가 없어요</div>`;
+    return;
+  }
+
+  Object.entries(data)
+    .sort((a, b) => b[1].savedAt - a[1].savedAt)
+    .forEach(([key, item]) => {
+      const div = document.createElement("div");
+      div.className = "archive-item";
+
+      const meta = document.createElement("div");
+      meta.className = "archive-item-meta";
+
+      const sender = document.createElement("span");
+      sender.className = "archive-item-sender";
+      sender.textContent = item.name || "알 수 없음";
+
+      const time = document.createElement("span");
+      time.textContent = fmtFull(item.ts);
+
+      meta.appendChild(sender);
+      meta.appendChild(time);
+      div.appendChild(meta);
+
+      if (item.type === "text" && item.text) {
+        const p = document.createElement("div");
+        p.className = "archive-item-text";
+        p.textContent = item.text;
+        div.appendChild(p);
+      }
+
+      if ((item.type === "image" || item.type === "video" || item.type === "sticker") && item.url) {
+        const wrap = document.createElement("div");
+        wrap.className = "archive-item-media";
+
+        if (item.type === "video") {
+          const video = document.createElement("video");
+          video.src = item.url;
+          video.controls = true;
+          video.playsInline = true;
+          wrap.appendChild(video);
+        } else {
+          const img = document.createElement("img");
+          img.src = item.url;
+          img.loading = "lazy";
+          img.onclick = () => window.openLightbox("image", item.url);
+          wrap.appendChild(img);
+        }
+
+        div.appendChild(wrap);
+      }
+
+      const del = document.createElement("button");
+      del.className = "archive-del";
+      del.textContent = "✕";
+      del.onclick = () => deleteFromArchive(key);
+
+      div.appendChild(del);
+      list.appendChild(div);
+    });
+}
+
+window.showToast = function(message) {
+  const toast = document.getElementById("toast");
+
+  toast.textContent = message;
+  toast.classList.add("show");
+
+  clearTimeout(window._toastTimer);
+
+  window._toastTimer = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 2500);
 };
+
+document.addEventListener("DOMContentLoaded", () => {
+  const cm = document.getElementById("chatMessages");
+  const btn = document.getElementById("scrollBottomBtn");
+
+  cm.addEventListener("scroll", () => {
+    btn.classList.toggle("show", !isNearBottom(cm));
+  }, { passive:true });
+});
 </script>
+
 </body>
 </html>
