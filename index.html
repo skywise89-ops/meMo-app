@@ -114,6 +114,7 @@
 
   /* ── 스티커 메시지 버블 ── */
   .msg-sticker-wrap {
+    /* 스티커는 배경 없이 이미지만 표시 */
     background: transparent !important;
     border: none !important;
     padding: 4px !important;
@@ -125,12 +126,15 @@
     display: block;
     cursor: pointer;
     border-radius: 8px;
+    /* 탭 하이라이트 애니메이션 */
     transition: transform 0.12s ease;
   }
   .msg-sticker-img:active { transform: scale(0.92); }
 
+
   /* ── 스티커 피커 패널 ── */
   #stickerPanel {
+    /* chatPane의 flex 자식으로 입력창 바로 위에 위치 */
     background: var(--surface);
     border-top: 1px solid var(--border);
     z-index: 10;
@@ -138,51 +142,91 @@
     flex-direction: column;
     max-height: 300px;
     flex-shrink: 0;
+    /* 슬라이드업 애니메이션 */
     overflow: hidden;
     transition: max-height 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
-  #stickerPanel.open { display: flex; }
-  #stickerPanel.animating { display: flex; }
+  #stickerPanel.open {
+    display: flex;
+  }
+  /* animating: display:flex 전환용 (JS rAF와 함께 사용) */
+  #stickerPanel.animating {
+    display: flex;
+  }
   .sticker-panel-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 14px 8px; flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px 8px;
+    flex-shrink: 0;
   }
   .sticker-panel-title {
-    font-size: 0.78rem; color: var(--text2);
-    display: flex; align-items: center; gap: 6px;
+    font-size: 0.78rem;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
   .sticker-panel-title span { font-size: 1rem; }
+
   .sticker-grid {
-    flex: 1; overflow-y: auto; overflow-x: hidden;
-    padding: 6px 10px 14px; display: grid;
-    grid-template-columns: repeat(4, 1fr); gap: 8px;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 6px 10px 14px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
     -webkit-overflow-scrolling: touch;
   }
   .sticker-grid::-webkit-scrollbar { display: none; }
   .sticker-cell {
-    display: flex; flex-direction: column; align-items: center;
-    gap: 4px; cursor: pointer; padding: 6px 4px;
-    border-radius: 12px; transition: background 0.15s; position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 6px 4px;
+    border-radius: 12px;
+    transition: background 0.15s;
+    position: relative;
   }
   .sticker-cell:active { background: var(--surface2); }
   .sticker-cell img {
-    width: 68px; height: 68px; object-fit: contain;
-    border-radius: 6px; background: var(--surface2);
+    width: 68px;
+    height: 68px;
+    object-fit: contain;
+    border-radius: 6px;
+    /* 로딩 전 placeholder */
+    background: var(--surface2);
   }
+
+  /* 스티커 로딩 상태 */
   .sticker-cell .sticker-loading {
-    width: 68px; height: 68px; border-radius: 6px;
-    background: var(--surface2); display: flex; align-items: center;
-    justify-content: center; font-size: 1.4rem;
+    width: 68px;
+    height: 68px;
+    border-radius: 6px;
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
     animation: stickerPulse 1.2s ease-in-out infinite;
   }
   @keyframes stickerPulse {
     0%, 100% { opacity: 0.6; }
     50% { opacity: 1; }
   }
+  /* 업로드 미완료 상태 오버레이 */
   .sticker-cell .sticker-not-ready {
-    position: absolute; inset: 0; background: rgba(0,0,0,0.45);
-    border-radius: 12px; display: flex; align-items: center;
-    justify-content: center; font-size: 1.2rem;
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
   }
 
   /* ── 묶음 사진 ── */
@@ -196,7 +240,8 @@
   .msg-media-group-item {
     flex: 0 0 auto; width: 130px; height: 140px;
     border-radius: 10px; overflow: hidden; position: relative;
-    cursor: pointer; background: var(--surface2); scroll-snap-align: start;
+    cursor: pointer; background: var(--surface2);
+    scroll-snap-align: start;
   }
   .msg-media-group-item img, .msg-media-group-item video { width: 100%; height: 100%; object-fit: cover; display: block; }
   .msg-media-group-item .play-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); }
@@ -220,11 +265,16 @@
 
   /* ── ALBUM ── */
   .album-grid {
-    flex: 1; min-height: 0; overflow-y: auto; display: grid;
-    grid-template-columns: repeat(3, 1fr); grid-auto-rows: calc((100vw - 4px) / 3);
-    gap: 2px; padding: 2px; align-content: start;
+    flex: 1; min-height: 0; overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: calc((100vw - 4px) / 3);
+    gap: 2px; padding: 2px;
+    align-content: start;
   }
-  @media (min-width: 600px) { .album-grid { grid-template-columns: repeat(4, 1fr); grid-auto-rows: calc((100vw - 6px) / 4); } }
+  @media (min-width: 600px) {
+    .album-grid { grid-template-columns: repeat(4, 1fr); grid-auto-rows: calc((100vw - 6px) / 4); }
+  }
   .album-item { overflow: hidden; position: relative; cursor: pointer; background: var(--surface); }
   .album-item img, .album-item video { width: 100%; height: 100%; object-fit: cover; display: block; }
   .album-item .play-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); }
@@ -259,14 +309,18 @@
   #lightbox .close-lb { position: absolute; top: 52px; right: 20px; background: none; border: none; color: white; font-size: 2rem; cursor: pointer; z-index: 101; padding: 8px; }
   #lightbox .lb-nav {
     position: absolute; top: 50%; transform: translateY(-50%);
-    width: 46px; height: 46px; border-radius: 50%; background: rgba(0,0,0,0.35); border: none; color: white;
-    font-size: 1.8rem; line-height: 1; cursor: pointer; z-index: 101; display: none; align-items: center; justify-content: center;
+    width: 46px; height: 46px; border-radius: 50%;
+    background: rgba(0,0,0,0.35); border: none; color: white;
+    font-size: 1.8rem; line-height: 1; cursor: pointer; z-index: 101;
+    display: none; align-items: center; justify-content: center;
   }
   #lightbox .lb-prev { left: 12px; }
   #lightbox .lb-next { right: 12px; }
   #lightbox .lb-counter {
     position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
-    color: rgba(255,255,255,0.85); font-size: 0.78rem; background: rgba(0,0,0,0.4); padding: 4px 12px; border-radius: 12px; display: none; z-index: 101;
+    color: rgba(255,255,255,0.85); font-size: 0.78rem;
+    background: rgba(0,0,0,0.4); padding: 4px 12px; border-radius: 12px;
+    display: none; z-index: 101;
   }
 
   /* ── INCOMING CALL ── */
@@ -374,6 +428,7 @@
 <div id="mainScreen" class="screen hidden">
   <div class="tab-content">
 
+    <!-- ── 채팅 탭 ── -->
     <div id="chatPane" class="tab-pane">
       <div class="topbar">
         <div>
@@ -412,6 +467,7 @@
         <button class="reply-bar-cancel" onclick="cancelReply()">✕</button>
       </div>
 
+      <!-- ── 스티커 피커 패널: chatPane 직속 flex 자식 (입력창 바로 위) ── -->
       <div id="stickerPanel">
         <div class="sticker-panel-header">
           <div class="sticker-panel-title">
@@ -419,13 +475,15 @@
           </div>
         </div>
         <div class="sticker-grid" id="stickerGrid">
-          </div>
+          <!-- JS로 채워짐 -->
+        </div>
       </div>
-      
       <div class="chat-input-wrap">
+        <!-- 미디어 버튼 -->
         <button class="icon-btn" onclick="document.getElementById('mediaInput').click()">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         </button>
+        <!-- 스티커 버튼 (NEW) -->
         <button class="icon-btn" id="stickerToggleBtn" onclick="toggleStickerPanel()" title="스티커">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.85 0 3.58-.5 5.06-1.38"/>
@@ -525,6 +583,7 @@
         <button class="danger-btn" onclick="doLogout()">로그아웃</button>
       </div>
     </div>
+
   </div>
   
   <div class="tab-bar">
@@ -601,7 +660,7 @@ import { getDatabase, ref, set, push, update, onValue, onChildAdded, onChildChan
          onDisconnect, serverTimestamp, query, orderByKey, limitToLast, endBefore, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 import { getStorage, ref as sRef,
          uploadBytesResumable, getDownloadURL, listAll }       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
-import { getMessaging, getToken }                              from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
+import { getMessaging, getToken }                             from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
 
 const firebaseConfig = {
   apiKey:            "AIzaSyBSfAOkWJtk41iCLIWkCtG91Hn9Aa44UNA",
@@ -647,8 +706,14 @@ const STICKER_DEFS = [
   { file: '22_good_work.png',         label: '수고' },
 ];
 
+// 스티커 Storage 경로 prefix
 const STICKER_STORAGE_PATH = 'stickers/peach/';
+
+// 런타임 URL 캐시 (Map: fileName → downloadURL)
+// ▸ 세션 내 중복 Storage 요청 방지
 const stickerUrlCache = new Map();
+
+// 패널 열림 여부
 let stickerPanelOpen = false;
 
 const app     = initializeApp(firebaseConfig);
@@ -783,64 +848,32 @@ function loadTheme() {
   setTheme(saved);
 }
 
-// ⭐️ 모든 모바일/데스크탑 환경에서 100% 안전하게 작동하는 이미지 압축 함수
 async function compressImageSafe(file, maxWidth = 1600) {
-  if (!file.type.startsWith('image/') || file.type.includes('gif')) {
-    return file; 
-  }
-
+  if (!file.type.startsWith('image/') || file.type.includes('gif')) return file;
   return new Promise((resolve) => {
     const img = new Image();
     const objectUrl = URL.createObjectURL(file);
     img.src = objectUrl;
-
     img.onload = () => {
       URL.revokeObjectURL(objectUrl);
-      let width = img.width;
-      let height = img.height;
-
-      if (width > maxWidth) {
-        height = Math.round((height * maxWidth) / width);
-        width = maxWidth;
-      }
-
+      let width = img.width, height = img.height;
+      if (width > maxWidth) { height = Math.round((height * maxWidth) / width); width = maxWidth; }
       const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
+      canvas.width = width; canvas.height = height;
       const ctx = canvas.getContext('2d');
-      
-      if (file.type !== 'image/png') {
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, width, height);
-      }
-      
+      if (file.type !== 'image/png') { ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, width, height); }
       ctx.drawImage(img, 0, 0, width, height);
       const targetType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
       const quality = targetType === 'image/jpeg' ? 0.8 : undefined;
-
       canvas.toBlob(blob => {
-        if (!blob) { resolve(file); return; } 
-        
+        if (!blob) { resolve(file); return; }
         const ext = targetType === 'image/png' ? '.png' : '.jpg';
-        const safeName = file.name.replace(/\.[^/.]+$/, "") + "_compressed" + ext;
-        
-        try {
-          const compressedFile = new File([blob], safeName, {
-            type: targetType,
-            lastModified: Date.now()
-          });
-          resolve(compressedFile);
-        } catch (e) {
-          blob.name = safeName;
-          resolve(blob);
-        }
+        const safeName = file.name.replace(/\.[^/.]+$/, '') + '_compressed' + ext;
+        try { resolve(new File([blob], safeName, { type: targetType, lastModified: Date.now() })); }
+        catch (e) { blob.name = safeName; resolve(blob); }
       }, targetType, quality);
     };
-
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      resolve(file);
-    };
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(file); };
   });
 }
 
@@ -1000,10 +1033,12 @@ function enterRoom() {
   loadTheme();
   initNotif();
 
+  // 스티커 패널 초기화 (Storage URL 미리 로드 시작)
   initStickerPanel();
 
   showScreen('mainScreen');
 
+  // 패널 외부 클릭 시 닫기
   document.addEventListener('click', e => {
     if (!stickerPanelOpen) return;
     const panel = document.getElementById('stickerPanel');
@@ -1025,15 +1060,28 @@ function enterRoom() {
 // ══════════════════════════════════════════════════
 // ── 스티커 패널 관련 함수 ──
 // ══════════════════════════════════════════════════
+
+/**
+ * 스티커 패널 초기화:
+ * Firebase Storage에서 이미 업로드된 스티커 URL을 가져와 캐시에 저장,
+ * 그리드 셀을 렌더링한다.
+ */
 async function initStickerPanel() {
-  buildStickerGrid();
-  await loadStickerUrlsFromStorage();
+  buildStickerGrid(); // 먼저 skeleton UI 렌더링
+  await loadStickerUrlsFromStorage(); // 그 다음 URL 채우기
 }
 
+/**
+ * Storage에서 stickers/peach/ 폴더의 파일 목록을 조회해
+ * stickerUrlCache를 채운다.
+ * 실패해도 무시 (업로드 안 된 상태일 수 있음).
+ */
 async function loadStickerUrlsFromStorage() {
   try {
     const listRef = sRef(storage, STICKER_STORAGE_PATH);
     const result  = await listAll(listRef);
+
+    // 병렬로 URL 가져오기
     await Promise.all(result.items.map(async (itemRef) => {
       const fileName = itemRef.name;
       if (!stickerUrlCache.has(fileName)) {
@@ -1041,16 +1089,23 @@ async function loadStickerUrlsFromStorage() {
           const url = await getDownloadURL(itemRef);
           stickerUrlCache.set(fileName, url);
         } catch (e) {
+          // 개별 파일 URL 실패는 무시
           console.warn('[Sticker] URL 로드 실패:', fileName, e.code);
         }
       }
     }));
+
+    // 그리드 업데이트 (URL이 채워진 셀만 업데이트)
     refreshStickerGrid();
   } catch (e) {
+    // Storage 폴더가 없거나 권한 없을 경우 → 스티커 미표시
     console.log('[Sticker] Storage 조회 실패:', e.code || e.message);
   }
 }
 
+/**
+ * 스티커 그리드 DOM 생성 (skeleton)
+ */
 function buildStickerGrid() {
   const grid = document.getElementById('stickerGrid');
   grid.innerHTML = '';
@@ -1059,39 +1114,53 @@ function buildStickerGrid() {
     cell.className = 'sticker-cell';
     cell.dataset.file = def.file;
 
+    // placeholder
     const placeholder = document.createElement('div');
     placeholder.className = 'sticker-loading';
     placeholder.textContent = '🍑';
     cell.appendChild(placeholder);
 
+    // 클릭 이벤트
     cell.addEventListener('click', () => onStickerCellClick(def));
+
     grid.appendChild(cell);
   });
 }
 
+/**
+ * 캐시된 URL로 그리드 셀 이미지 업데이트
+ */
 function refreshStickerGrid() {
   const grid = document.getElementById('stickerGrid');
   STICKER_DEFS.forEach(def => {
     const cell = grid.querySelector(`[data-file="${def.file}"]`);
     if (!cell) return;
     const url = stickerUrlCache.get(def.file);
-    if (!url) return;
+    if (!url) return; // 아직 업로드 안 됨
 
+    // placeholder → img 교체
     const existing = cell.querySelector('img');
-    if (existing) return;
+    if (existing) return; // 이미 img 있음
 
     const placeholder = cell.querySelector('.sticker-loading');
     if (placeholder) placeholder.remove();
 
     const img = document.createElement('img');
-    img.src = url; img.loading = 'lazy'; img.alt = def.label; img.draggable = false;
+    img.src = url;
+    img.loading = 'lazy';
+    img.alt = def.label;
+    img.draggable = false;
     cell.insertBefore(img, cell.querySelector('.sticker-loading') || null);
 
+    // not-ready 오버레이 제거
     const overlay = cell.querySelector('.sticker-not-ready');
     if (overlay) overlay.remove();
   });
 }
 
+/**
+ * 스티커 셀 클릭 핸들러
+ */
 function onStickerCellClick(def) {
   const url = stickerUrlCache.get(def.file);
   if (!url) {
@@ -1102,6 +1171,9 @@ function onStickerCellClick(def) {
   closeStickerPanel();
 }
 
+/**
+ * 스티커 메시지 전송
+ */
 function sendSticker(fileName, label, url) {
   const ts = Date.now();
   push(ref(db, `${ROOM_ID}/messages`), {
@@ -1114,10 +1186,18 @@ function sendSticker(fileName, label, url) {
     url,
     ts,
   });
+  // 앨범에는 저장 안 함 (스티커는 사진이 아님)
 }
 
+/**
+ * 스티커 피커 토글
+ */
 window.toggleStickerPanel = function() {
-  if (stickerPanelOpen) closeStickerPanel(); else openStickerPanel();
+  if (stickerPanelOpen) {
+    closeStickerPanel();
+  } else {
+    openStickerPanel();
+  }
 };
 
 function openStickerPanel() {
@@ -1126,6 +1206,7 @@ function openStickerPanel() {
   stickerPanelOpen = true;
   btn.classList.add('active');
 
+  // display:flex 먼저, 다음 프레임에 max-height 확장 (CSS transition 발동)
   panel.style.display = 'flex';
   panel.style.maxHeight = '0px';
   panel.style.overflow  = 'hidden';
@@ -1136,6 +1217,8 @@ function openStickerPanel() {
       panel.classList.add('open');
     });
   });
+
+  // 텍스트 인풋 blur (키보드 내리기)
   document.getElementById('msgInput').blur();
 }
 
@@ -1175,7 +1258,9 @@ window.toggleTodo = function(key, isCurrentlyDone, text) {
   if (isCurrentlyDone) return;
   update(ref(db, `${ROOM_ID}/todos/${key}`), { isDone: true, completedAt: Date.now() });
   push(ref(db, `${ROOM_ID}/messages`), {
-    uid: 'system', name: 'System', text: `${me.name}님이 '${text}' 버킷을 완료했어요! 🎉`, type: 'system', ts: Date.now()
+    uid: 'system', name: 'System',
+    text: `${me.name}님이 '${text}' 버킷을 완료했어요! 🎉`,
+    type: 'system', ts: Date.now()
   });
 };
 
@@ -1237,21 +1322,32 @@ function createTodoEl(t) {
   const content = document.createElement('div');
   content.style.flex = '1';
   const text = document.createElement('div');
-  text.className = 'todo-text'; text.textContent = t.text; content.appendChild(text);
+  text.className = 'todo-text';
+  text.textContent = t.text;
+  content.appendChild(text);
   if(t.isDone) {
     const meta = document.createElement('div');
-    meta.className = 'todo-meta'; meta.textContent = fmtFull(t.completedAt) + ' 달성'; content.appendChild(meta);
+    meta.className = 'todo-meta';
+    meta.textContent = fmtFull(t.completedAt) + ' 달성';
+    content.appendChild(meta);
     if(t.proofUrl) {
       if(t.proofType === 'video') {
         const v = document.createElement('video');
-        v.className = 'todo-proof-media'; v.src = t.proofUrl; v.onclick = () => openLightbox('video', t.proofUrl); content.appendChild(v);
+        v.className = 'todo-proof-media'; v.src = t.proofUrl;
+        v.onclick = () => openLightbox('video', t.proofUrl);
+        content.appendChild(v);
       } else {
         const img = document.createElement('img');
-        img.className = 'todo-proof-media'; img.src = t.proofUrl; img.loading = 'lazy'; img.onclick = () => openLightbox('image', t.proofUrl); content.appendChild(img);
+        img.className = 'todo-proof-media'; img.src = t.proofUrl; img.loading = 'lazy';
+        img.onclick = () => openLightbox('image', t.proofUrl);
+        content.appendChild(img);
       }
     } else {
       const btn = document.createElement('button');
-      btn.className = 'todo-proof-btn'; btn.innerHTML = '📷 인증샷 남기기'; btn.onclick = () => clickAddProof(t.key); content.appendChild(btn);
+      btn.className = 'todo-proof-btn';
+      btn.innerHTML = '📷 인증샷 남기기';
+      btn.onclick = () => clickAddProof(t.key);
+      content.appendChild(btn);
     }
   }
   div.appendChild(check);
@@ -1260,7 +1356,7 @@ function createTodoEl(t) {
 }
 
 // ══════════════════════════════════════════════════
-// ── 무한 스크롤 수정 코드 (100ms 지연 후 Observer 강제 갱신) ──
+// ── 무한 스크롤 ──
 // ══════════════════════════════════════════════════
 function setupTopObserver() {
   const sentinel = document.getElementById('topSentinel');
@@ -1276,90 +1372,49 @@ function setupTopObserver() {
 async function loadOlderMessages() {
   if (loadingOlder || !hasMoreOlder || !oldestKey) return;
   loadingOlder = true;
-  
   const cm = document.getElementById('chatMessages');
   const sentinel = document.getElementById('topSentinel');
-  
   try {
-    const messagesRef = ref(db, `${ROOM_ID}/messages`);
-    const olderQuery = query(messagesRef, orderByKey(), endBefore(oldestKey), limitToLast(20));
+    const olderQuery = query(ref(db, `${ROOM_ID}/messages`), orderByKey(), endBefore(oldestKey), limitToLast(20));
     const snapshot = await get(olderQuery);
-    
-    if (!snapshot.exists()) {
-      hasMoreOlder = false;
-      loadingOlder = false;
-      return;
-    }
-    
+    if (!snapshot.exists()) { hasMoreOlder = false; loadingOlder = false; return; }
     const children = [];
-    snapshot.forEach(child => {
-      children.push({ key: child.key, val: child.val() });
-    });
-    
+    snapshot.forEach(child => children.push({ key: child.key, val: child.val() }));
     if (children.length < 20) hasMoreOlder = false;
     if (children.length === 0) { loadingOlder = false; return; }
-    
     oldestKey = children[0].key;
-    
     const currentOldestDOM = sentinel.previousElementSibling;
-    if (currentOldestDOM && currentOldestDOM.classList.contains('date-sep')) {
-      cm.removeChild(currentOldestDOM);
-    }
-    
+    if (currentOldestDOM && currentOldestDOM.classList.contains('date-sep')) cm.removeChild(currentOldestDOM);
     const wraps = cm.querySelectorAll('.msg-wrap, .system-msg');
     const currentOldestWrap = wraps.length > 0 ? wraps[wraps.length - 1] : null;
     let nextGroupDate = currentOldestWrap ? currentOldestWrap.dataset.date : '';
-    
     const fragment = document.createDocumentFragment();
-    
     for (let i = children.length - 1; i >= 0; i--) {
       const item = children[i];
-      const msg = item.val;
-      const key = item.key;
-      
-      const wrap = createMessageElement(msg, key);
-      const currentDateStr = getDateStr(msg.ts);
+      const wrap = createMessageElement(item.val, item.key);
+      const currentDateStr = getDateStr(item.val.ts);
       wrap.dataset.date = currentDateStr;
-      
       if (i === children.length - 1 && nextGroupDate && currentDateStr !== nextGroupDate) {
-        const sep = document.createElement('div');
-        sep.className = 'date-sep';
-        sep.textContent = nextGroupDate;
+        const sep = document.createElement('div'); sep.className = 'date-sep'; sep.textContent = nextGroupDate;
         fragment.appendChild(sep);
       }
-      
       fragment.appendChild(wrap);
-      
       const nextMsg = children[i - 1];
       if (nextMsg) {
-        const nextDateStr = getDateStr(nextMsg.val.ts);
-        if (currentDateStr !== nextDateStr) {
-          const sep = document.createElement('div');
-          sep.className = 'date-sep';
-          sep.textContent = currentDateStr;
+        if (currentDateStr !== getDateStr(nextMsg.val.ts)) {
+          const sep = document.createElement('div'); sep.className = 'date-sep'; sep.textContent = currentDateStr;
           fragment.appendChild(sep);
         }
       } else {
-        const sep = document.createElement('div');
-        sep.className = 'date-sep';
-        sep.textContent = currentDateStr;
+        const sep = document.createElement('div'); sep.className = 'date-sep'; sep.textContent = currentDateStr;
         fragment.appendChild(sep);
       }
     }
-    
     cm.insertBefore(fragment, sentinel);
-    
   } catch (err) {
     console.error('과거 메시지 로드 실패:', err);
   } finally {
-    // ⭐️ 핵심 수정 부분: 100ms 지연 후 옵저버 상태 강제 재설정
-    setTimeout(() => {
-      loadingOlder = false;
-      if (hasMoreOlder && topObserver && sentinel) {
-        topObserver.unobserve(sentinel);
-        topObserver.observe(sentinel);
-      }
-    }, 100);
+    requestAnimationFrame(() => { loadingOlder = false; });
   }
 }
 
@@ -1423,6 +1478,10 @@ window.autoResize = el => {
   requestAnimationFrame(() => { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; });
 };
 
+/**
+ * 메시지 타입별 레이블 (알림/인용 표시용)
+ * sticker 타입 추가
+ */
 function mediaLabel(msg) {
   if (!msg) return '';
   if (msg.type === 'text')    return msg.text || '';
@@ -1436,6 +1495,10 @@ function mediaLabel(msg) {
   return '';
 }
 
+/**
+ * 메시지 DOM 엘리먼트 생성
+ * ── sticker 타입 케이스 추가 ──
+ */
 function createMessageElement(msg, key) {
   if (msg.type === 'system') {
     const wrap = document.createElement('div');
@@ -1483,20 +1546,25 @@ function createMessageElement(msg, key) {
       .replace(/\n/g, '<br>');
   }
   else if (msg.type === 'sticker') {
+    // ── 스티커 버블: 배경 없이 이미지만 ──
     bubble.classList.add('msg-sticker-wrap');
     const img = document.createElement('img');
     img.className = 'msg-sticker-img';
     img.alt = msg.stickerLabel || '스티커';
     img.loading = 'lazy';
 
+    // URL 결정: 메시지에 저장된 url 우선, 없으면 캐시 조회
     const stickerUrl = msg.url || stickerUrlCache.get(msg.stickerFile) || '';
     if (stickerUrl) {
+      // URL 있을 때만 src 할당 (빈 src 금지 → 브라우저 페이지 재요청 방지)
       img.src = stickerUrl;
       img.onclick = () => openLightbox('image', stickerUrl);
     } else {
+      // URL 없음 = 아직 미업로드 상태 → placeholder 표시
       img.style.cssText = 'width:120px;height:120px;background:var(--surface2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:2rem;';
       img.alt = '🍑';
     }
+
     bubble.appendChild(img);
   }
   else if (msg.type === 'image') {
@@ -1536,6 +1604,7 @@ function createMessageElement(msg, key) {
 
   wrap.appendChild(bubble);
 
+  // 번역 (스티커는 번역 없음)
   if (msg.translation && translateEnabled && msg.type !== 'sticker') {
     const tr = document.createElement('div'); tr.className = 'msg-translation'; tr.textContent = msg.translation; wrap.appendChild(tr);
   }
@@ -1569,6 +1638,8 @@ function renderMessage(msg, key) {
     wrap.after(sep);
   }
 }
+
+const fmt = ts => { const d = new Date(ts); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
 
 function uploadOneFile(file, progressPrefix) {
   return new Promise(async (resolve, reject) => {
@@ -1753,6 +1824,7 @@ window.switchTab = tab => {
   });
   document.getElementById(`${tab}Pane`).classList.remove('hidden');
   document.getElementById(`tab-${tab}`).classList.add('active');
+  // 탭 전환 시 스티커 패널 닫기
   if (tab !== 'chat' && stickerPanelOpen) closeStickerPanel();
 };
 
