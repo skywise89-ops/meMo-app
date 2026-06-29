@@ -130,12 +130,7 @@
     transition: transform 0.12s ease;
   }
   .msg-sticker-img:active { transform: scale(0.92); }
-  .msg-sticker-label {
-    font-size: 0.68rem;
-    color: var(--text2);
-    text-align: center;
-    margin-top: 2px;
-  }
+
 
   /* ── 스티커 피커 패널 ── */
   #stickerPanel {
@@ -205,12 +200,7 @@
     /* 로딩 전 placeholder */
     background: var(--surface2);
   }
-  .sticker-cell .sticker-name {
-    font-size: 0.6rem;
-    color: var(--text2);
-    text-align: center;
-    line-height: 1.2;
-  }
+
   /* 스티커 로딩 상태 */
   .sticker-cell .sticker-loading {
     width: 68px;
@@ -1130,11 +1120,6 @@ function buildStickerGrid() {
     placeholder.textContent = '🍑';
     cell.appendChild(placeholder);
 
-    const name = document.createElement('div');
-    name.className = 'sticker-name';
-    name.textContent = def.label;
-    cell.appendChild(name);
-
     // 클릭 이벤트
     cell.addEventListener('click', () => onStickerCellClick(def));
 
@@ -1165,7 +1150,7 @@ function refreshStickerGrid() {
     img.loading = 'lazy';
     img.alt = def.label;
     img.draggable = false;
-    cell.insertBefore(img, cell.querySelector('.sticker-name'));
+    cell.insertBefore(img, cell.querySelector('.sticker-loading') || null);
 
     // not-ready 오버레이 제거
     const overlay = cell.querySelector('.sticker-not-ready');
@@ -1580,12 +1565,7 @@ function createMessageElement(msg, key) {
       img.alt = '🍑';
     }
 
-    const labelEl = document.createElement('div');
-    labelEl.className = 'msg-sticker-label';
-    labelEl.textContent = msg.stickerLabel || '';
-
     bubble.appendChild(img);
-    bubble.appendChild(labelEl);
   }
   else if (msg.type === 'image') {
     const d = document.createElement('div'); d.className = 'msg-media';
