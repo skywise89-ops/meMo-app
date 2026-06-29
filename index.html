@@ -428,7 +428,6 @@
 <div id="mainScreen" class="screen hidden">
   <div class="tab-content">
 
-    <!-- ── 채팅 탭 ── -->
     <div id="chatPane" class="tab-pane">
       <div class="topbar">
         <div>
@@ -467,7 +466,6 @@
         <button class="reply-bar-cancel" onclick="cancelReply()">✕</button>
       </div>
 
-      <!-- ── 스티커 피커 패널: chatPane 직속 flex 자식 (입력창 바로 위) ── -->
       <div id="stickerPanel">
         <div class="sticker-panel-header">
           <div class="sticker-panel-title">
@@ -475,15 +473,12 @@
           </div>
         </div>
         <div class="sticker-grid" id="stickerGrid">
-          <!-- JS로 채워짐 -->
-        </div>
+          </div>
       </div>
       <div class="chat-input-wrap">
-        <!-- 미디어 버튼 -->
         <button class="icon-btn" onclick="document.getElementById('mediaInput').click()">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         </button>
-        <!-- 스티커 버튼 (NEW) -->
         <button class="icon-btn" id="stickerToggleBtn" onclick="toggleStickerPanel()" title="스티커">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.85 0 3.58-.5 5.06-1.38"/>
@@ -660,7 +655,7 @@ import { getDatabase, ref, set, push, update, onValue, onChildAdded, onChildChan
          onDisconnect, serverTimestamp, query, orderByKey, limitToLast, endBefore, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 import { getStorage, ref as sRef,
          uploadBytesResumable, getDownloadURL, listAll }       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
-import { getMessaging, getToken }                             from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
+import { getMessaging, getToken }                              from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js';
 
 const firebaseConfig = {
   apiKey:            "AIzaSyBSfAOkWJtk41iCLIWkCtG91Hn9Aa44UNA",
@@ -1414,7 +1409,13 @@ async function loadOlderMessages() {
   } catch (err) {
     console.error('과거 메시지 로드 실패:', err);
   } finally {
-    requestAnimationFrame(() => { loadingOlder = false; });
+    setTimeout(() => {
+      loadingOlder = false;
+      if (hasMoreOlder && topObserver) {
+        topObserver.unobserve(sentinel);
+        topObserver.observe(sentinel);
+      }
+    }, 50);
   }
 }
 
