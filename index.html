@@ -1707,6 +1707,7 @@ import {
   orderByKey,
   limitToLast,
   endBefore,
+  endAt,
   get
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
@@ -1795,7 +1796,6 @@ let partner = null;
 let myLang = "ko";
 let translateEnabled = true;
 let notifEnabled = false;
-let appHasFocus = true;
 let swRegistration = null;
 
 let roomEntered = false;
@@ -1813,20 +1813,14 @@ let initialLoadTimer = null;
 const seenKeys = new Set();
 window._loadedMessages = {};
 
+const searchMessageCache = new Map();
+let searchCacheReady = false;
+let searchCacheFailed = false;
+let searchCacheSession = 0;
+let searchRequestId = 0;
+
 const CHECK_SINGLE = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
 const CHECK_DOUBLE = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 6 7 17 2 12"/><polyline points="23 6 12 17"/></svg>`;
-
-document.addEventListener("visibilitychange", () => {
-  appHasFocus = document.visibilityState === "visible";
-});
-
-window.addEventListener("blur", () => {
-  appHasFocus = false;
-});
-
-window.addEventListener("focus", () => {
-  appHasFocus = true;
-});
 
 const swReadyPromise = ("serviceWorker" in navigator)
   ? navigator.serviceWorker.register("./firebase-messaging-sw.js")
@@ -2000,28 +1994,6 @@ window.toggleNotif = async function() {
   }
 };
 
-function sendLocalNotif(name, body) {
-  if (!notifEnabled || appHasFocus) return;
-
-  try {
-    const title = `meMo — ${name}`;
-
-    if (swRegistration) {
-      swRegistration.showNotification(title, {
-        body,
-        tag: `memo-${Date.now()}`
-      });
-    } else {
-      new Notification(title, {
-        body,
-        tag: `memo-${Date.now()}`
-      });
-    }
-  } catch (err) {
-    console.warn("[Notif]", err);
-  }
-}
-
 async function compressImageSafe(file, maxWidth = 1600) {
   if (!file.type.startsWith("image/") || file.type.includes("gif")) {
     return file;
@@ -2106,6 +2078,11 @@ window.signInWithGoogle = async function() {
 onAuthStateChanged(auth, async user => {
   if (!user) {
     roomEntered = false;
+    searchMessageCache.clear();
+    searchCacheReady = false;
+    searchCacheFailed = false;
+    searchCacheSession += 1;
+    searchRequestId += 1;
     showScreen("loginScreen");
     return;
   }
@@ -2145,6 +2122,11 @@ onAuthStateChanged(auth, async user => {
 });
 
 function enterRoom() {
+  const searchSession = ++searchCacheSession;
+  searchMessageCache.clear();
+  searchCacheReady = false;
+  searchCacheFailed = false;
+
   const meRef = ref(db, `${ROOM_ID}/presence/${me.name}`);
 
   set(meRef, {
@@ -2237,11 +2219,15 @@ function enterRoom() {
   );
 
   onChildAdded(initialQuery, snap => {
+    if (searchSession !== searchCacheSession) return;
+
     const key = snap.key;
+    const msg = snap.val();
+
+    cacheSearchableMessage(key, msg);
 
     if (seenKeys.has(key)) return;
 
-    const msg = snap.val();
     const shouldStickToBottom = !initialLoadDone || isNearBottom(container);
 
     seenKeys.add(key);
@@ -2255,10 +2241,6 @@ function enterRoom() {
     if (msg.uid !== me.name && msg.ts > latestTheirTs) {
       latestTheirTs = msg.ts;
       updateMyLastRead(msg.ts);
-
-      if (msg.ts > enterTime) {
-        sendLocalNotif(msg.name, mediaLabel(msg));
-      }
     }
 
     clearTimeout(initialLoadTimer);
@@ -2273,8 +2255,12 @@ function enterRoom() {
   });
 
   onChildChanged(messagesRef, snap => {
+    if (searchSession !== searchCacheSession) return;
+
     const key = snap.key;
     const msg = snap.val();
+
+    cacheSearchableMessage(key, msg);
 
     if (window._loadedMessages[key]) {
       window._loadedMessages[key].translation = msg.translation;
@@ -2305,6 +2291,8 @@ function enterRoom() {
 
     translationEl.textContent = msg.translation;
   });
+
+  hydrateSearchCache(messagesRef, searchSession);
 
   onValue(ref(db, `${ROOM_ID}/lastRead/${partner.name}`), snap => {
     partnerLastRead = snap.val() || 0;
@@ -2392,7 +2380,6 @@ async function loadOlderMessages() {
   loadingOlder = true;
 
   const cm = document.getElementById("chatMessages");
-  const sentinel = document.getElementById("topSentinel");
 
   const beforeHeight = cm.scrollHeight;
   const beforeTop = cm.scrollTop;
@@ -2432,36 +2419,11 @@ async function loadOlderMessages() {
       hasMoreOlder = false;
     }
 
-    const fragment = document.createDocumentFragment();
-
-    let previousDate = sentinel.nextElementSibling?.dataset?.date || "";
-
-    for (const { key, val: msg } of children) {
-      if (seenKeys.has(key)) continue;
-
-      seenKeys.add(key);
-
-      const dateStr = getDateStr(msg.ts);
-
-      if (dateStr !== previousDate) {
-        const sep = document.createElement("div");
-        sep.className = "date-sep";
-        sep.dataset.date = dateStr;
-        sep.textContent = dateStr;
-        fragment.appendChild(sep);
-
-        previousDate = dateStr;
-      }
-
-      const wrap = createMessageElement(msg, key);
-      wrap.dataset.date = dateStr;
-      fragment.appendChild(wrap);
-    }
+    const renderedCount = insertMessagesInOrder(children);
 
     oldestKey = children[0].key;
 
-    if (fragment.childNodes.length) {
-      cm.insertBefore(fragment, sentinel.nextSibling);
+    if (renderedCount) {
 
       requestAnimationFrame(() => {
         cm.scrollTop = beforeTop + (cm.scrollHeight - beforeHeight);
@@ -2473,6 +2435,51 @@ async function loadOlderMessages() {
   } finally {
     loadingOlder = false;
   }
+}
+
+function insertMessagesInOrder(children) {
+  const container = document.getElementById("chatMessages");
+  let renderedCount = 0;
+
+  for (const { key, val: msg } of children) {
+    cacheSearchableMessage(key, msg);
+
+    if (seenKeys.has(key)) continue;
+
+    seenKeys.add(key);
+    const wrap = createMessageElement(msg, key);
+
+    const next = Array.from(container.querySelectorAll(".msg-wrap,.system-msg"))
+      .find(el => el.dataset.key.localeCompare(key) > 0);
+
+    container.insertBefore(wrap, next || null);
+    renderedCount += 1;
+  }
+
+  if (renderedCount) rebuildDateSeparators();
+
+  return renderedCount;
+}
+
+function rebuildDateSeparators() {
+  const container = document.getElementById("chatMessages");
+  container.querySelectorAll(".date-sep").forEach(el => el.remove());
+
+  let previousDate = "";
+
+  container.querySelectorAll(".msg-wrap,.system-msg").forEach(wrap => {
+    const msg = window._loadedMessages[wrap.dataset.key];
+    const dateStr = getDateStr(msg?.ts);
+
+    if (dateStr !== previousDate) {
+      const sep = document.createElement("div");
+      sep.className = "date-sep";
+      sep.dataset.date = dateStr;
+      sep.textContent = dateStr;
+      container.insertBefore(sep, wrap);
+      previousDate = dateStr;
+    }
+  });
 }
 
 async function initStickerPanel() {
@@ -3432,6 +3439,41 @@ window.doLogout = async function() {
 let searchMatches = [];
 let searchIdx = -1;
 
+function cacheSearchableMessage(key, msg) {
+  if (msg?.type !== "text" || !msg.text) return;
+
+  searchMessageCache.set(key, {
+    text: String(msg.text),
+    ts: Number(msg.ts) || 0
+  });
+}
+
+async function hydrateSearchCache(messagesRef, searchSession) {
+  try {
+    const snapshot = await get(messagesRef);
+
+    if (searchSession !== searchCacheSession) return;
+
+    snapshot.forEach(child => {
+      cacheSearchableMessage(child.key, child.val());
+    });
+  } catch (err) {
+    if (searchSession !== searchCacheSession) return;
+
+    searchCacheFailed = true;
+    console.error("검색용 메시지 로드 실패:", err);
+    showToast("전체 메시지 검색을 준비하지 못했습니다.");
+  } finally {
+    if (searchSession !== searchCacheSession) return;
+
+    searchCacheReady = true;
+
+    if (document.getElementById("searchInput").value.trim()) {
+      window.doSearch();
+    }
+  }
+}
+
 window.toggleSearch = function() {
   const bar = document.getElementById("searchBar");
   const isOpen = bar.classList.toggle("show");
@@ -3445,6 +3487,7 @@ window.toggleSearch = function() {
 
 window.doSearch = function() {
   clearSearchHighlights();
+  const requestId = ++searchRequestId;
 
   const q = document.getElementById("searchInput").value.trim().toLowerCase();
 
@@ -3454,29 +3497,39 @@ window.doSearch = function() {
     return;
   }
 
-  searchMatches = [];
+  if (!searchCacheReady) {
+    document.getElementById("searchCount").textContent = "검색 준비 중…";
+    searchMatches = [];
+    return;
+  }
 
-  document.querySelectorAll("#chatMessages .msg-bubble").forEach(el => {
-    if (el.textContent.toLowerCase().includes(q)) {
-      el.classList.add("msg-highlight");
-      searchMatches.push(el);
-    }
-  });
+  if (searchCacheFailed) {
+    document.getElementById("searchCount").textContent = "검색 준비 실패";
+    searchMatches = [];
+    return;
+  }
 
-  searchMatches.reverse();
+  searchMatches = Array.from(searchMessageCache.entries())
+    .filter(([, msg]) => msg.text.toLowerCase().includes(q))
+    .sort(([keyA, a], [keyB, b]) => b.ts - a.ts || keyB.localeCompare(keyA))
+    .map(([key]) => key);
+
   searchIdx = searchMatches.length ? 0 : -1;
+  highlightLoadedSearchMatches();
 
   document.getElementById("searchCount").textContent =
     searchMatches.length ? `${searchIdx + 1}/${searchMatches.length}` : "0건";
 
-  searchMatches[0]?.scrollIntoView({ block:"center" });
+  if (searchMatches.length) {
+    void focusSearchMatch(searchMatches[0], requestId);
+  }
 };
 
 window.searchNext = function() {
   if (!searchMatches.length) return;
 
   searchIdx = (searchIdx + 1) % searchMatches.length;
-  searchMatches[searchIdx].scrollIntoView({ block:"center" });
+  void focusSearchMatch(searchMatches[searchIdx], searchRequestId);
 
   document.getElementById("searchCount").textContent =
     `${searchIdx + 1}/${searchMatches.length}`;
@@ -3486,13 +3539,14 @@ window.searchPrev = function() {
   if (!searchMatches.length) return;
 
   searchIdx = (searchIdx - 1 + searchMatches.length) % searchMatches.length;
-  searchMatches[searchIdx].scrollIntoView({ block:"center" });
+  void focusSearchMatch(searchMatches[searchIdx], searchRequestId);
 
   document.getElementById("searchCount").textContent =
     `${searchIdx + 1}/${searchMatches.length}`;
 };
 
 function clearSearch() {
+  searchRequestId += 1;
   document.getElementById("searchInput").value = "";
   document.getElementById("searchCount").textContent = "";
   clearSearchHighlights();
@@ -3504,6 +3558,50 @@ function clearSearchHighlights() {
   document.querySelectorAll(".msg-highlight").forEach(el => {
     el.classList.remove("msg-highlight");
   });
+}
+
+function highlightLoadedSearchMatches() {
+  for (const key of searchMatches) {
+    document.querySelector(`[data-key="${key}"]`)?.classList.add("msg-highlight");
+  }
+}
+
+async function focusSearchMatch(key, requestId) {
+  let target = document.querySelector(`[data-key="${key}"]`);
+
+  if (!target) {
+    try {
+      const messagesRef = ref(db, `${ROOM_ID}/messages`);
+      const snapshot = await get(query(
+        messagesRef,
+        orderByKey(),
+        endAt(key),
+        limitToLast(20)
+      ));
+
+      if (requestId !== searchRequestId) return;
+
+      const children = [];
+      snapshot.forEach(child => children.push({ key: child.key, val: child.val() }));
+
+      if (children.length) {
+        insertMessagesInOrder(children);
+      }
+    } catch (err) {
+      console.error("검색 결과 이동 실패:", err);
+      showToast("검색 결과를 불러오지 못했습니다.");
+      return;
+    }
+
+    target = document.querySelector(`[data-key="${key}"]`);
+  }
+
+  if (requestId !== searchRequestId || !target) return;
+
+  clearSearchHighlights();
+  highlightLoadedSearchMatches();
+  target.classList.add("msg-highlight");
+  target.scrollIntoView({ block:"center" });
 }
 
 let ctxTargetMsg = null;
