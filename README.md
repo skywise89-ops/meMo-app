@@ -43,7 +43,8 @@ npm test
 운영 규칙을 먼저 백업한 뒤 실행한다.
 
 ```bash
-npx firebase-tools@15.25.1 deploy --only database,storage,functions --project memo-e366f
+npx firebase-tools@15.25.1 deploy --only database,storage --project memo-e366f
+npx firebase-tools@15.25.1 deploy --only functions:deleteAlbumMedia,functions:restoreAlbumMedia,functions:createVoiceMessage,functions:purgeExpiredMedia,functions:cleanupOrphanVoiceUploads --project memo-e366f
 ```
 
-FCM 발송 서버 코드는 별도 운영 자산이다. 음성 메시지 알림 문구가 필요하면 발송 서버에서 `type: audio`를 `🎙️ 음성 메시지`로 처리해야 한다.
+기존 `sendPushOnMessage`는 별도 운영 자산이다. 함수 전체 배포는 이를 삭제 후보로 만들 수 있으므로 위 함수 목록을 유지한다. 음성 메시지 알림 문구가 필요하면 발송 서버에서 `type: audio`를 `🎙️ 음성 메시지`로 처리해야 한다.

@@ -1,0 +1,8 @@
+{
+  "rules": {
+    "memo_private_room": {
+      ".read": "auth != null && (auth.token.email == 'fromkevinjung@gmail.com' || auth.token.email == 'momo.021118@gmail.com')",
+      ".write": "auth != null && (auth.token.email == 'fromkevinjung@gmail.com' || auth.token.email == 'momo.021118@gmail.com')"
+    }
+  }
+}
