@@ -9,6 +9,8 @@
 - `firebase-messaging-sw.js`: FCM 백그라운드 알림과 중복 방지
 - `manifest.json`: PWA 설치 정보
 - `tests/app.test.mjs`: JavaScript 구문, DOM ID, 핵심 기능 배선 정적 검사
+- `functions/`: 관리자 앨범 삭제·복구, 음성 메시지 생성, 7일 만료 정리
+- `database.rules.json`, `storage.rules`: 두 계정 전용 서버 권한과 파일 크기 검증
 
 ## v3 개선
 
@@ -21,10 +23,27 @@
 - 영상 5MB 제한과 업로드 전 일괄 검증
 - 신규 앨범 항목에서 원본 대화 문맥 보기
 
+## v4 개선
+
+- `fromkevinjung@gmail.com` 전용 앨범 삭제와 7일 휴지통 복구
+- 과거 `messageKey` 없는 미디어도 URL로 원본 메시지 탐색
+- 60초·2MiB 제한 음성 메시지와 Safari MP4/AAC·WebM/Opus 대응
+- 음성 파일 업로드 완료 후 7일 만료, 15분 주기 서버 정리
+- 고아 음성 업로드 8일 후 정리
+- RTDB·Storage Rules로 삭제 권한과 업로드 크기 서버 검증
+
 ## 검사
 
 ```bash
 npm test
 ```
 
-Firebase Database Rules, Storage Rules, FCM 발송 서버 코드는 별도 운영 자산이다. 배포 전 현재 운영 설정과 함께 검증해야 한다.
+## Firebase 배포
+
+운영 규칙을 먼저 백업한 뒤 실행한다.
+
+```bash
+npx firebase-tools@15.25.1 deploy --only database,storage,functions --project memo-e366f
+```
+
+FCM 발송 서버 코드는 별도 운영 자산이다. 음성 메시지 알림 문구가 필요하면 발송 서버에서 `type: audio`를 `🎙️ 음성 메시지`로 처리해야 한다.

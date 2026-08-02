@@ -1,0 +1,41 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isMember() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && (
+          request.auth.token.email == 'fromkevinjung@gmail.com'
+          || request.auth.token.email == 'momo.021118@gmail.com'
+        );
+    }
+
+    match /memo_private_room/audio/{fileName} {
+      allow read: if isMember();
+      allow create: if isMember()
+        && request.resource.size <= 2 * 1024 * 1024
+        && request.resource.contentType.matches('audio/.*');
+      allow update, delete: if false;
+    }
+
+    match /memo_private_room/{fileName} {
+      allow read: if isMember();
+      allow create: if isMember() && (
+        (
+          request.resource.size <= 15 * 1024 * 1024
+          && request.resource.contentType.matches('image/.*')
+        ) || (
+          request.resource.size <= 5 * 1024 * 1024
+          && request.resource.contentType.matches('video/.*')
+        )
+      );
+      allow update, delete: if false;
+    }
+
+    match /stickers/{allPaths=**} {
+      allow read: if isMember();
+      allow write: if false;
+    }
+  }
+}

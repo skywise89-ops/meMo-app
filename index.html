@@ -743,6 +743,17 @@ body {
   white-space:nowrap;
 }
 
+.album-trash-btn {
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--surface2);
+  color:var(--text2);
+  padding:8px 10px;
+  font-size:.76rem;
+  cursor:pointer;
+  white-space:nowrap;
+}
+
 .album-grid {
   flex:1;
   min-height:0;
@@ -816,6 +827,175 @@ body {
   padding:5px 8px;
   cursor:pointer;
   z-index:2;
+}
+
+.album-delete-btn {
+  position:absolute;
+  top:6px;
+  right:6px;
+  width:30px;
+  height:30px;
+  border:1px solid rgba(255,255,255,.28);
+  border-radius:50%;
+  background:rgba(20,20,22,.76);
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  z-index:4;
+  font-size:.88rem;
+}
+
+.voice-composer {
+  display:none;
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  background:var(--surface);
+  border-top:1px solid var(--border);
+}
+
+.voice-composer.show { display:flex; }
+
+.voice-live-dot {
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:var(--danger);
+  animation:voicePulse 1s infinite;
+  flex-shrink:0;
+}
+
+@keyframes voicePulse {
+  50% { opacity:.35; }
+}
+
+.voice-status {
+  min-width:54px;
+  color:var(--text2);
+  font-size:.8rem;
+}
+
+.voice-preview {
+  min-width:0;
+  flex:1;
+  height:36px;
+}
+
+.voice-control-btn {
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--surface2);
+  color:var(--text);
+  min-height:36px;
+  padding:0 12px;
+  cursor:pointer;
+  font-size:.8rem;
+}
+
+.voice-control-btn.primary {
+  border-color:var(--accent);
+  background:var(--accent);
+  color:var(--bg);
+}
+
+.voice-control-btn.danger { color:var(--danger); }
+
+.msg-audio {
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  min-width:min(260px,68vw);
+}
+
+.msg-audio audio {
+  width:100%;
+  height:38px;
+}
+
+.msg-audio-expiry {
+  color:var(--text2);
+  font-size:.67rem;
+}
+
+.msg-media-expired {
+  color:var(--text2);
+  font-size:.82rem;
+  padding:10px 4px;
+}
+
+#trashModal {
+  position:fixed;
+  inset:0;
+  z-index:130;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:rgba(0,0,0,.72);
+}
+
+#trashModal.open { display:flex; }
+
+.trash-card {
+  width:min(620px,100%);
+  max-height:min(720px,88vh);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  border:1px solid var(--border);
+  border-radius:18px;
+  background:var(--bg);
+}
+
+.trash-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:14px 16px;
+  border-bottom:1px solid var(--border);
+}
+
+.trash-list {
+  overflow-y:auto;
+  padding:12px;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+.trash-item {
+  position:relative;
+  overflow:hidden;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--surface);
+}
+
+.trash-item img,
+.trash-item video {
+  width:100%;
+  aspect-ratio:1;
+  display:block;
+  object-fit:cover;
+}
+
+.trash-item-info {
+  padding:9px;
+  color:var(--text2);
+  font-size:.7rem;
+}
+
+.trash-restore-btn {
+  width:calc(100% - 18px);
+  margin:0 9px 9px;
+  border:1px solid var(--accent);
+  border-radius:9px;
+  background:transparent;
+  color:var(--accent);
+  padding:8px;
+  cursor:pointer;
 }
 
 .album-empty {
@@ -1759,6 +1939,15 @@ body {
         <div class="sticker-grid" id="stickerGrid"></div>
       </div>
 
+      <div class="voice-composer" id="voiceComposer" aria-live="polite">
+        <span class="voice-live-dot" id="voiceLiveDot"></span>
+        <span class="voice-status" id="voiceStatus">0:00 / 1:00</span>
+        <audio class="voice-preview" id="voicePreview" controls playsinline></audio>
+        <button class="voice-control-btn danger" id="voiceCancelBtn" type="button" onclick="cancelVoiceRecording()">취소</button>
+        <button class="voice-control-btn" id="voiceStopBtn" type="button" onclick="stopVoiceRecording()">정지</button>
+        <button class="voice-control-btn primary" id="voiceSendBtn" type="button" onclick="sendVoiceMessage()">전송</button>
+      </div>
+
       <div class="chat-input-wrap">
         <button class="icon-btn" onclick="document.getElementById('mediaInput').click()">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -1771,6 +1960,13 @@ body {
             <path d="M15 9.5v.01M9 9.5v.01"/>
             <path d="M9 14.5c.83 1.2 2.06 2 3.5 2"/>
             <path d="M14.5 2.5C14.5 2.5 14 7 17 9.5s7 2 7 2"/>
+          </svg>
+        </button>
+
+        <button class="icon-btn" id="voiceRecordBtn" onclick="startVoiceRecording()" title="음성 메시지" aria-label="음성 메시지 녹음">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="2" width="6" height="12" rx="3"/>
+            <path d="M5 10a7 7 0 0014 0M12 17v5M8 22h8"/>
           </svg>
         </button>
 
@@ -1795,6 +1991,7 @@ body {
           <option value="image">사진만</option>
           <option value="video">영상만</option>
         </select>
+        <button class="album-trash-btn" id="albumTrashBtn" type="button" onclick="openTrash()" hidden>휴지통</button>
         <span class="album-count" id="albumCount">0개</span>
       </div>
       <div class="album-grid" id="albumGrid">
@@ -1965,18 +2162,40 @@ body {
   </div>
 </div>
 
+<div id="trashModal" role="dialog" aria-modal="true" aria-label="앨범 휴지통">
+  <div class="trash-card">
+    <div class="trash-head">
+      <div>
+        <strong>앨범 휴지통</strong>
+        <div style="font-size:.7rem;color:var(--text2);margin-top:3px">7일 후 영구 삭제됩니다.</div>
+      </div>
+      <button class="icon-btn" type="button" onclick="closeTrash()" aria-label="닫기">✕</button>
+    </div>
+    <div class="trash-list" id="trashList"></div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script type="module">
 import {
+  ALBUM_ADMIN_EMAIL,
+  AUDIO_RETENTION_MS,
+  MAX_AUDIO_BYTES,
+  MAX_AUDIO_DURATION_MS,
   APP_VERSION,
   MAX_VIDEO_BYTES,
   SEARCH_PAGE_SIZE,
   SEARCH_RESULT_LIMIT,
   albumMonthKey,
+  audioFileExtension,
+  formatAudioDuration,
+  isAudioExpired,
   mediaKind,
   normalizedVideoFileName,
   normalizeSearchText,
+  selectAudioMimeType,
+  validateAudioRecording,
   validateMediaFile,
   videoContentType
 } from "./app-core.js";
@@ -2024,6 +2243,11 @@ import {
   getMessaging,
   getToken
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
+
+import {
+  getFunctions,
+  httpsCallable
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBSfAOkWJtk41iCLIWkCtG91Hn9Aa44UNA",
@@ -2084,6 +2308,10 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 const storage = getStorage(app);
+const cloudFunctions = getFunctions(app, "asia-northeast3");
+const deleteAlbumMediaCall = httpsCallable(cloudFunctions, "deleteAlbumMedia");
+const restoreAlbumMediaCall = httpsCallable(cloudFunctions, "restoreAlbumMedia");
+const createVoiceMessageCall = httpsCallable(cloudFunctions, "createVoiceMessage");
 
 let messaging = null;
 try {
@@ -2113,6 +2341,22 @@ let loadingOlder = false;
 let hasMoreOlder = true;
 let initialLoadTimer = null;
 let albumMedia = [];
+let trashMedia = [];
+
+let voiceRecorder = null;
+let voiceStream = null;
+let voiceChunks = [];
+let voiceBlob = null;
+let voiceObjectUrl = "";
+let voiceMimeType = "";
+let voiceStartedAt = 0;
+let voiceDurationMs = 0;
+let voiceTimerId = null;
+let voiceAutoStopId = null;
+let voiceCancelRequested = false;
+let voiceState = "idle";
+let voicePendingUpload = null;
+let voiceRequestId = 0;
 
 const seenKeys = new Set();
 window._loadedMessages = {};
@@ -2122,6 +2366,10 @@ const CHECK_DOUBLE = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" st
 
 document.addEventListener("visibilitychange", () => {
   appHasFocus = document.visibilityState === "visible";
+
+  if (document.visibilityState !== "visible" && voiceState === "recording") {
+    window.stopVoiceRecording();
+  }
 });
 
 window.addEventListener("blur", () => {
@@ -2184,10 +2432,14 @@ function mediaLabel(msg) {
   if (msg.type === "text") return msg.text || "";
   if (msg.type === "image") return "📷 사진";
   if (msg.type === "video") return "🎥 영상";
+  if (msg.type === "audio") return "🎙️ 음성 메시지";
+  if (msg.type === "deleted-media") return "삭제된 미디어";
   if (msg.type === "sticker") return `🍑 스티커 (${msg.stickerLabel || ""})`;
 
   if (msg.type === "album") {
-    const count = Array.isArray(msg.items) ? msg.items.length : (msg.count || 0);
+    const count = Array.isArray(msg.items)
+      ? msg.items.filter(item => !item?.deleted && item?.url).length
+      : (msg.count || 0);
     return count ? `📷 사진 ${count}장` : "📷 사진";
   }
 
@@ -2440,6 +2692,7 @@ onAuthStateChanged(auth, async user => {
   me = {
     ...profile,
     email: user.email,
+    authUid: user.uid,
     photoURL: user.photoURL
   };
 
@@ -2597,35 +2850,14 @@ function enterRoom() {
   onChildChanged(messagesRef, snap => {
     const key = snap.key;
     const msg = snap.val();
-
-    if (window._loadedMessages[key]) {
-      window._loadedMessages[key].translation = msg.translation;
-    }
-
     const el = container.querySelector(`[data-key="${key}"]`);
 
-    if (!el || !msg.translation || !translateEnabled) return;
+    window._loadedMessages[key] = msg;
+    if (!el) return;
 
-    let translationEl = el.querySelector(".msg-translation");
-
-    if (!translationEl) {
-      translationEl = document.createElement("div");
-      translationEl.className = "msg-translation";
-
-      if (msg.uid === me.name) {
-        translationEl.style.cssText = "border-left:none;border-right:2px solid var(--accent2);padding-left:0;padding-right:8px;text-align:right";
-      }
-
-      const timeEl = el.querySelector(".msg-time");
-
-      if (timeEl) {
-        el.insertBefore(translationEl, timeEl);
-      } else {
-        el.appendChild(translationEl);
-      }
-    }
-
-    translationEl.textContent = msg.translation;
+    const replacement = createMessageElement(msg, key);
+    replacement.dataset.date = el.dataset.date || getDateStr(msg.ts);
+    el.replaceWith(replacement);
   });
 
   onValue(ref(db, `${ROOM_ID}/lastRead/${partner.name}`), snap => {
@@ -2642,6 +2874,10 @@ function enterRoom() {
   onValue(ref(db, `${ROOM_ID}/media`), snap => {
     updateAlbum(snap.val());
   });
+
+  const isAdmin = me.email.toLowerCase() === ALBUM_ADMIN_EMAIL;
+  document.getElementById("albumTrashBtn").hidden = !isAdmin;
+  if (isAdmin) listenTrash();
 
   listenTodos();
   listenSignaling();
@@ -3143,6 +3379,38 @@ function createMessageElement(msg, key) {
     bubble.appendChild(media);
   }
 
+  if (msg.type === "audio") {
+    const audioWrap = document.createElement("div");
+    audioWrap.className = "msg-audio";
+
+    if (isAudioExpired(msg) || !msg.url) {
+      const expired = document.createElement("div");
+      expired.className = "msg-media-expired";
+      expired.textContent = "만료된 음성 메시지입니다.";
+      audioWrap.appendChild(expired);
+    } else {
+      const audio = document.createElement("audio");
+      audio.src = msg.url;
+      audio.controls = true;
+      audio.preload = "metadata";
+      audioWrap.appendChild(audio);
+
+      const expiry = document.createElement("div");
+      expiry.className = "msg-audio-expiry";
+      expiry.textContent = `${formatAudioDuration(msg.durationMs)} · ${fmtFull(msg.expiresAt)} 만료`;
+      audioWrap.appendChild(expiry);
+    }
+
+    bubble.appendChild(audioWrap);
+  }
+
+  if (msg.type === "deleted-media") {
+    const deleted = document.createElement("div");
+    deleted.className = "msg-media-expired";
+    deleted.textContent = "삭제된 미디어입니다.";
+    bubble.appendChild(deleted);
+  }
+
   if (msg.type === "album") {
     const group = document.createElement("div");
     group.className = "msg-media-group";
@@ -3153,7 +3421,12 @@ function createMessageElement(msg, key) {
       const cell = document.createElement("div");
       cell.className = "msg-media-group-item";
 
-      if (item.type === "video") {
+      if (item.deleted || !item.url) {
+        const deleted = document.createElement("div");
+        deleted.className = "msg-media-expired";
+        deleted.textContent = "삭제됨";
+        cell.appendChild(deleted);
+      } else if (item.type === "video") {
         const video = document.createElement("video");
         video.src = item.url;
         video.preload = "metadata";
@@ -3174,9 +3447,11 @@ function createMessageElement(msg, key) {
         cell.appendChild(badge);
       }
 
-      cell.onclick = () => {
-        window.openLightbox(item.type, item.url, items, index);
-      };
+      if (!item.deleted && item.url) {
+        cell.onclick = () => {
+          window.openLightbox(item.type, item.url, items, index);
+        };
+      }
 
       group.appendChild(cell);
     });
@@ -3244,6 +3519,253 @@ function validateMediaFiles(files) {
   files.forEach(validateMediaFile);
 }
 
+function clearVoiceTimers() {
+  clearInterval(voiceTimerId);
+  clearTimeout(voiceAutoStopId);
+  voiceTimerId = null;
+  voiceAutoStopId = null;
+}
+
+function stopVoiceTracks() {
+  voiceStream?.getTracks().forEach(track => track.stop());
+  voiceStream = null;
+}
+
+function updateVoiceComposer() {
+  const composer = document.getElementById("voiceComposer");
+  const liveDot = document.getElementById("voiceLiveDot");
+  const status = document.getElementById("voiceStatus");
+  const preview = document.getElementById("voicePreview");
+  const stopButton = document.getElementById("voiceStopBtn");
+  const sendButton = document.getElementById("voiceSendBtn");
+  const cancelButton = document.getElementById("voiceCancelBtn");
+
+  composer.classList.toggle("show", voiceState !== "idle");
+  liveDot.style.display = voiceState === "recording" ? "block" : "none";
+  preview.style.display = voiceState === "preview" || voiceState === "uploading" ? "block" : "none";
+  stopButton.style.display = voiceState === "recording" || voiceState === "stopping" ? "block" : "none";
+  sendButton.style.display = voiceState === "preview" || voiceState === "uploading" ? "block" : "none";
+  sendButton.disabled = voiceState === "uploading";
+  cancelButton.disabled = voiceState === "uploading";
+  status.textContent = voiceState === "uploading"
+    ? "전송 중"
+    : `${formatAudioDuration(voiceDurationMs)} / 1:00`;
+}
+
+function resetVoiceComposer() {
+  voiceRequestId += 1;
+  clearVoiceTimers();
+  stopVoiceTracks();
+
+  if (voiceObjectUrl) URL.revokeObjectURL(voiceObjectUrl);
+
+  voiceRecorder = null;
+  voiceChunks = [];
+  voiceBlob = null;
+  voiceObjectUrl = "";
+  voiceMimeType = "";
+  voiceStartedAt = 0;
+  voiceDurationMs = 0;
+  voiceCancelRequested = false;
+  voicePendingUpload = null;
+  voiceState = "idle";
+
+  const preview = document.getElementById("voicePreview");
+  preview.pause();
+  preview.removeAttribute("src");
+  preview.load();
+  updateVoiceComposer();
+}
+
+function voiceErrorMessage(err) {
+  if (err?.name === "NotAllowedError") return "마이크 권한을 허용해주세요.";
+  if (err?.name === "NotFoundError") return "사용 가능한 마이크가 없습니다.";
+  if (err?.name === "NotReadableError") return "다른 앱이 마이크를 사용 중입니다.";
+  return err?.message || "음성 녹음을 시작하지 못했습니다.";
+}
+
+window.startVoiceRecording = async function() {
+  if (voiceState !== "idle") return;
+
+  if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+    showToast("이 브라우저는 음성 녹음을 지원하지 않습니다.");
+    return;
+  }
+
+  voiceState = "requesting";
+  voiceDurationMs = 0;
+  const requestId = ++voiceRequestId;
+  updateVoiceComposer();
+
+  try {
+    const requestedStream = await navigator.mediaDevices.getUserMedia({
+      audio:{
+        channelCount:1,
+        echoCancellation:true,
+        noiseSuppression:true,
+        autoGainControl:true
+      },
+      video:false
+    });
+
+    if (requestId !== voiceRequestId || voiceState !== "requesting") {
+      requestedStream.getTracks().forEach(track => track.stop());
+      return;
+    }
+
+    voiceStream = requestedStream;
+
+    voiceMimeType = selectAudioMimeType(type => MediaRecorder.isTypeSupported(type));
+    const options = { audioBitsPerSecond:48_000 };
+    if (voiceMimeType) options.mimeType = voiceMimeType;
+
+    try {
+      voiceRecorder = new MediaRecorder(voiceStream, options);
+    } catch {
+      voiceRecorder = new MediaRecorder(voiceStream);
+    }
+
+    voiceMimeType = voiceRecorder.mimeType || voiceMimeType || "audio/webm";
+    voiceChunks = [];
+    voiceCancelRequested = false;
+
+    voiceRecorder.ondataavailable = event => {
+      if (event.data?.size) voiceChunks.push(event.data);
+    };
+
+    voiceRecorder.onerror = event => {
+      console.error("[Voice recorder]", event.error || event);
+      showToast("녹음 중 오류가 발생했습니다.");
+      resetVoiceComposer();
+    };
+
+    voiceRecorder.onstop = () => {
+      const canceled = voiceCancelRequested;
+      const duration = Math.min(
+        MAX_AUDIO_DURATION_MS,
+        Math.max(0, Date.now() - voiceStartedAt)
+      );
+      const blob = new Blob(voiceChunks, { type:voiceMimeType });
+
+      clearVoiceTimers();
+      stopVoiceTracks();
+      voiceRecorder = null;
+      voiceChunks = [];
+
+      if (canceled) {
+        resetVoiceComposer();
+        return;
+      }
+
+      try {
+        validateAudioRecording(blob, duration);
+      } catch (err) {
+        showToast(err.message);
+        resetVoiceComposer();
+        return;
+      }
+
+      voiceBlob = blob;
+      voiceDurationMs = duration;
+      voiceObjectUrl = URL.createObjectURL(blob);
+      voiceState = "preview";
+
+      const preview = document.getElementById("voicePreview");
+      preview.src = voiceObjectUrl;
+      updateVoiceComposer();
+    };
+
+    voiceStartedAt = Date.now();
+    voiceState = "recording";
+    voiceRecorder.start(1000);
+    updateVoiceComposer();
+
+    voiceTimerId = setInterval(() => {
+      voiceDurationMs = Math.min(MAX_AUDIO_DURATION_MS, Date.now() - voiceStartedAt);
+      updateVoiceComposer();
+    }, 250);
+
+    voiceAutoStopId = setTimeout(() => {
+      window.stopVoiceRecording();
+    }, MAX_AUDIO_DURATION_MS);
+  } catch (err) {
+    if (requestId !== voiceRequestId) return;
+    console.error("[Voice permission]", err);
+    showToast(voiceErrorMessage(err));
+    resetVoiceComposer();
+  }
+};
+
+window.stopVoiceRecording = function() {
+  if (voiceState !== "recording" || !voiceRecorder) return;
+  voiceState = "stopping";
+  voiceDurationMs = Math.min(MAX_AUDIO_DURATION_MS, Date.now() - voiceStartedAt);
+  clearVoiceTimers();
+  updateVoiceComposer();
+  voiceRecorder.stop();
+};
+
+window.cancelVoiceRecording = function() {
+  if (voiceState === "uploading") return;
+
+  if (voiceState === "recording" && voiceRecorder) {
+    voiceCancelRequested = true;
+    voiceState = "stopping";
+    clearVoiceTimers();
+    voiceRecorder.stop();
+    return;
+  }
+
+  resetVoiceComposer();
+};
+
+window.sendVoiceMessage = async function() {
+  if (voiceState !== "preview" || !voiceBlob) return;
+
+  try {
+    validateAudioRecording(voiceBlob, voiceDurationMs);
+    voiceState = "uploading";
+    updateVoiceComposer();
+
+    if (!voicePendingUpload) {
+      const messageKey = push(ref(db, `${ROOM_ID}/messages`)).key;
+      const extension = audioFileExtension(voiceMimeType);
+      const storagePath = `${ROOM_ID}/audio/${messageKey}.${extension}`;
+      const metadata = {
+        contentType:voiceMimeType,
+        customMetadata:{
+          kind:"voice",
+          messageKey,
+          ownerUid:me.authUid
+        }
+      };
+      const snapshot = await uploadBytes(sRef(storage, storagePath), voiceBlob, metadata);
+      const url = await getDownloadURL(snapshot.ref);
+
+      voicePendingUpload = { messageKey, storagePath, url };
+    }
+
+    await createVoiceMessageCall({
+      ...voicePendingUpload,
+      durationMs:Math.round(voiceDurationMs),
+      size:voiceBlob.size,
+      mimeType:voiceMimeType
+    });
+
+    showToast("음성 메시지를 보냈습니다. 7일 후 자동 삭제됩니다.");
+    resetVoiceComposer();
+  } catch (err) {
+    console.error("[Voice upload]", {
+      code:err?.code || "",
+      message:err?.message || String(err),
+      details:err?.details || null
+    });
+    voiceState = "preview";
+    updateVoiceComposer();
+    showToast("음성 메시지 전송에 실패했습니다. 다시 시도해주세요.");
+  }
+};
+
 async function uploadOneFile(file, progressPrefix = "") {
   validateMediaFile(file);
 
@@ -3299,7 +3821,8 @@ async function uploadOneFile(file, progressPrefix = "") {
       type:isVideo ? "video" : "image",
       size:targetFile.size,
       mimeType:contentType,
-      fileName:uploadName
+      fileName:uploadName,
+      storagePath:`${ROOM_ID}/${safeName}`
     };
   } catch (err) {
     console.error("[Storage upload failed]", {
@@ -3342,6 +3865,8 @@ async function sendSingleMedia(file) {
       photoURL: me.photoURL || "",
       type,
       url,
+      mediaKey,
+      storagePath:uploaded.storagePath,
       ts
       },
       [`media/${mediaKey}`]:{
@@ -3352,7 +3877,10 @@ async function sendSingleMedia(file) {
         ts,
         messageKey,
         size:uploaded.size,
-        mimeType:uploaded.mimeType
+        mimeType:uploaded.mimeType,
+        storagePath:uploaded.storagePath,
+        ownerUid:me.authUid,
+        ownerEmail:me.email
       }
     });
 
@@ -3373,6 +3901,13 @@ async function sendMediaGroup(files) {
     }
 
     const messageKey = push(ref(db, `${ROOM_ID}/messages`)).key;
+
+    items.forEach(item => {
+      item.mediaKey = push(ref(db, `${ROOM_ID}/media`)).key;
+      item.ownerUid = me.authUid;
+      item.ownerEmail = me.email;
+    });
+
     const updates = {
       [`messages/${messageKey}`]:{
         uid:me.name,
@@ -3385,8 +3920,7 @@ async function sendMediaGroup(files) {
     };
 
     items.forEach((item, index) => {
-      const mediaKey = push(ref(db, `${ROOM_ID}/media`)).key;
-      updates[`media/${mediaKey}`] = {
+      updates[`media/${item.mediaKey}`] = {
         uid:me.name,
         name:me.name,
         type:item.type,
@@ -3395,7 +3929,10 @@ async function sendMediaGroup(files) {
         messageKey,
         groupId:messageKey,
         size:item.size,
-        mimeType:item.mimeType
+        mimeType:item.mimeType,
+        storagePath:item.storagePath,
+        ownerUid:me.authUid,
+        ownerEmail:me.email
       };
     });
 
@@ -3550,8 +4087,118 @@ function createAlbumItem(item, gallery) {
     div.appendChild(source);
   }
 
+  if (me?.email?.toLowerCase() === ALBUM_ADMIN_EMAIL) {
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "album-delete-btn";
+    deleteButton.textContent = "🗑";
+    deleteButton.setAttribute("aria-label", "앨범에서 삭제");
+    deleteButton.onclick = async event => {
+      event.stopPropagation();
+
+      if (!confirm("이 미디어를 삭제할까요? 7일 동안 휴지통에서 복구할 수 있습니다.")) return;
+
+      deleteButton.disabled = true;
+
+      try {
+        await deleteAlbumMediaCall({ mediaKey:item.key });
+        showToast("휴지통으로 이동했습니다.");
+      } catch (err) {
+        console.error("[Album delete]", err);
+        showToast(err?.code === "functions/permission-denied"
+          ? "삭제 권한이 없습니다."
+          : "삭제하지 못했습니다. 다시 시도해주세요.");
+        deleteButton.disabled = false;
+      }
+    };
+    div.appendChild(deleteButton);
+  }
+
   return div;
 }
+
+function listenTrash() {
+  onValue(ref(db, `${ROOM_ID}/trash/media`), snap => {
+    const value = snap.val();
+    trashMedia = value
+      ? Object.entries(value)
+          .map(([key, item]) => ({ key, ...item }))
+          .sort((a, b) => b.deletedAt - a.deletedAt)
+      : [];
+    renderTrash();
+  });
+}
+
+function renderTrash() {
+  const list = document.getElementById("trashList");
+  if (!list) return;
+  list.innerHTML = "";
+
+  if (!trashMedia.length) {
+    list.innerHTML = `<div class="album-empty" style="grid-column:1/-1;height:180px">휴지통이 비어 있습니다.</div>`;
+    return;
+  }
+
+  trashMedia.forEach(entry => {
+    const media = entry.media || {};
+    const item = document.createElement("div");
+    item.className = "trash-item";
+
+    if (media.type === "video") {
+      const video = document.createElement("video");
+      video.src = media.url || "";
+      video.preload = "metadata";
+      video.muted = true;
+      video.playsInline = true;
+      item.appendChild(video);
+    } else {
+      const image = document.createElement("img");
+      image.src = media.url || "";
+      image.alt = "삭제된 앨범 미디어";
+      image.loading = "lazy";
+      item.appendChild(image);
+    }
+
+    const days = Math.max(0, Math.ceil((Number(entry.expiresAt || 0) - Date.now()) / (24 * 60 * 60 * 1000)));
+    const info = document.createElement("div");
+    info.className = "trash-item-info";
+    info.textContent = `${fmtFull(media.ts)} · ${days}일 후 영구 삭제`;
+    item.appendChild(info);
+
+    const restore = document.createElement("button");
+    restore.type = "button";
+    restore.className = "trash-restore-btn";
+    restore.textContent = "복구";
+    restore.onclick = async () => {
+      restore.disabled = true;
+
+      try {
+        await restoreAlbumMediaCall({ mediaKey:entry.key });
+        showToast("앨범으로 복구했습니다.");
+      } catch (err) {
+        console.error("[Album restore]", err);
+        showToast("복구하지 못했습니다.");
+        restore.disabled = false;
+      }
+    };
+    item.appendChild(restore);
+    list.appendChild(item);
+  });
+}
+
+window.openTrash = function() {
+  if (me?.email?.toLowerCase() !== ALBUM_ADMIN_EMAIL) return;
+  renderTrash();
+  document.getElementById("trashModal").classList.add("open");
+};
+
+window.closeTrash = function() {
+  document.getElementById("trashModal").classList.remove("open");
+};
+
+document.getElementById("trashModal").addEventListener("click", event => {
+  if (event.target.id === "trashModal") window.closeTrash();
+});
 
 let lightboxGallery = null;
 
@@ -3828,7 +4475,10 @@ window.uploadTodoProof = async function(event) {
       ts:Date.now(),
       sourceTodoKey:pendingProofKey,
       size:uploaded.size,
-      mimeType:uploaded.mimeType
+      mimeType:uploaded.mimeType,
+      storagePath:uploaded.storagePath,
+      ownerUid:me.authUid,
+      ownerEmail:me.email
     });
 
     showToast("인증샷 등록 완료! 📷");
@@ -3923,6 +4573,10 @@ window.rejectCall = async function() {
 };
 
 window.switchTab = function(tab) {
+  if (tab !== "chat" && voiceState === "recording") {
+    window.stopVoiceRecording();
+  }
+
   ["chat","album","archive","todo","profile"].forEach(name => {
     document.getElementById(`${name}Pane`).classList.add("hidden");
     document.getElementById(`tab-${name}`).classList.remove("active");
@@ -3948,6 +4602,8 @@ window.saveTranslatePref = function() {
 
 window.doLogout = async function() {
   if (!confirm("로그아웃 할까요?")) return;
+
+  resetVoiceComposer();
 
   await set(ref(db, `${ROOM_ID}/presence/${me.name}`), {
     online:false
@@ -4288,6 +4944,9 @@ async function saveToArchive(msg) {
     type:msg.type || "text",
     url:msg.url || null,
     items:Array.isArray(msg.items) ? msg.items : null,
+    durationMs:msg.durationMs || null,
+    expiresAt:msg.expiresAt || null,
+    expired:Boolean(msg.expired),
     name:msg.name || "",
     uid:msg.uid || "",
     ts:msg.ts || Date.now(),
@@ -4343,6 +5002,13 @@ function renderArchiveList(data) {
         div.appendChild(p);
       }
 
+      if (item.type === "deleted-media") {
+        const deleted = document.createElement("div");
+        deleted.className = "msg-media-expired";
+        deleted.textContent = "삭제된 미디어입니다.";
+        div.appendChild(deleted);
+      }
+
       if ((item.type === "image" || item.type === "video" || item.type === "sticker") && item.url) {
         const wrap = document.createElement("div");
         wrap.className = "archive-item-media";
@@ -4364,12 +5030,38 @@ function renderArchiveList(data) {
         div.appendChild(wrap);
       }
 
+      if (item.type === "audio") {
+        const wrap = document.createElement("div");
+        wrap.className = "archive-item-media";
+
+        if (isAudioExpired(item) || !item.url) {
+          const expired = document.createElement("div");
+          expired.className = "msg-media-expired";
+          expired.textContent = "만료된 음성 메시지입니다.";
+          wrap.appendChild(expired);
+        } else {
+          const audio = document.createElement("audio");
+          audio.src = item.url;
+          audio.controls = true;
+          audio.preload = "metadata";
+          audio.style.width = "100%";
+          wrap.appendChild(audio);
+        }
+
+        div.appendChild(wrap);
+      }
+
       if (item.type === "album" && Array.isArray(item.items)) {
         const album = document.createElement("div");
         album.className = "archive-album-grid";
 
         item.items.slice(0, 4).forEach((media, index) => {
-          if (media.type === "video") {
+          if (media.deleted || !media.url) {
+            const deleted = document.createElement("div");
+            deleted.className = "msg-media-expired";
+            deleted.textContent = "삭제됨";
+            album.appendChild(deleted);
+          } else if (media.type === "video") {
             const video = document.createElement("video");
             video.src = media.url;
             video.preload = "metadata";
