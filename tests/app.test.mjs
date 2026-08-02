@@ -9,8 +9,10 @@ import {
   MAX_VIDEO_BYTES,
   albumMonthKey,
   mediaKind,
+  normalizedVideoFileName,
   normalizeSearchText,
-  validateMediaFile
+  validateMediaFile,
+  videoContentType
 } from "../app-core.js";
 
 const root = new URL("../", import.meta.url);
@@ -66,6 +68,17 @@ test("video upload limit is exactly 5 MiB", () => {
   );
   assert.equal(mediaKind({ name:"iphone.MOV", type:"" }), "video");
   assert.equal(mediaKind({ name:"photo.JPG", type:"" }), "image");
+  assert.equal(videoContentType({ name:"iphone.MOV", type:"" }), "video/quicktime");
+  assert.equal(videoContentType({ name:"clip", type:"video/mp4" }), "video/mp4");
+  assert.equal(normalizedVideoFileName({ name:"clip", type:"video/quicktime" }), "clip.mov");
+});
+
+test("iOS video upload uses a stable blob and non-resumable request", () => {
+  assert.match(html, /const bytes = await file\.arrayBuffer\(\)/);
+  assert.match(html, /targetFile = new Blob\(\[bytes\]/);
+  assert.match(html, /await uploadBytes\(storageRef, targetFile, metadata\)/);
+  assert.match(html, /serverResponse:err\?\.serverResponse/);
+  assert.match(html, /finally \{[\s\S]*?input\.value = "";/);
 });
 
 test("search normalization and album month grouping are deterministic", () => {

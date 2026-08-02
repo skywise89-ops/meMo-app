@@ -1975,8 +1975,10 @@ import {
   SEARCH_RESULT_LIMIT,
   albumMonthKey,
   mediaKind,
+  normalizedVideoFileName,
   normalizeSearchText,
-  validateMediaFile
+  validateMediaFile,
+  videoContentType
 } from "./app-core.js";
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -2012,6 +2014,7 @@ import {
 import {
   getStorage,
   ref as sRef,
+  uploadBytes,
   uploadBytesResumable,
   getDownloadURL,
   listAll
@@ -3244,38 +3247,82 @@ function validateMediaFiles(files) {
 async function uploadOneFile(file, progressPrefix = "") {
   validateMediaFile(file);
 
-  const targetFile = await compressImageSafe(file);
-  const isVideo = mediaKind(targetFile) === "video";
-  const safeName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${targetFile.name || "media"}`;
+  const isVideo = mediaKind(file) === "video";
+  let targetFile = file;
+  let uploadName = file.name || "media";
+  let contentType = file.type || "application/octet-stream";
 
-  return new Promise((resolve, reject) => {
-    const task = uploadBytesResumable(
-      sRef(storage, `${ROOM_ID}/${safeName}`),
-      targetFile
-    );
+  try {
+    targetFile = await compressImageSafe(file);
+    uploadName = targetFile.name || "media";
+    contentType = targetFile.type || "application/octet-stream";
 
-    task.on(
-      "state_changed",
-      snap => {
-        showToast(`${progressPrefix}업로드 ${Math.round(snap.bytesTransferred / snap.totalBytes * 100)}%`);
+    if (isVideo) {
+      contentType = videoContentType(file);
+      uploadName = normalizedVideoFileName(file);
+
+      // iOS Safari/설치형 PWA가 사진 앱 파일을 임시 참조로 제공할 수 있다.
+      // input을 비우기 전에 5 MiB 이하 영상을 독립 Blob으로 복사한다.
+      const bytes = await file.arrayBuffer();
+      targetFile = new Blob([bytes], { type:contentType });
+    }
+
+    const safeName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${uploadName}`;
+    const storageRef = sRef(storage, `${ROOM_ID}/${safeName}`);
+    const metadata = { contentType };
+    let uploadedRef;
+
+    if (isVideo) {
+      // 모든 영상은 5 MiB 이하이므로 Safari에서 더 안정적인 단일 요청을 쓴다.
+      const snapshot = await uploadBytes(storageRef, targetFile, metadata);
+      uploadedRef = snapshot.ref;
+      showToast(`${progressPrefix}업로드 100%`);
+    } else {
+      uploadedRef = await new Promise((resolve, reject) => {
+        const task = uploadBytesResumable(storageRef, targetFile, metadata);
+
+        task.on(
+          "state_changed",
+          snap => {
+            showToast(`${progressPrefix}업로드 ${Math.round(snap.bytesTransferred / snap.totalBytes * 100)}%`);
+          },
+          reject,
+          () => resolve(task.snapshot.ref)
+        );
+      });
+    }
+
+    const url = await getDownloadURL(uploadedRef);
+
+    return {
+      url,
+      type:isVideo ? "video" : "image",
+      size:targetFile.size,
+      mimeType:contentType,
+      fileName:uploadName
+    };
+  } catch (err) {
+    console.error("[Storage upload failed]", {
+      code:err?.code || "",
+      message:err?.message || String(err),
+      serverResponse:err?.serverResponse || "",
+      file:{
+        name:uploadName,
+        type:contentType,
+        size:targetFile.size
       },
-      reject,
-      async () => {
-        try {
-          const url = await getDownloadURL(task.snapshot.ref);
-          resolve({
-            url,
-            type:isVideo ? "video" : "image",
-            size:targetFile.size,
-            mimeType:targetFile.type || "",
-            fileName:targetFile.name || "media"
-          });
-        } catch (err) {
-          reject(err);
-        }
-      }
-    );
-  });
+      online:navigator.onLine
+    });
+    throw err;
+  }
+}
+
+function uploadFailureMessage(err) {
+  if (err?.code === "storage/unknown") {
+    return "저장소 응답 오류(storage/unknown). 다시 시도해주세요.";
+  }
+
+  return err?.message || "업로드에 실패했습니다.";
 }
 
 async function sendSingleMedia(file) {
@@ -3311,7 +3358,7 @@ async function sendSingleMedia(file) {
 
     showToast("공유 완료!");
   } catch (err) {
-    showToast(`실패: ${err.message}`);
+    showToast(`실패: ${uploadFailureMessage(err)}`);
   }
 }
 
@@ -3356,27 +3403,32 @@ async function sendMediaGroup(files) {
 
     showToast(`미디어 ${files.length}개 공유 완료!`);
   } catch (err) {
-    showToast(`실패: ${err.message}`);
+    showToast(`실패: ${uploadFailureMessage(err)}`);
   }
 }
 
 window.sendMedia = async function(event) {
-  const files = Array.from(event.target.files || []);
-  event.target.value = "";
+  const input = event.currentTarget || event.target;
+  const files = Array.from(input.files || []);
 
-  if (!files.length) return;
-
-  try {
-    validateMediaFiles(files);
-  } catch (err) {
-    showToast(err.message);
+  if (!files.length) {
+    input.value = "";
     return;
   }
 
-  if (files.length === 1) {
-    await sendSingleMedia(files[0]);
-  } else {
-    await sendMediaGroup(files);
+  try {
+    validateMediaFiles(files);
+
+    if (files.length === 1) {
+      await sendSingleMedia(files[0]);
+    } else {
+      await sendMediaGroup(files);
+    }
+  } catch (err) {
+    showToast(err.message);
+  } finally {
+    // iOS 사진 앱이 넘긴 임시 파일을 모두 읽은 뒤 input을 초기화한다.
+    input.value = "";
   }
 };
 
@@ -3740,16 +3792,20 @@ window.clickAddProof = function(key) {
 };
 
 window.uploadTodoProof = async function(event) {
-  const file = event.target.files[0];
-  event.target.value = "";
+  const input = event.currentTarget || event.target;
+  const file = input.files[0];
 
-  if (!file || !pendingProofKey) return;
+  if (!file || !pendingProofKey) {
+    input.value = "";
+    return;
+  }
 
   try {
     validateMediaFile(file);
   } catch (err) {
     showToast(err.message);
     pendingProofKey = null;
+    input.value = "";
     return;
   }
 
@@ -3777,9 +3833,10 @@ window.uploadTodoProof = async function(event) {
 
     showToast("인증샷 등록 완료! 📷");
   } catch (err) {
-    showToast(`업로드 실패: ${err.message}`);
+    showToast(`업로드 실패: ${uploadFailureMessage(err)}`);
   } finally {
     pendingProofKey = null;
+    input.value = "";
   }
 };
 
