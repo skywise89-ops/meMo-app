@@ -1,0 +1,9 @@
+{
+  "name": "memo-private-pwa",
+  "private": true,
+  "type": "module",
+  "version": "3.0.0",
+  "scripts": {
+    "test": "node --test tests/app.test.mjs"
+  }
+}

@@ -322,6 +322,48 @@ body {
   display:flex;
   flex-direction:column;
   max-width:78%;
+  position:relative;
+}
+
+.msg-actions-btn {
+  position:absolute;
+  top:18px;
+  width:30px;
+  height:30px;
+  border:1px solid var(--border);
+  border-radius:50%;
+  background:var(--surface);
+  color:var(--text2);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .15s,color .15s,background .15s;
+  z-index:2;
+}
+
+.msg-wrap.me .msg-actions-btn {
+  right:calc(100% + 6px);
+}
+
+.msg-wrap.them .msg-actions-btn {
+  left:calc(100% + 6px);
+}
+
+.msg-wrap:hover .msg-actions-btn,
+.msg-wrap:focus-within .msg-actions-btn,
+.msg-actions-btn:focus {
+  opacity:1;
+  pointer-events:auto;
+}
+
+.msg-actions-btn:hover,
+.msg-actions-btn:focus {
+  color:var(--accent);
+  background:var(--surface2);
+  outline:none;
 }
 
 .msg-wrap.me {
@@ -673,16 +715,62 @@ body {
   margin-right:6px;
 }
 
+.album-toolbar {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 12px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+
+.album-filter {
+  min-width:0;
+  background:var(--surface2);
+  color:var(--text);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:8px 10px;
+  font-size:.82rem;
+  outline:none;
+}
+
+.album-count {
+  margin-left:auto;
+  color:var(--text2);
+  font-size:.75rem;
+  white-space:nowrap;
+}
+
 .album-grid {
   flex:1;
   min-height:0;
   overflow-y:auto;
+  padding:0 2px 14px;
+}
+
+.album-section {
+  width:100%;
+}
+
+.album-section-title {
+  position:sticky;
+  top:0;
+  z-index:3;
+  padding:9px 10px;
+  background:color-mix(in srgb,var(--surface) 94%,transparent);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+  color:var(--text2);
+  font-size:.76rem;
+}
+
+.album-section-grid {
   display:grid;
-  grid-template-columns:repeat(3,1fr);
-  grid-auto-rows:calc((100vw - 4px)/3);
+  grid-template-columns:repeat(3,minmax(0,1fr));
   gap:2px;
-  padding:2px;
-  align-content:start;
+  padding:2px 0;
 }
 
 .album-item {
@@ -690,6 +778,7 @@ body {
   position:relative;
   cursor:pointer;
   background:var(--surface);
+  aspect-ratio:1;
 }
 
 .album-item img,
@@ -713,6 +802,20 @@ body {
   width:32px;
   height:32px;
   fill:rgba(255,255,255,.9);
+}
+
+.album-source-btn {
+  position:absolute;
+  right:6px;
+  bottom:6px;
+  border:0;
+  border-radius:999px;
+  background:rgba(0,0,0,.62);
+  color:#fff;
+  font-size:.68rem;
+  padding:5px 8px;
+  cursor:pointer;
+  z-index:2;
 }
 
 .album-empty {
@@ -1271,9 +1374,64 @@ body {
   white-space:nowrap;
 }
 
-.msg-highlight {
-  background:rgba(200,169,126,.25);
-  border-radius:8px;
+.search-results {
+  display:none;
+  max-height:46vh;
+  overflow-y:auto;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+
+.search-results.show {
+  display:block;
+}
+
+.search-result-item {
+  width:100%;
+  border:0;
+  border-bottom:1px solid var(--border);
+  background:transparent;
+  color:var(--text);
+  text-align:left;
+  padding:11px 14px;
+  cursor:pointer;
+}
+
+.search-result-item.active,
+.search-result-item:hover,
+.search-result-item:focus {
+  background:var(--surface2);
+  outline:none;
+}
+
+.search-result-meta {
+  display:flex;
+  gap:8px;
+  color:var(--text2);
+  font-size:.7rem;
+  margin-bottom:4px;
+}
+
+.search-result-name {
+  color:var(--accent);
+}
+
+.search-result-text {
+  font-size:.86rem;
+  line-height:1.45;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  word-break:break-word;
+}
+
+.search-empty {
+  padding:24px 14px;
+  color:var(--text2);
+  text-align:center;
+  font-size:.82rem;
 }
 
 #ctxMenu {
@@ -1373,6 +1531,110 @@ body {
   overflow:hidden;
 }
 
+.archive-album-grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:3px;
+  max-width:220px;
+}
+
+.archive-album-grid img,
+.archive-album-grid video {
+  width:100%;
+  aspect-ratio:1;
+  object-fit:cover;
+  border-radius:8px;
+}
+
+#searchContext {
+  position:fixed;
+  inset:0;
+  z-index:520;
+  background:rgba(0,0,0,.72);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+
+#searchContext.open {
+  display:flex;
+}
+
+.search-context-card {
+  width:min(680px,100%);
+  max-height:min(760px,88vh);
+  display:flex;
+  flex-direction:column;
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:18px;
+  overflow:hidden;
+}
+
+.search-context-head {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:14px 16px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+}
+
+.search-context-list {
+  overflow-y:auto;
+  padding:12px;
+}
+
+.search-context-row {
+  padding:10px 12px;
+  border-radius:12px;
+  margin-bottom:6px;
+  background:var(--surface);
+  border:1px solid var(--border);
+}
+
+.search-context-row.target {
+  border-color:var(--accent);
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 20%,transparent);
+}
+
+.search-context-meta {
+  color:var(--text2);
+  font-size:.7rem;
+  margin-bottom:4px;
+}
+
+.search-context-body {
+  font-size:.88rem;
+  line-height:1.5;
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+
+@media (min-width:900px) {
+  .album-grid {
+    padding:8px 16px 20px;
+  }
+
+  .album-section-grid {
+    grid-template-columns:repeat(auto-fill,180px);
+    gap:8px;
+    justify-content:center;
+    padding:8px 0 16px;
+  }
+
+  .album-section-title {
+    border-radius:10px;
+  }
+}
+
+@media (hover:none) {
+  .msg-actions-btn {
+    display:none;
+  }
+}
+
 .archive-item-media img {
   width:100%;
   display:block;
@@ -1465,12 +1727,13 @@ body {
       </div>
 
       <div class="search-bar" id="searchBar">
-        <input class="search-input" id="searchInput" placeholder="메시지 검색..." oninput="doSearch()" onkeydown="if(event.key==='Enter' && !event.isComposing) searchNext()">
+        <input class="search-input" id="searchInput" placeholder="전체 메시지 검색..." oninput="queueSearch()" onkeydown="if(event.key==='Enter' && !event.isComposing) doSearch()">
         <span class="search-count" id="searchCount"></span>
         <button class="search-nav" onclick="searchPrev()">▲</button>
         <button class="search-nav" onclick="searchNext()">▼</button>
         <button class="search-nav" onclick="toggleSearch()">✕</button>
       </div>
+      <div class="search-results" id="searchResults"></div>
 
       <div style="position:relative;flex:1;display:flex;flex-direction:column;overflow:hidden">
         <div class="chat-messages" id="chatMessages">
@@ -1523,8 +1786,19 @@ body {
 
     <div id="albumPane" class="tab-pane hidden">
       <div class="topbar"><div class="topbar-title">📷 앨범</div></div>
+      <div class="album-toolbar">
+        <select class="album-filter" id="albumMonthFilter" onchange="renderAlbum()">
+          <option value="all">전체 기간</option>
+        </select>
+        <select class="album-filter" id="albumTypeFilter" onchange="renderAlbum()">
+          <option value="all">사진 + 영상</option>
+          <option value="image">사진만</option>
+          <option value="video">영상만</option>
+        </select>
+        <span class="album-count" id="albumCount">0개</span>
+      </div>
       <div class="album-grid" id="albumGrid">
-        <div class="album-empty" style="grid-column:1/-1;height:300px">아직 공유된 미디어가 없어요</div>
+        <div class="album-empty" style="height:300px">아직 공유된 미디어가 없어요</div>
       </div>
     </div>
 
@@ -1609,6 +1883,7 @@ body {
         </div>
 
         <button class="danger-btn" onclick="doLogout()">로그아웃</button>
+        <div style="text-align:center;color:var(--text2);font-size:.68rem" id="appVersionDisplay"></div>
       </div>
     </div>
   </div>
@@ -1680,9 +1955,30 @@ body {
   <div class="lb-counter" id="lbCounter"></div>
 </div>
 
+<div id="searchContext" role="dialog" aria-modal="true" aria-label="검색된 메시지 문맥">
+  <div class="search-context-card">
+    <div class="search-context-head">
+      <strong>검색된 메시지 문맥</strong>
+      <button class="icon-btn" onclick="closeSearchContext()" aria-label="닫기">✕</button>
+    </div>
+    <div class="search-context-list" id="searchContextList"></div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script type="module">
+import {
+  APP_VERSION,
+  MAX_VIDEO_BYTES,
+  SEARCH_PAGE_SIZE,
+  SEARCH_RESULT_LIMIT,
+  albumMonthKey,
+  mediaKind,
+  normalizeSearchText,
+  validateMediaFile
+} from "./app-core.js";
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   getAuth,
@@ -1705,6 +2001,9 @@ import {
   serverTimestamp,
   query,
   orderByKey,
+  startAt,
+  endAt,
+  limitToFirst,
   limitToLast,
   endBefore,
   get
@@ -1795,6 +2094,7 @@ let partner = null;
 let myLang = "ko";
 let translateEnabled = true;
 let notifEnabled = false;
+let fcmReady = false;
 let appHasFocus = true;
 let swRegistration = null;
 
@@ -1809,6 +2109,7 @@ let oldestKey = null;
 let loadingOlder = false;
 let hasMoreOlder = true;
 let initialLoadTimer = null;
+let albumMedia = [];
 
 const seenKeys = new Set();
 window._loadedMessages = {};
@@ -1943,8 +2244,10 @@ async function initNotif() {
       const token = await getFCMToken();
       if (token && me) {
         await set(ref(db, `${ROOM_ID}/tokens/${me.name}`), token);
+        fcmReady = true;
       }
     } catch (err) {
+      fcmReady = false;
       console.warn("[FCM] 토큰 갱신 실패:", err);
     }
   }
@@ -1956,6 +2259,7 @@ window.toggleNotif = async function() {
 
   if (!toggle.checked) {
     notifEnabled = false;
+    fcmReady = false;
     localStorage.setItem("memo_notif", "off");
 
     if (me) {
@@ -1991,17 +2295,19 @@ window.toggleNotif = async function() {
 
     await set(ref(db, `${ROOM_ID}/tokens/${me.name}`), token);
     notifEnabled = true;
+    fcmReady = true;
     localStorage.setItem("memo_notif", "on");
     showToast("실시간 푸시 알림이 켜졌습니다.");
   } catch (err) {
+    fcmReady = false;
     console.error("[FCM]", err);
     toggle.checked = false;
     showToast("알림 연동에 실패했습니다.");
   }
 };
 
-function sendLocalNotif(name, body) {
-  if (!notifEnabled || appHasFocus) return;
+function sendLocalNotif(name, body, eventId = "") {
+  if (!notifEnabled || appHasFocus || fcmReady) return;
 
   try {
     const title = `meMo — ${name}`;
@@ -2009,12 +2315,14 @@ function sendLocalNotif(name, body) {
     if (swRegistration) {
       swRegistration.showNotification(title, {
         body,
-        tag: `memo-${Date.now()}`
+        tag: eventId ? `memo-${eventId}` : `memo-${Date.now()}`,
+        renotify:false
       });
     } else {
       new Notification(title, {
         body,
-        tag: `memo-${Date.now()}`
+        tag: eventId ? `memo-${eventId}` : `memo-${Date.now()}`,
+        renotify:false
       });
     }
   } catch (err) {
@@ -2212,7 +2520,7 @@ function enterRoom() {
     if (!wrap?.dataset.key) return;
 
     const msg = window._loadedMessages[wrap.dataset.key];
-    if (!msg || msg.type !== "text") return;
+    if (!msg || msg.type === "system") return;
 
     pressTimer = setTimeout(() => {
       showCtxMenu(msg, wrap);
@@ -2221,6 +2529,17 @@ function enterRoom() {
 
   container.addEventListener("touchend", () => clearTimeout(pressTimer), { passive:true });
   container.addEventListener("touchmove", () => clearTimeout(pressTimer), { passive:true });
+
+  container.addEventListener("contextmenu", event => {
+    const wrap = event.target.closest(".msg-wrap");
+    if (!wrap?.dataset.key) return;
+
+    const msg = window._loadedMessages[wrap.dataset.key];
+    if (!msg || msg.type === "system") return;
+
+    event.preventDefault();
+    showCtxMenu(msg, wrap, { x:event.clientX, y:event.clientY });
+  });
 
   container.addEventListener("dblclick", event => {
     const wrap = event.target.closest(".msg-wrap");
@@ -2257,7 +2576,7 @@ function enterRoom() {
       updateMyLastRead(msg.ts);
 
       if (msg.ts > enterTime) {
-        sendLocalNotif(msg.name, mediaLabel(msg));
+        sendLocalNotif(msg.name, mediaLabel(msg), key);
       }
     }
 
@@ -2342,6 +2661,7 @@ function enterRoom() {
   document.getElementById("myEmailDisplay").textContent = me.email;
   document.getElementById("langSelect").value = myLang;
   document.getElementById("translateToggle").checked = translateEnabled;
+  document.getElementById("appVersionDisplay").textContent = `meMo v${APP_VERSION}`;
 
   enterTime = Date.now();
 
@@ -2722,6 +3042,17 @@ function createMessageElement(msg, key) {
   wrap.className = `msg-wrap ${isMe ? "me" : "them"}`;
   wrap.dataset.key = key;
 
+  const actionsButton = document.createElement("button");
+  actionsButton.type = "button";
+  actionsButton.className = "msg-actions-btn";
+  actionsButton.textContent = "⋯";
+  actionsButton.setAttribute("aria-label", "메시지 작업");
+  actionsButton.onclick = event => {
+    event.stopPropagation();
+    showCtxMenu(msg, wrap);
+  };
+  wrap.appendChild(actionsButton);
+
   if (!isMe) {
     const sender = document.createElement("div");
     sender.className = "msg-sender";
@@ -2906,39 +3237,44 @@ function renderMessage(msg, key, stickToBottom = false) {
   }
 }
 
-function uploadOneFile(file, progressPrefix = "") {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const targetFile = await compressImageSafe(file);
-      const isVideo = targetFile.type.startsWith("video/");
-      const safeName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${targetFile.name || "media"}`;
+function validateMediaFiles(files) {
+  files.forEach(validateMediaFile);
+}
 
-      const task = uploadBytesResumable(
-        sRef(storage, `${ROOM_ID}/${safeName}`),
-        targetFile
-      );
+async function uploadOneFile(file, progressPrefix = "") {
+  validateMediaFile(file);
 
-      task.on(
-        "state_changed",
-        snap => {
-          showToast(`${progressPrefix}업로드 ${Math.round(snap.bytesTransferred / snap.totalBytes * 100)}%`);
-        },
-        reject,
-        async () => {
-          try {
-            const url = await getDownloadURL(task.snapshot.ref);
-            resolve({
-              url,
-              type: isVideo ? "video" : "image"
-            });
-          } catch (err) {
-            reject(err);
-          }
+  const targetFile = await compressImageSafe(file);
+  const isVideo = mediaKind(targetFile) === "video";
+  const safeName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${targetFile.name || "media"}`;
+
+  return new Promise((resolve, reject) => {
+    const task = uploadBytesResumable(
+      sRef(storage, `${ROOM_ID}/${safeName}`),
+      targetFile
+    );
+
+    task.on(
+      "state_changed",
+      snap => {
+        showToast(`${progressPrefix}업로드 ${Math.round(snap.bytesTransferred / snap.totalBytes * 100)}%`);
+      },
+      reject,
+      async () => {
+        try {
+          const url = await getDownloadURL(task.snapshot.ref);
+          resolve({
+            url,
+            type:isVideo ? "video" : "image",
+            size:targetFile.size,
+            mimeType:targetFile.type || "",
+            fileName:targetFile.name || "media"
+          });
+        } catch (err) {
+          reject(err);
         }
-      );
-    } catch (err) {
-      reject(err);
-    }
+      }
+    );
   });
 }
 
@@ -2946,23 +3282,31 @@ async function sendSingleMedia(file) {
   showToast("업로드 중...");
 
   try {
-    const { url, type } = await uploadOneFile(file);
+    const uploaded = await uploadOneFile(file);
+    const { url, type } = uploaded;
     const ts = Date.now();
+    const messageKey = push(ref(db, `${ROOM_ID}/messages`)).key;
+    const mediaKey = push(ref(db, `${ROOM_ID}/media`)).key;
 
-    await push(ref(db, `${ROOM_ID}/messages`), {
+    await update(ref(db, ROOM_ID), {
+      [`messages/${messageKey}`]:{
       uid: me.name,
       name: me.name,
       photoURL: me.photoURL || "",
       type,
       url,
       ts
-    });
-
-    await push(ref(db, `${ROOM_ID}/media`), {
-      uid: me.name,
-      type,
-      url,
-      ts
+      },
+      [`media/${mediaKey}`]:{
+        uid:me.name,
+        name:me.name,
+        type,
+        url,
+        ts,
+        messageKey,
+        size:uploaded.size,
+        mimeType:uploaded.mimeType
+      }
     });
 
     showToast("공유 완료!");
@@ -2977,28 +3321,40 @@ async function sendMediaGroup(files) {
 
   try {
     for (let i = 0; i < files.length; i++) {
-      const { url, type } = await uploadOneFile(files[i], `(${i + 1}/${files.length}) `);
-
-      items.push({ url, type });
-
-      await push(ref(db, `${ROOM_ID}/media`), {
-        uid: me.name,
-        type,
-        url,
-        ts: baseTs + i
-      });
+      const uploaded = await uploadOneFile(files[i], `(${i + 1}/${files.length}) `);
+      items.push(uploaded);
     }
 
-    await push(ref(db, `${ROOM_ID}/messages`), {
-      uid: me.name,
-      name: me.name,
-      photoURL: me.photoURL || "",
-      type: "album",
-      items,
-      ts: baseTs + files.length
+    const messageKey = push(ref(db, `${ROOM_ID}/messages`)).key;
+    const updates = {
+      [`messages/${messageKey}`]:{
+        uid:me.name,
+        name:me.name,
+        photoURL:me.photoURL || "",
+        type:"album",
+        items,
+        ts:baseTs + files.length
+      }
+    };
+
+    items.forEach((item, index) => {
+      const mediaKey = push(ref(db, `${ROOM_ID}/media`)).key;
+      updates[`media/${mediaKey}`] = {
+        uid:me.name,
+        name:me.name,
+        type:item.type,
+        url:item.url,
+        ts:baseTs + index,
+        messageKey,
+        groupId:messageKey,
+        size:item.size,
+        mimeType:item.mimeType
+      };
     });
 
-    showToast(`사진 ${files.length}장 공유 완료!`);
+    await update(ref(db, ROOM_ID), updates);
+
+    showToast(`미디어 ${files.length}개 공유 완료!`);
   } catch (err) {
     showToast(`실패: ${err.message}`);
   }
@@ -3010,6 +3366,13 @@ window.sendMedia = async function(event) {
 
   if (!files.length) return;
 
+  try {
+    validateMediaFiles(files);
+  } catch (err) {
+    showToast(err.message);
+    return;
+  }
+
   if (files.length === 1) {
     await sendSingleMedia(files[0]);
   } else {
@@ -3018,36 +3381,124 @@ window.sendMedia = async function(event) {
 };
 
 function updateAlbum(media) {
+  albumMedia = media
+    ? Object.entries(media)
+        .map(([key, item]) => ({ key, ...item }))
+        .sort((a, b) => b.ts - a.ts)
+    : [];
+
+  refreshAlbumMonthOptions();
+  window.renderAlbum();
+}
+
+function refreshAlbumMonthOptions() {
+  const select = document.getElementById("albumMonthFilter");
+  const previous = select.value || "all";
+  const months = [...new Set(albumMedia.map(item => albumMonthKey(item.ts)))].sort().reverse();
+
+  select.innerHTML = `<option value="all">전체 기간</option>`;
+
+  months.forEach(month => {
+    const [year, value] = month.split("-");
+    const option = document.createElement("option");
+    option.value = month;
+    option.textContent = `${year}년 ${Number(value)}월`;
+    select.appendChild(option);
+  });
+
+  select.value = months.includes(previous) ? previous : "all";
+}
+
+window.renderAlbum = function() {
   const grid = document.getElementById("albumGrid");
+  const month = document.getElementById("albumMonthFilter").value;
+  const type = document.getElementById("albumTypeFilter").value;
+
+  const filtered = albumMedia.filter(item => {
+    const monthMatches = month === "all" || albumMonthKey(item.ts) === month;
+    const typeMatches = type === "all" || item.type === type;
+    return monthMatches && typeMatches;
+  });
+
+  document.getElementById("albumCount").textContent = `${filtered.length}개`;
   grid.innerHTML = "";
 
-  if (!media) {
-    grid.innerHTML = `<div class="album-empty" style="grid-column:1/-1;height:300px">아직 공유된 미디어가 없어요</div>`;
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="album-empty" style="height:300px">조건에 맞는 미디어가 없어요</div>`;
     return;
   }
 
-  Object.values(media)
-    .sort((a, b) => b.ts - a.ts)
-    .forEach(item => {
-      const div = document.createElement("div");
-      div.className = "album-item";
+  const groups = new Map();
 
-      if (item.type === "video") {
-        const video = document.createElement("video");
-        video.src = item.url;
-        video.preload = "metadata";
-        div.appendChild(video);
-        div.onclick = () => window.openLightbox("video", item.url);
-      } else {
-        const img = document.createElement("img");
-        img.src = item.url;
-        img.loading = "lazy";
-        div.appendChild(img);
-        div.onclick = () => window.openLightbox("image", item.url);
-      }
+  filtered.forEach(item => {
+    const date = getDateStr(item.ts);
+    if (!groups.has(date)) groups.set(date, []);
+    groups.get(date).push(item);
+  });
 
-      grid.appendChild(div);
+  groups.forEach((items, date) => {
+    const section = document.createElement("section");
+    section.className = "album-section";
+
+    const title = document.createElement("div");
+    title.className = "album-section-title";
+    title.textContent = `${date} · ${items.length}개`;
+
+    const sectionGrid = document.createElement("div");
+    sectionGrid.className = "album-section-grid";
+
+    items.forEach(item => {
+      sectionGrid.appendChild(createAlbumItem(item, filtered));
     });
+
+    section.appendChild(title);
+    section.appendChild(sectionGrid);
+    grid.appendChild(section);
+  });
+};
+
+function createAlbumItem(item, gallery) {
+  const div = document.createElement("div");
+  div.className = "album-item";
+
+  if (item.type === "video") {
+    const video = document.createElement("video");
+    video.src = item.url;
+    video.preload = "metadata";
+    video.muted = true;
+    video.playsInline = true;
+    div.appendChild(video);
+
+    const play = document.createElement("div");
+    play.className = "play-icon";
+    play.innerHTML = `<svg viewBox="0 0 24 24"><polygon points="8,5 19,12 8,19"/></svg>`;
+    div.appendChild(play);
+  } else {
+    const img = document.createElement("img");
+    img.src = item.url;
+    img.loading = "lazy";
+    img.alt = "공유 사진";
+    div.appendChild(img);
+  }
+
+  div.onclick = () => {
+    const index = gallery.findIndex(entry => entry.key === item.key);
+    window.openLightbox(item.type, item.url, gallery, Math.max(index, 0));
+  };
+
+  if (item.messageKey) {
+    const source = document.createElement("button");
+    source.type = "button";
+    source.className = "album-source-btn";
+    source.textContent = "대화 보기";
+    source.onclick = event => {
+      event.stopPropagation();
+      window.openSearchContext(item.messageKey);
+    };
+    div.appendChild(source);
+  }
+
+  return div;
 }
 
 let lightboxGallery = null;
@@ -3126,6 +3577,12 @@ window.lightboxNav = function(direction) {
 
 document.addEventListener("keydown", event => {
   const lb = document.getElementById("lightbox");
+  const searchContext = document.getElementById("searchContext");
+
+  if (event.key === "Escape" && searchContext.classList.contains("open")) {
+    window.closeSearchContext();
+    return;
+  }
 
   if (!lb.classList.contains("open")) return;
 
@@ -3288,10 +3745,19 @@ window.uploadTodoProof = async function(event) {
 
   if (!file || !pendingProofKey) return;
 
+  try {
+    validateMediaFile(file);
+  } catch (err) {
+    showToast(err.message);
+    pendingProofKey = null;
+    return;
+  }
+
   showToast("인증샷 업로드 중...");
 
   try {
-    const { url, type } = await uploadOneFile(file);
+    const uploaded = await uploadOneFile(file);
+    const { url, type } = uploaded;
 
     await update(ref(db, `${ROOM_ID}/todos/${pendingProofKey}`), {
       proofUrl:url,
@@ -3300,9 +3766,13 @@ window.uploadTodoProof = async function(event) {
 
     await push(ref(db, `${ROOM_ID}/media`), {
       uid:me.name,
+      name:me.name,
       type,
       url,
-      ts:Date.now()
+      ts:Date.now(),
+      sourceTodoKey:pendingProofKey,
+      size:uploaded.size,
+      mimeType:uploaded.mimeType
     });
 
     showToast("인증샷 등록 완료! 📷");
@@ -3431,6 +3901,9 @@ window.doLogout = async function() {
 
 let searchMatches = [];
 let searchIdx = -1;
+let searchRunId = 0;
+let searchTimer = null;
+let searchTotalMatches = 0;
 
 window.toggleSearch = function() {
   const bar = document.getElementById("searchBar");
@@ -3443,77 +3916,266 @@ window.toggleSearch = function() {
   }
 };
 
-window.doSearch = function() {
-  clearSearchHighlights();
+function searchableMessageText(msg) {
+  return [
+    msg?.text,
+    msg?.translation,
+    msg?.stickerLabel,
+    msg?.name,
+    msg?.type === "text" ? "" : mediaLabel(msg)
+  ].filter(Boolean).join(" ");
+}
 
-  const q = document.getElementById("searchInput").value.trim().toLowerCase();
+window.queueSearch = function() {
+  searchRunId += 1;
+  clearTimeout(searchTimer);
 
-  if (!q) {
-    document.getElementById("searchCount").textContent = "";
-    searchMatches = [];
+  const value = document.getElementById("searchInput").value.trim();
+  if (!value) {
+    clearSearchResults();
     return;
   }
 
-  searchMatches = [];
-
-  document.querySelectorAll("#chatMessages .msg-bubble").forEach(el => {
-    if (el.textContent.toLowerCase().includes(q)) {
-      el.classList.add("msg-highlight");
-      searchMatches.push(el);
-    }
-  });
-
-  searchMatches.reverse();
-  searchIdx = searchMatches.length ? 0 : -1;
-
-  document.getElementById("searchCount").textContent =
-    searchMatches.length ? `${searchIdx + 1}/${searchMatches.length}` : "0건";
-
-  searchMatches[0]?.scrollIntoView({ block:"center" });
+  searchTimer = setTimeout(() => window.doSearch(), 350);
 };
+
+window.doSearch = async function() {
+  clearTimeout(searchTimer);
+
+  const input = document.getElementById("searchInput");
+  const count = document.getElementById("searchCount");
+  const results = document.getElementById("searchResults");
+  const q = normalizeSearchText(input.value.trim());
+
+  if (!q) {
+    clearSearchResults();
+    return;
+  }
+
+  const runId = ++searchRunId;
+  let cursor = null;
+  let scanned = 0;
+
+  searchMatches = [];
+  searchIdx = -1;
+  searchTotalMatches = 0;
+  results.classList.add("show");
+  results.innerHTML = `<div class="search-empty">전체 대화를 검색하는 중...</div>`;
+  count.textContent = "검색 중";
+
+  try {
+    while (runId === searchRunId) {
+      const messagesRef = ref(db, `${ROOM_ID}/messages`);
+      const pageQuery = cursor
+        ? query(messagesRef, orderByKey(), endBefore(cursor), limitToLast(SEARCH_PAGE_SIZE))
+        : query(messagesRef, orderByKey(), limitToLast(SEARCH_PAGE_SIZE));
+
+      const snapshot = await get(pageQuery);
+      if (runId !== searchRunId) return;
+
+      const page = [];
+      snapshot.forEach(child => {
+        page.push({ key:child.key, msg:child.val() });
+      });
+
+      if (!page.length) break;
+
+      scanned += page.length;
+      cursor = page[0].key;
+
+      for (const item of [...page].reverse()) {
+        if (!normalizeSearchText(searchableMessageText(item.msg)).includes(q)) continue;
+
+        searchTotalMatches += 1;
+        if (searchMatches.length < SEARCH_RESULT_LIMIT) {
+          searchMatches.push(item);
+        }
+      }
+
+      renderSearchResults(true, scanned);
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      if (page.length < SEARCH_PAGE_SIZE) break;
+    }
+
+    if (runId !== searchRunId) return;
+    searchIdx = searchMatches.length ? 0 : -1;
+    renderSearchResults(false, scanned);
+  } catch (err) {
+    if (runId !== searchRunId) return;
+    console.error("전체 메시지 검색 실패:", err);
+    count.textContent = "실패";
+    results.innerHTML = `<div class="search-empty">검색하지 못했습니다. 연결을 확인해주세요.</div>`;
+  }
+};
+
+function renderSearchResults(isScanning, scanned = 0) {
+  const results = document.getElementById("searchResults");
+  const count = document.getElementById("searchCount");
+
+  results.classList.add("show");
+  results.innerHTML = "";
+
+  if (!searchMatches.length) {
+    results.innerHTML = `<div class="search-empty">${isScanning ? `검색 중 · ${scanned}개 확인` : "검색 결과가 없습니다."}</div>`;
+  } else {
+    const fragment = document.createDocumentFragment();
+
+    searchMatches.forEach(({ key, msg }, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `search-result-item ${index === searchIdx ? "active" : ""}`;
+      button.dataset.searchIndex = index;
+      button.onclick = () => window.openSearchContext(key);
+
+      const meta = document.createElement("div");
+      meta.className = "search-result-meta";
+
+      const name = document.createElement("span");
+      name.className = "search-result-name";
+      name.textContent = msg.name || "System";
+
+      const time = document.createElement("span");
+      time.textContent = fmtFull(msg.ts);
+
+      const body = document.createElement("div");
+      body.className = "search-result-text";
+      body.textContent = searchableMessageText(msg);
+
+      meta.appendChild(name);
+      meta.appendChild(time);
+      button.appendChild(meta);
+      button.appendChild(body);
+      fragment.appendChild(button);
+    });
+
+    results.appendChild(fragment);
+  }
+
+  const shown = searchMatches.length;
+  count.textContent = isScanning
+    ? `${shown}건 · ${scanned}개 검색 중`
+    : searchTotalMatches > SEARCH_RESULT_LIMIT
+      ? `${shown}/${searchTotalMatches}건`
+      : `${searchTotalMatches}건`;
+}
 
 window.searchNext = function() {
   if (!searchMatches.length) return;
 
   searchIdx = (searchIdx + 1) % searchMatches.length;
-  searchMatches[searchIdx].scrollIntoView({ block:"center" });
-
-  document.getElementById("searchCount").textContent =
-    `${searchIdx + 1}/${searchMatches.length}`;
+  focusSearchResult();
 };
 
 window.searchPrev = function() {
   if (!searchMatches.length) return;
 
   searchIdx = (searchIdx - 1 + searchMatches.length) % searchMatches.length;
-  searchMatches[searchIdx].scrollIntoView({ block:"center" });
+  focusSearchResult();
+};
+
+function focusSearchResult() {
+  document.querySelectorAll(".search-result-item").forEach((el, index) => {
+    el.classList.toggle("active", index === searchIdx);
+  });
+
+  document.querySelector(`.search-result-item[data-search-index="${searchIdx}"]`)
+    ?.scrollIntoView({ block:"nearest" });
 
   document.getElementById("searchCount").textContent =
-    `${searchIdx + 1}/${searchMatches.length}`;
+    `${searchIdx + 1}/${searchTotalMatches}건`;
+}
+
+window.openSearchContext = async function(key) {
+  const modal = document.getElementById("searchContext");
+  const list = document.getElementById("searchContextList");
+  const messagesRef = ref(db, `${ROOM_ID}/messages`);
+
+  modal.classList.add("open");
+  list.innerHTML = `<div class="search-empty">문맥을 불러오는 중...</div>`;
+
+  try {
+    const [beforeSnap, afterSnap] = await Promise.all([
+      get(query(messagesRef, orderByKey(), endAt(key), limitToLast(6))),
+      get(query(messagesRef, orderByKey(), startAt(key), limitToFirst(6)))
+    ]);
+
+    const context = new Map();
+    beforeSnap.forEach(child => context.set(child.key, child.val()));
+    afterSnap.forEach(child => context.set(child.key, child.val()));
+
+    list.innerHTML = "";
+
+    [...context.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .forEach(([messageKey, msg]) => {
+        const row = document.createElement("div");
+        row.className = `search-context-row ${messageKey === key ? "target" : ""}`;
+        row.dataset.contextKey = messageKey;
+
+        const meta = document.createElement("div");
+        meta.className = "search-context-meta";
+        meta.textContent = `${msg.name || "System"} · ${fmtFull(msg.ts)}`;
+
+        const body = document.createElement("div");
+        body.className = "search-context-body";
+        body.textContent = searchableMessageText(msg);
+
+        row.appendChild(meta);
+        row.appendChild(body);
+        list.appendChild(row);
+      });
+
+    requestAnimationFrame(() => {
+      list.querySelector(".search-context-row.target")?.scrollIntoView({ block:"center" });
+    });
+  } catch (err) {
+    console.error("검색 문맥 로드 실패:", err);
+    list.innerHTML = `<div class="search-empty">문맥을 불러오지 못했습니다.</div>`;
+  }
+};
+
+window.closeSearchContext = function() {
+  document.getElementById("searchContext").classList.remove("open");
+  document.getElementById("searchContextList").innerHTML = "";
 };
 
 function clearSearch() {
   document.getElementById("searchInput").value = "";
-  document.getElementById("searchCount").textContent = "";
-  clearSearchHighlights();
-  searchMatches = [];
-  searchIdx = -1;
+  clearSearchResults();
 }
 
-function clearSearchHighlights() {
-  document.querySelectorAll(".msg-highlight").forEach(el => {
-    el.classList.remove("msg-highlight");
-  });
+function clearSearchResults() {
+  searchRunId += 1;
+  clearTimeout(searchTimer);
+  searchMatches = [];
+  searchIdx = -1;
+  searchTotalMatches = 0;
+  document.getElementById("searchCount").textContent = "";
+  document.getElementById("searchResults").classList.remove("show");
+  document.getElementById("searchResults").innerHTML = "";
 }
 
 let ctxTargetMsg = null;
 const ctxMenu = document.getElementById("ctxMenu");
 
-function showCtxMenu(msg, wrap) {
+function showCtxMenu(msg, wrap, point = null) {
   ctxTargetMsg = msg;
 
   const rect = wrap.getBoundingClientRect();
   const menuH = 100;
+  const menuW = 150;
+
+  if (point) {
+    const top = Math.max(12, Math.min(point.y, window.innerHeight - menuH - 12));
+    const left = Math.max(12, Math.min(point.x, window.innerWidth - menuW - 12));
+
+    ctxMenu.style.top = `${top}px`;
+    ctxMenu.style.left = `${left}px`;
+    ctxMenu.style.right = "auto";
+    ctxMenu.classList.add("show");
+    return;
+  }
 
   let top = rect.bottom + 6;
 
@@ -3568,6 +4230,7 @@ async function saveToArchive(msg) {
     text:msg.type === "sticker" ? `🍑 ${msg.stickerLabel || "스티커"}` : (msg.text || null),
     type:msg.type || "text",
     url:msg.url || null,
+    items:Array.isArray(msg.items) ? msg.items : null,
     name:msg.name || "",
     uid:msg.uid || "",
     ts:msg.ts || Date.now(),
@@ -3644,6 +4307,31 @@ function renderArchiveList(data) {
         div.appendChild(wrap);
       }
 
+      if (item.type === "album" && Array.isArray(item.items)) {
+        const album = document.createElement("div");
+        album.className = "archive-album-grid";
+
+        item.items.slice(0, 4).forEach((media, index) => {
+          if (media.type === "video") {
+            const video = document.createElement("video");
+            video.src = media.url;
+            video.preload = "metadata";
+            video.muted = true;
+            video.playsInline = true;
+            video.onclick = () => window.openLightbox(media.type, media.url, item.items, index);
+            album.appendChild(video);
+          } else {
+            const img = document.createElement("img");
+            img.src = media.url;
+            img.loading = "lazy";
+            img.onclick = () => window.openLightbox(media.type, media.url, item.items, index);
+            album.appendChild(img);
+          }
+        });
+
+        div.appendChild(album);
+      }
+
       const del = document.createElement("button");
       del.className = "archive-del";
       del.textContent = "✕";
@@ -3674,6 +4362,10 @@ document.addEventListener("DOMContentLoaded", () => {
   cm.addEventListener("scroll", () => {
     btn.classList.toggle("show", !isNearBottom(cm));
   }, { passive:true });
+
+  document.getElementById("searchContext").addEventListener("click", event => {
+    if (event.target.id === "searchContext") window.closeSearchContext();
+  });
 });
 </script>
 

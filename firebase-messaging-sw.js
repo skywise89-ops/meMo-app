@@ -14,28 +14,58 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
+const APP_VERSION = '3.0.0';
 
-// 앱이 완전히 닫혔을 때 백그라운드 푸시 알림 수신
-messaging.onBackgroundMessage((payload) => {
+// notification payload는 FCM SDK가 이미 표시한다. data-only payload만 직접 표시한다.
+messaging.onBackgroundMessage(async (payload) => {
   console.log('[sw] 백그라운드 메시지 수신: ', payload);
-  const notificationTitle = payload.notification?.title || 'meMo';
+
+  if (payload.notification) {
+    console.log('[sw] FCM 자동 표시 payload이므로 수동 표시 생략:', payload.messageId || 'unknown');
+    return;
+  }
+
+  const data = payload.data || {};
+  const eventId = data.eventId || data.messageKey || payload.messageId || 'latest';
+  const tag = `memo-${eventId}`;
+
+  try {
+    const existing = await self.registration.getNotifications({ tag });
+    if (existing.length) {
+      console.log('[sw] 중복 알림 생략:', eventId);
+      return;
+    }
+  } catch (err) {
+    console.warn('[sw] 기존 알림 조회 실패:', err);
+  }
+
+  const notificationTitle = data.title || 'meMo';
   const notificationOptions = {
-    body: payload.notification?.body || '새로운 메시지가 도착했습니다.',
-    icon: 'data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' rx=\'20\' fill=\'%230d0d0f\'/><text x=\'50\' y=\'62\' text-anchor=\'middle\' font-size=\'40\' font-family=\'system-ui\' fill=\'%23c8a97e\'>mM</text></svg>',
-    tag: 'memo-chat-alert',
-    renotify: true
+    body: data.body || '새로운 메시지가 도착했습니다.',
+    icon: './icon-192.png',
+    badge: './icon-192.png',
+    tag,
+    renotify: false,
+    data: {
+      eventId,
+      url: data.url || './'
+    }
   };
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  await self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 // 캐싱 버전 관리
-const CACHE_VERSION = 'memo-v2';
+const CACHE_VERSION = `memo-v${APP_VERSION}`;
 self.addEventListener('install', e => { self.skipWaiting(); });
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(names => {
-      return Promise.all(names.filter(n => n !== CACHE_VERSION).map(n => caches.delete(n)));
+      return Promise.all(
+        names
+          .filter(name => name.startsWith('memo-v') && name !== CACHE_VERSION)
+          .map(name => caches.delete(name))
+      );
     }).then(() => clients.claim())
   );
 });
@@ -44,12 +74,16 @@ self.addEventListener('fetch', e => { e.respondWith(fetch(e.request).catch(() =>
 // 알림 클릭시 웹앱 창 열기 및 포커스
 self.addEventListener('notificationclick', e => {
   e.notification.close();
+  const targetUrl = new URL(e.notification.data?.url || './', self.registration.scope).href;
+
   e.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async list => {
       for (const client of list) {
-        if (client.url.includes('meMo') || client.url.includes('memo')) { return client.focus(); }
+        if (new URL(client.url).origin !== self.location.origin) continue;
+        if ('navigate' in client && client.url !== targetUrl) await client.navigate(targetUrl);
+        return client.focus();
       }
-      return clients.openWindow('./');
+      return clients.openWindow(targetUrl);
     })
   );
 });
