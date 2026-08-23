@@ -404,6 +404,10 @@ body {
   border-left:2px solid var(--accent);
 }
 
+body.hide-translations .msg-translation {
+  display:none;
+}
+
 .me .msg-translation {
   border-left:none;
   border-right:2px solid var(--accent2);
@@ -1970,7 +1974,7 @@ body {
           </svg>
         </button>
 
-        <textarea class="chat-input" id="msgInput" placeholder="메시지 입력..." rows="1" oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
+        <textarea class="chat-input" id="msgInput" placeholder="메시지 입력..." rows="1" maxlength="5000" oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
 
         <button class="chat-send-btn" onclick="sendMessage()">
           <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
@@ -2063,7 +2067,7 @@ body {
           </div>
 
           <div class="profile-row">
-            <span class="profile-row-label">자동 번역 (한↔일)</span>
+            <span class="profile-row-label">번역 표시 (한↔일)</span>
             <label class="toggle-sw">
               <input type="checkbox" id="translateToggle" checked onchange="saveTranslatePref()">
               <span class="slider"></span>
@@ -2312,6 +2316,7 @@ const cloudFunctions = getFunctions(app, "asia-northeast3");
 const deleteAlbumMediaCall = httpsCallable(cloudFunctions, "deleteAlbumMedia");
 const restoreAlbumMediaCall = httpsCallable(cloudFunctions, "restoreAlbumMedia");
 const createVoiceMessageCall = httpsCallable(cloudFunctions, "createVoiceMessage");
+const translateTextCall = httpsCallable(cloudFunctions, "translateText", { timeout:15000 });
 
 let messaging = null;
 try {
@@ -2323,7 +2328,7 @@ try {
 let me = null;
 let partner = null;
 let myLang = "ko";
-let translateEnabled = true;
+let showTranslations = true;
 let notifEnabled = false;
 let fcmReady = false;
 let appHasFocus = true;
@@ -2357,12 +2362,33 @@ let voiceCancelRequested = false;
 let voiceState = "idle";
 let voicePendingUpload = null;
 let voiceRequestId = 0;
+let messageSendQueue = Promise.resolve();
 
 const seenKeys = new Set();
 window._loadedMessages = {};
 
 const CHECK_SINGLE = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
 const CHECK_DOUBLE = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 6 7 17 2 12"/><polyline points="23 6 12 17"/></svg>`;
+
+function translationPreferenceKey(email) {
+  return `memo_show_translation_${String(email || "").trim().toLowerCase()}`;
+}
+
+function loadTranslationPreference(email) {
+  const key = translationPreferenceKey(email);
+  const stored = localStorage.getItem(key);
+
+  if (stored !== null) return stored !== "false";
+
+  const legacyValue = localStorage.getItem("memo_translate");
+  const enabled = legacyValue !== "false";
+  localStorage.setItem(key, String(enabled));
+  return enabled;
+}
+
+function applyTranslationVisibility() {
+  document.body.classList.toggle("hide-translations", !showTranslations);
+}
 
 document.addEventListener("visibilitychange", () => {
   appHasFocus = document.visibilityState === "visible";
@@ -2702,7 +2728,8 @@ onAuthStateChanged(auth, async user => {
   };
 
   myLang = localStorage.getItem(`memo_lang_${user.email}`) || profile.lang;
-  translateEnabled = localStorage.getItem("memo_translate") !== "false";
+  showTranslations = loadTranslationPreference(user.email);
+  applyTranslationVisibility();
 
   roomEntered = true;
   enterRoom();
@@ -2899,7 +2926,7 @@ function enterRoom() {
   document.getElementById("myNameDisplay").textContent = me.name;
   document.getElementById("myEmailDisplay").textContent = me.email;
   document.getElementById("langSelect").value = myLang;
-  document.getElementById("translateToggle").checked = translateEnabled;
+  document.getElementById("translateToggle").checked = showTranslations;
   document.getElementById("appVersionDisplay").textContent = `meMo v${APP_VERSION}`;
 
   enterTime = Date.now();
@@ -3177,63 +3204,94 @@ function closeStickerPanel() {
 }
 
 async function translate(text, src, tgt) {
-  try {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${src}&tl=${tgt}&dt=t&q=${encodeURIComponent(text)}`;
-    const res = await fetch(url);
+  const result = await translateTextCall({
+    text,
+    sourceLanguageCode:src,
+    targetLanguageCode:tgt
+  });
+  const translated = result?.data?.translation;
 
-    if (res.ok) {
-      const data = await res.json();
-      const translated = data?.[0]?.map(item => item?.[0]).filter(Boolean).join("");
+  if (typeof translated !== "string" || !translated.trim()) {
+    throw new Error("번역 결과가 비어 있습니다.");
+  }
 
-      if (translated) return translated;
-    }
-  } catch {}
-
-  return null;
+  return translated.trim();
 }
 
-window.sendMessage = async function() {
+async function sendQueuedTextMessage(message) {
+  let translation = null;
+
+  try {
+    translation = await translate(
+      message.text,
+      message.lang,
+      message.lang === "ko" ? "ja" : "ko"
+    );
+  } catch (err) {
+    console.warn("[Translation] 공식 번역 실패", {
+      code:err?.code || null,
+      message:err?.message || "unknown"
+    });
+    showToast("번역에 실패해 원문으로 전송합니다.");
+  }
+
+  try {
+    await push(ref(db, `${ROOM_ID}/messages`), {
+      uid:message.uid,
+      name:message.name,
+      photoURL:message.photoURL,
+      lang:message.lang,
+      text:message.text,
+      translation:translation || null,
+      type:"text",
+      ts:Date.now(),
+      ...(message.replyTo ? { replyTo:message.replyTo } : {})
+    });
+  } catch (err) {
+    showToast("메시지를 보내지 못했습니다. 다시 시도해주세요.");
+    throw err;
+  }
+}
+
+window.sendMessage = function() {
   const input = document.getElementById("msgInput");
   const text = input.value.trim();
 
   if (!text) return;
 
+  if (Array.from(text).length > 5000) {
+    showToast("메시지는 5000자 이하만 보낼 수 있습니다.");
+    return;
+  }
+
   input.value = "";
   input.style.height = "42px";
   input._lastVal = "";
 
-  let translation = null;
-
-  if (translateEnabled) {
-    translation = await translate(
-      text,
-      myLang,
-      myLang === "ko" ? "ja" : "ko"
-    );
-  }
-
-  await push(ref(db, `${ROOM_ID}/messages`), {
+  const queuedMessage = {
     uid: me.name,
     name: me.name,
     photoURL: me.photoURL || "",
     lang: myLang,
     text,
-    translation: translation || null,
-    type: "text",
-    ts: Date.now(),
-    ...(replyTo ? {
-      replyTo: {
+    replyTo: replyTo ? {
         text: replyTo.text,
         type: replyTo.type,
         name: replyTo.name,
         ...(replyTo.type === "album"
           ? { count: (replyTo.items || []).length }
           : {})
-      }
-    } : {})
-  });
+      } : null
+  };
 
   window.cancelReply();
+
+  const sendTask = messageSendQueue.then(() => sendQueuedTextMessage(queuedMessage));
+  messageSendQueue = sendTask.catch(err => {
+    console.error("[Message] 전송 실패", err);
+  });
+
+  return sendTask;
 };
 
 window.handleKey = function(event) {
@@ -3461,7 +3519,7 @@ function createMessageElement(msg, key) {
 
   wrap.appendChild(bubble);
 
-  if (msg.translation && translateEnabled && msg.type !== "sticker") {
+  if (msg.translation && msg.type !== "sticker") {
     const translation = document.createElement("div");
     translation.className = "msg-translation";
     translation.textContent = msg.translation;
@@ -4596,8 +4654,9 @@ window.changeLang = function() {
 };
 
 window.saveTranslatePref = function() {
-  translateEnabled = document.getElementById("translateToggle").checked;
-  localStorage.setItem("memo_translate", translateEnabled);
+  showTranslations = document.getElementById("translateToggle").checked;
+  localStorage.setItem(translationPreferenceKey(me.email), String(showTranslations));
+  applyTranslationVisibility();
 };
 
 window.doLogout = async function() {
@@ -4941,6 +5000,7 @@ function archivePath() {
 async function saveToArchive(msg) {
   await push(ref(db, archivePath()), {
     text:msg.type === "sticker" ? `🍑 ${msg.stickerLabel || "스티커"}` : (msg.text || null),
+    translation:msg.translation || null,
     type:msg.type || "text",
     url:msg.url || null,
     items:Array.isArray(msg.items) ? msg.items : null,
@@ -5000,6 +5060,13 @@ function renderArchiveList(data) {
         p.className = "archive-item-text";
         p.textContent = item.text;
         div.appendChild(p);
+
+        if (item.translation) {
+          const translation = document.createElement("div");
+          translation.className = "msg-translation";
+          translation.textContent = item.translation;
+          div.appendChild(translation);
+        }
       }
 
       if (item.type === "deleted-media") {

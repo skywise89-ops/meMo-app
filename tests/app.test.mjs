@@ -71,6 +71,18 @@ test("required improvements remain wired", () => {
   assert.match(worker, /getNotifications\(\{ tag \}\)/);
 });
 
+test("official translation remains wired without the unofficial endpoint", () => {
+  assert.match(html, /httpsCallable\(cloudFunctions, "translateText"/);
+  assert.doesNotMatch(html, /translate_a\/single|client=gtx/);
+  assert.match(html, /memo_show_translation_/);
+  assert.match(html, /body\.hide-translations \.msg-translation/);
+  assert.match(html, /messageSendQueue\.then/);
+  assert.match(html, /msg\?\.translation/);
+  assert.match(html, /translation:msg\.translation \|\| null/);
+  assert.match(functionsSource, /exports\.translateText = onCall/);
+  assert.match(functionsSource, /TranslationServiceClient/);
+});
+
 test("video upload limit is exactly 5 MiB", () => {
   assert.equal(MAX_VIDEO_BYTES, 5 * 1024 * 1024);
   assert.doesNotThrow(() => validateMediaFile({ name:"ok.mp4", type:"video/mp4", size:MAX_VIDEO_BYTES }));

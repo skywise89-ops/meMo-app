@@ -32,6 +32,15 @@
 - 고아 음성 업로드 8일 후 정리
 - RTDB·Storage Rules로 삭제 권한과 업로드 크기 서버 검증
 
+## v4.1 개선
+
+- 비공식 브라우저 번역 호출을 인증된 Cloud Translation v3 NMT callable Function으로 교체
+- 번역 표시 설정을 계정별로 저장하고 발신 번역 생성과 분리
+- 번역 실패 시 원문 전송과 사용자 안내
+- 연속 메시지의 번역·저장 순서를 보장하는 전송 큐
+- 신규 보관함 항목에 번역문 보존
+- 과거 번역 누락 메시지는 변경하거나 재번역하지 않음
+
 ## 검사
 
 ```bash
@@ -44,7 +53,7 @@ npm test
 
 ```bash
 npx firebase-tools@15.25.1 deploy --only database,storage --project memo-e366f
-npx firebase-tools@15.25.1 deploy --only functions:deleteAlbumMedia,functions:restoreAlbumMedia,functions:createVoiceMessage,functions:purgeExpiredMedia,functions:cleanupOrphanVoiceUploads --project memo-e366f
+npx firebase-tools@15.25.1 deploy --only functions:translateText,functions:deleteAlbumMedia,functions:restoreAlbumMedia,functions:createVoiceMessage,functions:purgeExpiredMedia,functions:cleanupOrphanVoiceUploads --project memo-e366f
 ```
 
 기존 `sendPushOnMessage`는 별도 운영 자산이다. 함수 전체 배포는 이를 삭제 후보로 만들 수 있으므로 위 함수 목록을 유지한다. 음성 메시지 알림 문구가 필요하면 발송 서버에서 `type: audio`를 `🎙️ 음성 메시지`로 처리해야 한다.

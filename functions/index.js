@@ -6,6 +6,7 @@ const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { initializeApp } = require("firebase-admin/app");
 const { getDatabase } = require("firebase-admin/database");
 const { getStorage } = require("firebase-admin/storage");
+const { TranslationServiceClient } = require("@google-cloud/translate").v3;
 const {
   ADMIN_EMAIL,
   AUDIO_RETENTION_MS,
@@ -20,6 +21,10 @@ const {
   tombstoneMessage,
   validPushKey
 } = require("./media-state");
+const {
+  parseTranslationRequest,
+  translatedTextFromResponse
+} = require("./translation");
 
 initializeApp();
 setGlobalOptions({
@@ -28,6 +33,20 @@ setGlobalOptions({
   memory:"256MiB",
   timeoutSeconds:60
 });
+
+let translationClient = null;
+
+function getTranslationClient() {
+  if (!translationClient) {
+    translationClient = new TranslationServiceClient();
+  }
+
+  return translationClient;
+}
+
+function translationProjectId() {
+  return process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || "memo-e366f";
+}
 
 function authEmail(auth) {
   return normalizeEmail(auth?.token?.email);
@@ -60,6 +79,40 @@ function requireMediaKey(value) {
 
   return value;
 }
+
+exports.translateText = onCall({ timeoutSeconds:15 }, async request => {
+  const email = requireMember(request.auth);
+  let input;
+
+  try {
+    input = parseTranslationRequest(request.data);
+  } catch (err) {
+    throw new HttpsError("invalid-argument", err.message);
+  }
+
+  try {
+    const client = getTranslationClient();
+    const [response] = await client.translateText({
+      parent:`projects/${translationProjectId()}/locations/global`,
+      contents:[input.text],
+      mimeType:"text/plain",
+      sourceLanguageCode:input.sourceLanguageCode,
+      targetLanguageCode:input.targetLanguageCode
+    });
+
+    return {
+      translation:translatedTextFromResponse(response)
+    };
+  } catch (err) {
+    console.error("[translateText] Cloud Translation 호출 실패", {
+      email,
+      code:err?.code || null,
+      message:err?.message || "unknown"
+    });
+
+    throw new HttpsError("unavailable", "번역 서비스에 연결하지 못했습니다.");
+  }
+});
 
 async function deleteStorageObject(bucket, storagePath) {
   if (!storagePath) return;
