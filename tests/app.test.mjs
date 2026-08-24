@@ -30,6 +30,7 @@ const worker = await readFile(new URL("firebase-messaging-sw.js", root), "utf8")
 const databaseRules = await readFile(new URL("database.rules.json", root), "utf8");
 const storageRules = await readFile(new URL("storage.rules", root), "utf8");
 const functionsSource = await readFile(new URL("functions/index.js", root), "utf8");
+const translationSource = await readFile(new URL("functions/translation.js", root), "utf8");
 
 test("module script parses", async () => {
   const match = html.match(/<script type="module">([\s\S]*?)<\/script>/);
@@ -77,9 +78,16 @@ test("official translation remains wired without the unofficial endpoint", () =>
   assert.match(html, /memo_show_translation_/);
   assert.match(html, /body\.hide-translations \.msg-translation/);
   assert.match(html, /messageSendQueue\.then/);
+  assert.match(html, /timeout:6000/);
+  assert.match(html, /clientTranslationRetryAt/);
+  assert.match(html, /translationStatus/);
+  assert.match(html, /번역 중…/);
   assert.match(html, /msg\?\.translation/);
   assert.match(html, /translation:msg\.translation \|\| null/);
   assert.match(functionsSource, /exports\.translateText = onCall/);
+  assert.match(functionsSource, /exports\.fillMissingTranslation = onValueCreated/);
+  assert.match(functionsSource, /region:"asia-southeast1"/);
+  assert.match(translationSource, /translationStatus === FALLBACK_TRANSLATION_PENDING/);
   assert.match(functionsSource, /TranslationServiceClient/);
 });
 

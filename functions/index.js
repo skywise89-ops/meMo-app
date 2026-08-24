@@ -3,6 +3,7 @@
 const { setGlobalOptions } = require("firebase-functions/v2");
 const { HttpsError, onCall } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { onValueCreated } = require("firebase-functions/v2/database");
 const { initializeApp } = require("firebase-admin/app");
 const { getDatabase } = require("firebase-admin/database");
 const { getStorage } = require("firebase-admin/storage");
@@ -22,7 +23,11 @@ const {
   validPushKey
 } = require("./media-state");
 const {
+  completeFallbackTranslation,
+  failFallbackTranslation,
+  isFallbackTranslationCandidate,
   parseTranslationRequest,
+  targetLanguageFor,
   translatedTextFromResponse
 } = require("./translation");
 
@@ -46,6 +51,19 @@ function getTranslationClient() {
 
 function translationProjectId() {
   return process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || "memo-e366f";
+}
+
+async function requestCloudTranslation(input) {
+  const client = getTranslationClient();
+  const [response] = await client.translateText({
+    parent:`projects/${translationProjectId()}/locations/global`,
+    contents:[input.text],
+    mimeType:"text/plain",
+    sourceLanguageCode:input.sourceLanguageCode,
+    targetLanguageCode:input.targetLanguageCode
+  });
+
+  return translatedTextFromResponse(response);
 }
 
 function authEmail(auth) {
@@ -80,7 +98,7 @@ function requireMediaKey(value) {
   return value;
 }
 
-exports.translateText = onCall({ timeoutSeconds:15 }, async request => {
+exports.translateText = onCall({ timeoutSeconds:5 }, async request => {
   const email = requireMember(request.auth);
   let input;
 
@@ -91,17 +109,8 @@ exports.translateText = onCall({ timeoutSeconds:15 }, async request => {
   }
 
   try {
-    const client = getTranslationClient();
-    const [response] = await client.translateText({
-      parent:`projects/${translationProjectId()}/locations/global`,
-      contents:[input.text],
-      mimeType:"text/plain",
-      sourceLanguageCode:input.sourceLanguageCode,
-      targetLanguageCode:input.targetLanguageCode
-    });
-
     return {
-      translation:translatedTextFromResponse(response)
+      translation:await requestCloudTranslation(input)
     };
   } catch (err) {
     console.error("[translateText] Cloud Translation 호출 실패", {
@@ -111,6 +120,77 @@ exports.translateText = onCall({ timeoutSeconds:15 }, async request => {
     });
 
     throw new HttpsError("unavailable", "번역 서비스에 연결하지 못했습니다.");
+  }
+});
+
+exports.fillMissingTranslation = onValueCreated({
+  ref:`/${ROOM_ID}/messages/{messageId}`,
+  instance:"memo-e366f-default-rtdb",
+  region:"asia-southeast1",
+  retry:false,
+  timeoutSeconds:30,
+  maxInstances:3,
+  memory:"256MiB"
+}, async event => {
+  const messageId = event.params.messageId;
+  const messageRef = getDatabase().ref(`${ROOM_ID}/messages/${messageId}`);
+  const currentSnapshot = await messageRef.get();
+  const message = currentSnapshot.val();
+
+  if (!isFallbackTranslationCandidate(message)) return;
+
+  const input = parseTranslationRequest({
+    text:message.text,
+    sourceLanguageCode:message.lang,
+    targetLanguageCode:targetLanguageFor(message.lang)
+  });
+
+  let translation;
+
+  try {
+    translation = await requestCloudTranslation(input);
+  } catch (err) {
+    const failedAt = Date.now();
+
+    try {
+      await messageRef.transaction(current =>
+        failFallbackTranslation(current, failedAt)
+      );
+    } catch (updateErr) {
+      console.error("[fillMissingTranslation] 실패 상태 저장 오류", {
+        messageId,
+        code:updateErr?.code || null,
+        message:updateErr?.message || "unknown"
+      });
+      throw updateErr;
+    }
+
+    console.error("[fillMissingTranslation] Cloud Translation 호출 실패", {
+      messageId,
+      code:err?.code || null,
+      message:err?.message || "unknown"
+    });
+
+    return;
+  }
+
+  try {
+    const translatedAt = Date.now();
+    const result = await messageRef.transaction(current =>
+      completeFallbackTranslation(current, translation, translatedAt)
+    );
+
+    console.info("[fillMissingTranslation] 처리 완료", {
+      messageId,
+      committed:result.committed
+    });
+  } catch (err) {
+    console.error("[fillMissingTranslation] 번역 결과 저장 오류", {
+      messageId,
+      code:err?.code || null,
+      message:err?.message || "unknown"
+    });
+    throw err;
   }
 });
 

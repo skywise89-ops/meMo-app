@@ -416,6 +416,15 @@ body.hide-translations .msg-translation {
   text-align:right;
 }
 
+.msg-translation.translation-pending {
+  opacity:.7;
+  font-style:italic;
+}
+
+.msg-translation.translation-failed {
+  opacity:.75;
+}
+
 .msg-time {
   font-size:.68rem;
   color:var(--text2);
@@ -2316,7 +2325,7 @@ const cloudFunctions = getFunctions(app, "asia-northeast3");
 const deleteAlbumMediaCall = httpsCallable(cloudFunctions, "deleteAlbumMedia");
 const restoreAlbumMediaCall = httpsCallable(cloudFunctions, "restoreAlbumMedia");
 const createVoiceMessageCall = httpsCallable(cloudFunctions, "createVoiceMessage");
-const translateTextCall = httpsCallable(cloudFunctions, "translateText", { timeout:15000 });
+const translateTextCall = httpsCallable(cloudFunctions, "translateText", { timeout:6000 });
 
 let messaging = null;
 try {
@@ -2363,6 +2372,7 @@ let voiceState = "idle";
 let voicePendingUpload = null;
 let voiceRequestId = 0;
 let messageSendQueue = Promise.resolve();
+let clientTranslationRetryAt = 0;
 
 const seenKeys = new Set();
 window._loadedMessages = {};
@@ -3220,19 +3230,26 @@ async function translate(text, src, tgt) {
 
 async function sendQueuedTextMessage(message) {
   let translation = null;
+  let translationStatus = "pending";
+  const shouldTryClientTranslation = Date.now() >= clientTranslationRetryAt;
 
-  try {
-    translation = await translate(
-      message.text,
-      message.lang,
-      message.lang === "ko" ? "ja" : "ko"
-    );
-  } catch (err) {
-    console.warn("[Translation] 공식 번역 실패", {
-      code:err?.code || null,
-      message:err?.message || "unknown"
-    });
-    showToast("번역에 실패해 원문으로 전송합니다.");
+  if (shouldTryClientTranslation) {
+    try {
+      translation = await translate(
+        message.text,
+        message.lang,
+        message.lang === "ko" ? "ja" : "ko"
+      );
+      translationStatus = "complete";
+      clientTranslationRetryAt = 0;
+    } catch (err) {
+      clientTranslationRetryAt = Date.now() + 60 * 1000;
+      console.warn("[Translation] 클라이언트 번역 실패, 서버 fallback 사용", {
+        code:err?.code || null,
+        message:err?.message || "unknown"
+      });
+      showToast("네트워크 문제로 서버에서 번역을 이어서 처리합니다.");
+    }
   }
 
   try {
@@ -3243,6 +3260,7 @@ async function sendQueuedTextMessage(message) {
       lang:message.lang,
       text:message.text,
       translation:translation || null,
+      translationStatus,
       type:"text",
       ts:Date.now(),
       ...(message.replyTo ? { replyTo:message.replyTo } : {})
@@ -3524,6 +3542,16 @@ function createMessageElement(msg, key) {
     translation.className = "msg-translation";
     translation.textContent = msg.translation;
     wrap.appendChild(translation);
+  } else if (msg.type === "text" && msg.translationStatus === "pending") {
+    const pending = document.createElement("div");
+    pending.className = "msg-translation translation-pending";
+    pending.textContent = "번역 중…";
+    wrap.appendChild(pending);
+  } else if (msg.type === "text" && msg.translationStatus === "failed") {
+    const failed = document.createElement("div");
+    failed.className = "msg-translation translation-failed";
+    failed.textContent = "번역을 불러오지 못했습니다.";
+    wrap.appendChild(failed);
   }
 
   const time = document.createElement("div");

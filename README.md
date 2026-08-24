@@ -41,6 +41,14 @@
 - 신규 보관함 항목에 번역문 보존
 - 과거 번역 누락 메시지는 변경하거나 재번역하지 않음
 
+## v4.1.1 개선
+
+- 정상 네트워크에서는 기존처럼 원문과 번역문을 함께 저장
+- 클라이언트 번역 요청이 서버에 도달하지 못하면 신규 메시지만 RTDB trigger로 번역 보충
+- 첫 네트워크 실패 후 60초간 client callable을 건너뛰어 연속 전송 지연 방지
+- fallback 처리 중·실패 상태를 채팅에 표시
+- 과거 `translation:null` 메시지는 조회하거나 변경하지 않음
+
 ## 검사
 
 ```bash
@@ -53,7 +61,7 @@ npm test
 
 ```bash
 npx firebase-tools@15.25.1 deploy --only database,storage --project memo-e366f
-npx firebase-tools@15.25.1 deploy --only functions:translateText,functions:deleteAlbumMedia,functions:restoreAlbumMedia,functions:createVoiceMessage,functions:purgeExpiredMedia,functions:cleanupOrphanVoiceUploads --project memo-e366f
+npx firebase-tools@15.25.1 deploy --only functions:translateText,functions:fillMissingTranslation,functions:deleteAlbumMedia,functions:restoreAlbumMedia,functions:createVoiceMessage,functions:purgeExpiredMedia,functions:cleanupOrphanVoiceUploads --project memo-e366f
 ```
 
 기존 `sendPushOnMessage`는 별도 운영 자산이다. 함수 전체 배포는 이를 삭제 후보로 만들 수 있으므로 위 함수 목록을 유지한다. 음성 메시지 알림 문구가 필요하면 발송 서버에서 `type: audio`를 `🎙️ 음성 메시지`로 처리해야 한다.
