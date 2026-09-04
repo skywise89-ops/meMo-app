@@ -4,7 +4,7 @@
 
 ## 주요 구성
 
-- `index.html`: UI, Firebase Auth/Realtime Database/Storage 연동, 채팅·앨범·검색·버킷·보관함
+- `index.html`: UI, Firebase Auth/Realtime Database/Storage 연동, 채팅·앨범·좋아요·검색·버킷·보관함
 - `app-core.js`: 검색 정규화, 앨범 날짜, 영상 용량 검증 등 테스트 가능한 순수 로직
 - `firebase-messaging-sw.js`: FCM 백그라운드 알림과 중복 방지
 - `manifest.json`: PWA 설치 정보
@@ -48,6 +48,15 @@
 - 첫 네트워크 실패 후 60초간 client callable을 건너뛰어 연속 전송 지연 방지
 - fallback 처리 중·실패 상태를 채팅에 표시
 - 과거 `translation:null` 메시지는 조회하거나 변경하지 않음
+
+## v4.2 개선
+
+- 사진·영상 개인 좋아요(즐겨찾기). 라이트박스(확대 보기) 좌상단 ♡ 버튼으로 토글
+- 좋아요는 계정별로 `favorites/$name`에 저장되며 상대방에게는 보이지 않음
+- 앨범 툴바의 `♥ 좋아요` 토글로 좋아요한 항목만 모아 보기(월·유형 필터와 함께 적용)
+- 앨범 썸네일 좌상단에 좋아요 표시 배지
+- 관리자 앨범 삭제 시 좋아요를 함께 정리하고, 휴지통 복구 시 원래대로 되돌림
+- RTDB Rules로 본인 계정 경로만 쓰기 허용, 값은 타임스탬프(number)만 저장
 
 ## 검사
 

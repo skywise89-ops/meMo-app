@@ -767,6 +767,23 @@ body.hide-translations .msg-translation {
   white-space:nowrap;
 }
 
+.album-fav-toggle {
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--surface2);
+  color:var(--text2);
+  padding:8px 10px;
+  font-size:.76rem;
+  cursor:pointer;
+  white-space:nowrap;
+}
+
+.album-fav-toggle.on {
+  border-color:#ff5f7e;
+  background:rgba(255,95,126,.16);
+  color:#ff5f7e;
+}
+
 .album-grid {
   flex:1;
   min-height:0;
@@ -826,6 +843,18 @@ body.hide-translations .msg-translation {
   width:32px;
   height:32px;
   fill:rgba(255,255,255,.9);
+}
+
+.album-item .album-fav-badge {
+  position:absolute;
+  top:6px;
+  left:6px;
+  color:#ff5f7e;
+  font-size:.95rem;
+  line-height:1;
+  pointer-events:none;
+  text-shadow:0 1px 3px rgba(0,0,0,.6);
+  z-index:3;
 }
 
 .album-source-btn {
@@ -1197,6 +1226,35 @@ body.hide-translations .msg-translation {
   cursor:pointer;
   z-index:101;
   padding:8px;
+}
+
+#lightbox .lb-fav {
+  position:absolute;
+  top:52px;
+  left:20px;
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.28);
+  background:rgba(0,0,0,.4);
+  color:rgba(255,255,255,.9);
+  font-size:1.45rem;
+  line-height:1;
+  padding:0;
+  cursor:pointer;
+  z-index:101;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+#lightbox .lb-fav.on {
+  color:#ff5f7e;
+  border-color:rgba(255,95,126,.6);
+}
+
+#lightbox .lb-fav[hidden] {
+  display:none;
 }
 
 #lightbox .lb-nav {
@@ -2004,6 +2062,7 @@ body.hide-translations .msg-translation {
           <option value="image">사진만</option>
           <option value="video">영상만</option>
         </select>
+        <button class="album-fav-toggle" id="albumFavoriteFilter" type="button" aria-pressed="false" onclick="toggleAlbumFavoriteFilter()">♥ 좋아요</button>
         <button class="album-trash-btn" id="albumTrashBtn" type="button" onclick="openTrash()" hidden>휴지통</button>
         <span class="album-count" id="albumCount">0개</span>
       </div>
@@ -2159,6 +2218,7 @@ body.hide-translations .msg-translation {
 
 <div id="lightbox">
   <button class="close-lb" onclick="closeLightbox()">✕</button>
+  <button class="lb-fav" id="lbFavorite" type="button" aria-pressed="false" aria-label="좋아요" onclick="toggleLightboxFavorite()" hidden>♡</button>
   <button class="lb-nav lb-prev" id="lbPrev" onclick="lightboxNav(-1)">‹</button>
   <button class="lb-nav lb-next" id="lbNext" onclick="lightboxNav(1)">›</button>
   <div id="lightboxContent"></div>
@@ -2202,6 +2262,9 @@ import {
   SEARCH_RESULT_LIMIT,
   albumMonthKey,
   audioFileExtension,
+  buildMediaKeyIndex,
+  favoriteKeySet,
+  filterAlbumMedia,
   formatAudioDuration,
   isAudioExpired,
   mediaKind,
@@ -2355,6 +2418,9 @@ let loadingOlder = false;
 let hasMoreOlder = true;
 let initialLoadTimer = null;
 let albumMedia = [];
+let albumMediaKeyByUrl = new Map();
+let favoriteMediaKeys = new Set();
+let albumFavoriteOnly = false;
 let trashMedia = [];
 
 let voiceRecorder = null;
@@ -2919,6 +2985,7 @@ function enterRoom() {
   listenTodos();
   listenSignaling();
   listenArchive();
+  listenFavorites();
 
   const avatarEl = document.getElementById("myAvatarDisplay");
 
@@ -4062,9 +4129,42 @@ function updateAlbum(media) {
         .sort((a, b) => b.ts - a.ts)
     : [];
 
+  albumMediaKeyByUrl = buildMediaKeyIndex(albumMedia);
+
   refreshAlbumMonthOptions();
   window.renderAlbum();
+  updateLightboxFavorite();
 }
+
+function favoritePath() {
+  return `${ROOM_ID}/favorites/${me.name}`;
+}
+
+function listenFavorites() {
+  onValue(ref(db, favoritePath()), snap => {
+    favoriteMediaKeys = favoriteKeySet(snap.val());
+    updateAlbumFavoriteToggle();
+    window.renderAlbum();
+    updateLightboxFavorite();
+  });
+}
+
+function updateAlbumFavoriteToggle() {
+  const button = document.getElementById("albumFavoriteFilter");
+  if (!button) return;
+
+  button.classList.toggle("on", albumFavoriteOnly);
+  button.setAttribute("aria-pressed", albumFavoriteOnly ? "true" : "false");
+  button.textContent = favoriteMediaKeys.size
+    ? `♥ 좋아요 ${favoriteMediaKeys.size}`
+    : "♥ 좋아요";
+}
+
+window.toggleAlbumFavoriteFilter = function() {
+  albumFavoriteOnly = !albumFavoriteOnly;
+  updateAlbumFavoriteToggle();
+  window.renderAlbum();
+};
 
 function refreshAlbumMonthOptions() {
   const select = document.getElementById("albumMonthFilter");
@@ -4089,17 +4189,24 @@ window.renderAlbum = function() {
   const month = document.getElementById("albumMonthFilter").value;
   const type = document.getElementById("albumTypeFilter").value;
 
-  const filtered = albumMedia.filter(item => {
-    const monthMatches = month === "all" || albumMonthKey(item.ts) === month;
-    const typeMatches = type === "all" || item.type === type;
-    return monthMatches && typeMatches;
+  const filtered = filterAlbumMedia(albumMedia, {
+    month,
+    type,
+    favoritesOnly:albumFavoriteOnly,
+    favorites:favoriteMediaKeys
   });
 
-  document.getElementById("albumCount").textContent = `${filtered.length}개`;
+  document.getElementById("albumCount").textContent = albumFavoriteOnly
+    ? `♥ ${filtered.length}개`
+    : `${filtered.length}개`;
   grid.innerHTML = "";
 
   if (!filtered.length) {
-    grid.innerHTML = `<div class="album-empty" style="height:300px">조건에 맞는 미디어가 없어요</div>`;
+    grid.innerHTML = `<div class="album-empty" style="height:300px">${
+      albumFavoriteOnly
+        ? "좋아요한 사진이 없어요. 사진을 크게 열어 ♡를 눌러보세요."
+        : "조건에 맞는 미디어가 없어요"
+    }</div>`;
     return;
   }
 
@@ -4160,6 +4267,14 @@ function createAlbumItem(item, gallery) {
     const index = gallery.findIndex(entry => entry.key === item.key);
     window.openLightbox(item.type, item.url, gallery, Math.max(index, 0));
   };
+
+  if (favoriteMediaKeys.has(item.key)) {
+    const badge = document.createElement("span");
+    badge.className = "album-fav-badge";
+    badge.textContent = "♥";
+    badge.setAttribute("aria-hidden", "true");
+    div.appendChild(badge);
+  }
 
   if (item.messageKey) {
     const source = document.createElement("button");
@@ -4287,10 +4402,55 @@ document.getElementById("trashModal").addEventListener("click", event => {
 });
 
 let lightboxGallery = null;
+let lightboxMediaUrl = "";
+let lightboxMediaKey = "";
+
+function updateLightboxFavorite() {
+  const button = document.getElementById("lbFavorite");
+  if (!button) return;
+
+  lightboxMediaKey = lightboxMediaUrl
+    ? (albumMediaKeyByUrl.get(lightboxMediaUrl) || "")
+    : "";
+
+  if (!me || !lightboxMediaKey) {
+    button.hidden = true;
+    return;
+  }
+
+  const liked = favoriteMediaKeys.has(lightboxMediaKey);
+
+  button.hidden = false;
+  button.classList.toggle("on", liked);
+  button.textContent = liked ? "♥" : "♡";
+  button.setAttribute("aria-pressed", liked ? "true" : "false");
+  button.setAttribute("aria-label", liked ? "좋아요 취소" : "좋아요");
+}
+
+window.toggleLightboxFavorite = async function() {
+  if (!me || !lightboxMediaKey) return;
+
+  const button = document.getElementById("lbFavorite");
+  const mediaKey = lightboxMediaKey;
+  const liked = favoriteMediaKeys.has(mediaKey);
+
+  if (button) button.disabled = true;
+
+  try {
+    await set(ref(db, `${favoritePath()}/${mediaKey}`), liked ? null : Date.now());
+    showToast(liked ? "좋아요를 취소했어요" : "좋아요에 담았어요 ♥");
+  } catch (err) {
+    console.error("[Favorite toggle]", err);
+    showToast("좋아요를 저장하지 못했어요. 다시 시도해주세요.");
+  } finally {
+    if (button) button.disabled = false;
+  }
+};
 
 function renderLightboxItem(type, url) {
   const content = document.getElementById("lightboxContent");
   content.innerHTML = "";
+  lightboxMediaUrl = url || "";
 
   if (type === "image") {
     const img = document.createElement("img");
@@ -4331,6 +4491,7 @@ window.openLightbox = function(type, url, items, index = 0) {
 
   renderLightboxItem(type, url);
   updateLightboxNav();
+  updateLightboxFavorite();
 
   const lb = document.getElementById("lightbox");
   lb.classList.add("open");
@@ -4344,6 +4505,9 @@ window.closeLightbox = function() {
   document.getElementById("lightbox").classList.remove("open");
   document.getElementById("lightboxContent").innerHTML = "";
   lightboxGallery = null;
+  lightboxMediaUrl = "";
+  lightboxMediaKey = "";
+  updateLightboxFavorite();
 };
 
 window.lightboxNav = function(direction) {
@@ -4358,6 +4522,7 @@ window.lightboxNav = function(direction) {
 
   renderLightboxItem(item.type, item.url);
   updateLightboxNav();
+  updateLightboxFavorite();
 };
 
 document.addEventListener("keydown", event => {

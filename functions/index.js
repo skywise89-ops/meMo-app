@@ -251,14 +251,17 @@ exports.deleteAlbumMedia = onCall(async request => {
     ? await roomRef.child(`todos/${media.sourceTodoKey}`).get()
     : null;
   const archiveSnapshot = await roomRef.child("archive").get();
+  const favoritesSnapshot = await roomRef.child("favorites").get();
   const messageBefore = messageSnapshot?.exists() ? messageSnapshot.val() : null;
   const todoBefore = todoSnapshot?.exists() ? todoSnapshot.val() : null;
   const archiveBefore = {};
+  const favoritesBefore = {};
   const trash = {
     media:{ ...normalizedMedia, storagePath },
     messageBefore,
     todoBefore,
     archiveBefore,
+    favoritesBefore,
     deletedAt:now,
     deletedBy:email,
     expiresAt:now + MEDIA_TRASH_RETENTION_MS,
@@ -298,6 +301,14 @@ exports.deleteAlbumMedia = onCall(async request => {
         updates[`archive/${archiveOwner}/${archiveKey}`] = tombstone;
       }
     }
+  }
+
+  for (const [owner, entries] of Object.entries(favoritesSnapshot.val() || {})) {
+    const savedAt = entries?.[mediaKey];
+    if (savedAt === undefined || savedAt === null) continue;
+
+    favoritesBefore[owner] = savedAt;
+    updates[`favorites/${owner}/${mediaKey}`] = null;
   }
 
   await roomRef.update(updates);
@@ -354,6 +365,11 @@ exports.restoreAlbumMedia = onCall(async request => {
         updates[`todos/${media.sourceTodoKey}/proofUrl`] = media.url;
         updates[`todos/${media.sourceTodoKey}/proofType`] = media.type;
       }
+    }
+
+    for (const [favoriteOwner, savedAt] of Object.entries(trash.favoritesBefore || {})) {
+      if (savedAt === undefined || savedAt === null) continue;
+      updates[`favorites/${favoriteOwner}/${mediaKey}`] = savedAt;
     }
 
     for (const [archiveOwner, entries] of Object.entries(trash.archiveBefore || {})) {

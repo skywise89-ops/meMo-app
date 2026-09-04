@@ -1,4 +1,4 @@
-export const APP_VERSION = "4.1.1";
+export const APP_VERSION = "4.2.0";
 export const MAX_VIDEO_BYTES = 5 * 1024 * 1024;
 export const MAX_AUDIO_BYTES = 2 * 1024 * 1024;
 export const MAX_AUDIO_DURATION_MS = 60 * 1000;
@@ -22,6 +22,40 @@ export function normalizeSearchText(value) {
 export function albumMonthKey(ts) {
   const d = new Date(ts || Date.now());
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+export function favoriteKeySet(value) {
+  if (!value || typeof value !== "object") return new Set();
+
+  return new Set(
+    Object.entries(value)
+      .filter(([key, ts]) => Boolean(key) && ts !== null && ts !== undefined && ts !== false)
+      .map(([key]) => key)
+  );
+}
+
+export function buildMediaKeyIndex(items) {
+  const index = new Map();
+
+  (Array.isArray(items) ? items : []).forEach(item => {
+    if (item?.url && item?.key && !index.has(item.url)) index.set(item.url, item.key);
+  });
+
+  return index;
+}
+
+export function filterAlbumMedia(items, options = {}) {
+  const month = options.month || "all";
+  const type = options.type || "all";
+  const favoritesOnly = Boolean(options.favoritesOnly);
+  const favorites = options.favorites instanceof Set ? options.favorites : new Set();
+
+  return (Array.isArray(items) ? items : []).filter(item => {
+    if (month !== "all" && albumMonthKey(item?.ts) !== month) return false;
+    if (type !== "all" && item?.type !== type) return false;
+    if (favoritesOnly && !favorites.has(item?.key)) return false;
+    return true;
+  });
 }
 
 export function mediaKind(file) {

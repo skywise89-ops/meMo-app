@@ -13,6 +13,9 @@ import {
   MAX_VIDEO_BYTES,
   albumMonthKey,
   audioFileExtension,
+  buildMediaKeyIndex,
+  favoriteKeySet,
+  filterAlbumMedia,
   formatAudioDuration,
   isAudioExpired,
   mediaKind,
@@ -147,4 +150,57 @@ test("admin deletion and voice expiration are wired end to end", () => {
   assert.match(storageRules, /allow update, delete: if false/);
   assert.match(functionsSource, /exports\.purgeExpiredMedia = onSchedule/);
   assert.match(functionsSource, /schedule:"every 15 minutes"/);
+});
+
+test("favorite filtering is deterministic and per-account", () => {
+  const august = new Date(2026, 7, 2).getTime();
+  const july = new Date(2026, 6, 2).getTime();
+  const items = [
+    { key:"a", ts:august, type:"image", url:"https://x/a.jpg" },
+    { key:"b", ts:august, type:"video", url:"https://x/b.mp4" },
+    { key:"c", ts:july, type:"image", url:"https://x/c.jpg" }
+  ];
+  const favorites = favoriteKeySet({ a:1, c:2, d:null });
+
+  assert.deepEqual([...favorites], ["a", "c"]);
+  assert.deepEqual([...favoriteKeySet(null)], []);
+
+  assert.deepEqual(
+    filterAlbumMedia(items, { favoritesOnly:true, favorites }).map(item => item.key),
+    ["a", "c"]
+  );
+  assert.deepEqual(
+    filterAlbumMedia(items, { favoritesOnly:true, favorites, type:"image", month:albumMonthKey(august) })
+      .map(item => item.key),
+    ["a"]
+  );
+  assert.deepEqual(filterAlbumMedia(items, {}).map(item => item.key), ["a", "b", "c"]);
+  assert.deepEqual(filterAlbumMedia(items, { favoritesOnly:true }).map(item => item.key), []);
+
+  const index = buildMediaKeyIndex(items);
+  assert.equal(index.get("https://x/b.mp4"), "b");
+  assert.equal(index.get("https://x/none.jpg"), undefined);
+  assert.equal(buildMediaKeyIndex(null).size, 0);
+});
+
+test("photo favorites are wired through album and lightbox", () => {
+  const rules = JSON.parse(databaseRules);
+  const favorites = rules.rules.memo_private_room.favorites.$name;
+
+  assert.match(favorites[".read"], /\$name == 'Kevin'/);
+  assert.match(favorites[".write"], /\$name == 'Momo'/);
+  assert.equal(favorites.$mediaId[".validate"], "newData.isNumber()");
+
+  assert.match(html, /id="albumFavoriteFilter"/);
+  assert.match(html, /id="lbFavorite"/);
+  assert.match(html, /window\.toggleAlbumFavoriteFilter = function/);
+  assert.match(html, /window\.toggleLightboxFavorite = async function/);
+  assert.match(html, /function listenFavorites\(\)/);
+  assert.match(html, /listenFavorites\(\);/);
+  assert.match(html, /\$\{ROOM_ID\}\/favorites\/\$\{me\.name\}/);
+  assert.match(html, /favoritesOnly:albumFavoriteOnly/);
+  assert.match(html, /album-fav-badge/);
+  assert.match(html, /albumMediaKeyByUrl = buildMediaKeyIndex\(albumMedia\)/);
+  assert.match(functionsSource, /updates\[`favorites\/\$\{owner\}\/\$\{mediaKey\}`\] = null/);
+  assert.match(functionsSource, /trash\.favoritesBefore/);
 });

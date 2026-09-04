@@ -41,6 +41,15 @@
         ".read": "auth != null && auth.token.email_verified == true && (auth.token.email == 'fromkevinjung@gmail.com' || auth.token.email == 'momo.021118@gmail.com')",
         ".write": "auth != null && auth.token.email_verified == true && (auth.token.email == 'fromkevinjung@gmail.com' || auth.token.email == 'momo.021118@gmail.com')"
       },
+      "favorites": {
+        "$name": {
+          ".read": "auth != null && auth.token.email_verified == true && ((auth.token.email == 'fromkevinjung@gmail.com' && $name == 'Kevin') || (auth.token.email == 'momo.021118@gmail.com' && $name == 'Momo'))",
+          ".write": "auth != null && auth.token.email_verified == true && ((auth.token.email == 'fromkevinjung@gmail.com' && $name == 'Kevin') || (auth.token.email == 'momo.021118@gmail.com' && $name == 'Momo'))",
+          "$mediaId": {
+            ".validate": "newData.isNumber()"
+          }
+        }
+      },
       "archive": {
         "$name": {
           ".read": "auth != null && auth.token.email_verified == true && ((auth.token.email == 'fromkevinjung@gmail.com' && $name == 'Kevin') || (auth.token.email == 'momo.021118@gmail.com' && $name == 'Momo'))",
