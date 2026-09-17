@@ -2,7 +2,7 @@
   "name": "memo-private-pwa",
   "private": true,
   "type": "module",
-  "version": "4.2.4",
+  "version": "4.3.0",
   "scripts": {
     "test": "node --test tests/app.test.mjs && npm --prefix functions test"
   }

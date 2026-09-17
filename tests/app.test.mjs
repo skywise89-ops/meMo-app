@@ -26,6 +26,7 @@ import {
   normalizedVideoFileName,
   normalizeSearchText,
   selectAudioMimeType,
+  timelineWindowAround,
   validateAudioRecording,
   validateMediaFile,
   videoContentType
@@ -64,11 +65,11 @@ test("service worker parses", () => {
 });
 
 test("app shell updates bypass stale GitHub Pages caches", () => {
-  assert.match(html, /data-app-shell-version="4\.2\.4"/);
-  assert.match(html, /from "\.\/app-core\.js\?v=4\.2\.4"/);
-  assert.match(html, /firebase-messaging-sw\.js\?v=4\.2\.4/);
+  assert.match(html, /data-app-shell-version="4\.3\.0"/);
+  assert.match(html, /from "\.\/app-core\.js\?v=4\.3\.0"/);
+  assert.match(html, /firebase-messaging-sw\.js\?v=4\.3\.0/);
   assert.match(html, /updateViaCache:"none"/);
-  assert.match(worker, /const APP_VERSION = '4\.2\.4'/);
+  assert.match(worker, /const APP_VERSION = '4\.3\.0'/);
   assert.match(worker, /e\.request\.mode === 'navigate'/);
   assert.match(worker, /url\.pathname\.endsWith\('\/app-core\.js'\)/);
   assert.match(worker, /fetch\(e\.request, \{ cache:'no-store' \}\)/);
@@ -140,9 +141,9 @@ test("search normalization and album month grouping are deterministic", () => {
   assert.match(albumMonthKey(new Date(2026, 7, 2).getTime()), /^2026-08$/);
 });
 
-test("anchored chat pages merge in key order without duplicates", () => {
-  assert.equal(CHAT_PAGE_SIZE, 30);
-  assert.equal(CHAT_ANCHOR_SIDE, 30);
+test("complete chat timeline windows remain ordered and pageable", () => {
+  assert.equal(CHAT_PAGE_SIZE, 100);
+  assert.equal(CHAT_ANCHOR_SIDE, 100);
 
   const realPushKeys = [
     "-P0b7H6RW3XqdgRltK3M",
@@ -175,22 +176,39 @@ test("anchored chat pages merge in key order without duplicates", () => {
   );
   assert.equal(merged[2].msg.text, "new p");
   assert.deepEqual(mergeMessageEntries(null, [{ key:"", msg:{} }]), []);
+
+  const timelineState = timelineWindowAround(
+    realPushKeys.map(key => ({ key, msg:{ text:key } })),
+    realPushKeys[3],
+    2
+  );
+  assert.deepEqual(timelineState.windowEntries.map(entry => entry.key), realPushKeys.slice(1, 6));
+  assert.equal(timelineState.start, 1);
+  assert.equal(timelineState.end, 6);
+  assert.equal(timelineState.hasMoreOlder, true);
+  assert.equal(timelineState.hasMoreNewer, true);
+
+  const missingState = timelineWindowAround(timelineState.timeline, "missing", 2);
+  assert.equal(missingState.start, -1);
+  assert.deepEqual(missingState.windowEntries, []);
 });
 
-test("search and album source jump into the chat timeline", () => {
+test("search and album source anchor a complete paged chat timeline", () => {
   assert.match(html, /button\.onclick = \(\) => window\.jumpToMessage\(key\)/);
   assert.match(html, /window\.jumpToMessage = async function/);
-  assert.match(html, /endAt\(key\), limitToLast\(anchorLimit\)/);
-  assert.match(html, /startAt\(key\), limitToFirst\(anchorLimit\)/);
-  assert.match(html, /orderByKey\(\), limitToLast\(1\)/);
-  assert.match(html, /hasMoreNewer = Boolean\(latestKey && windowNewestKey !== latestKey\)/);
+  assert.match(html, /timelineEntries\.push\(\.\.\.page\)/);
+  assert.match(html, /searchTimelineEntries = mergeMessageEntries\(timelineEntries\)/);
+  assert.match(html, /timelineWindowAround\(timeline, key, CHAT_ANCHOR_SIDE\)/);
+  assert.match(html, /activeTimelineEntries\.slice\(nextStart, activeTimelineStart\)/);
+  assert.match(html, /activeTimelineEntries\.slice\(activeTimelineEnd, nextEnd\)/);
+  assert.match(html, /fetchCompleteMessageTimeline\(navigationRunId\)/);
   assert.match(html, /async function loadNewerMessages\(\)/);
   assert.match(html, /startAfter\(newestKey\)/);
   assert.match(html, /window\.returnToLatestMessages = async function/);
   assert.match(html, /message-jump-target/);
   assert.match(html, /window\.switchTab\("chat"\);[\s\S]*?window\.jumpToMessage\(item\.messageKey\)/);
   assert.doesNotMatch(html, /openSearchContext|searchContextList/);
-  assert.doesNotMatch(html, /\[beforeEntries, afterEntries, cachedLatestEntries\(\)\]/);
+  assert.doesNotMatch(html, /endAt\(key\)|startAt\(key\)/);
 });
 
 test("voice message limits and expiration are deterministic", () => {

@@ -1,4 +1,4 @@
-export const APP_VERSION = "4.2.4";
+export const APP_VERSION = "4.3.0";
 export const MAX_VIDEO_BYTES = 5 * 1024 * 1024;
 export const MAX_AUDIO_BYTES = 2 * 1024 * 1024;
 export const MAX_AUDIO_DURATION_MS = 60 * 1000;
@@ -6,8 +6,8 @@ export const AUDIO_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 export const ALBUM_ADMIN_EMAIL = "fromkevinjung@gmail.com";
 export const SEARCH_PAGE_SIZE = 200;
 export const SEARCH_RESULT_LIMIT = 300;
-export const CHAT_PAGE_SIZE = 30;
-export const CHAT_ANCHOR_SIDE = 30;
+export const CHAT_PAGE_SIZE = 100;
+export const CHAT_ANCHOR_SIDE = 100;
 
 if (typeof window !== "undefined" && typeof document !== "undefined") {
   const shellVersion = document.documentElement?.dataset?.appShellVersion || "";
@@ -59,6 +59,35 @@ export function mergeMessageEntries(...pages) {
   return [...messages.entries()]
     .sort((a, b) => compareFirebasePushKeys(a[0], b[0]))
     .map(([key, msg]) => ({ key, msg }));
+}
+
+export function timelineWindowAround(entries, targetKey, sideSize = CHAT_ANCHOR_SIDE) {
+  const timeline = mergeMessageEntries(entries);
+  const targetIndex = timeline.findIndex(entry => entry.key === targetKey);
+
+  if (targetIndex < 0) {
+    return {
+      timeline,
+      windowEntries:[],
+      start:-1,
+      end:-1,
+      hasMoreOlder:false,
+      hasMoreNewer:false
+    };
+  }
+
+  const side = Math.max(0, Math.floor(Number(sideSize) || 0));
+  const start = Math.max(0, targetIndex - side);
+  const end = Math.min(timeline.length, targetIndex + side + 1);
+
+  return {
+    timeline,
+    windowEntries:timeline.slice(start, end),
+    start,
+    end,
+    hasMoreOlder:start > 0,
+    hasMoreNewer:end < timeline.length
+  };
 }
 
 export function albumMonthKey(ts) {

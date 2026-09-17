@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko" data-app-shell-version="4.2.4">
+<html lang="ko" data-app-shell-version="4.3.0">
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -2221,11 +2221,12 @@ import {
   mergeMessageEntries,
   normalizedVideoFileName,
   normalizeSearchText,
+  timelineWindowAround,
   selectAudioMimeType,
   validateAudioRecording,
   validateMediaFile,
   videoContentType
-} from "./app-core.js?v=4.2.4";
+} from "./app-core.js?v=4.3.0";
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
@@ -2249,9 +2250,7 @@ import {
   serverTimestamp,
   query,
   orderByKey,
-  startAt,
   startAfter,
-  endAt,
   limitToFirst,
   limitToLast,
   endBefore,
@@ -2375,6 +2374,9 @@ let chatHistoryMode = false;
 let chatNavigationRunId = 0;
 let jumpHighlightTimer = null;
 let returningToLatest = false;
+let activeTimelineEntries = [];
+let activeTimelineStart = -1;
+let activeTimelineEnd = -1;
 let initialLoadTimer = null;
 let albumMedia = [];
 let albumMediaKeyByUrl = new Map();
@@ -2443,7 +2445,7 @@ window.addEventListener("focus", () => {
 });
 
 const swReadyPromise = ("serviceWorker" in navigator)
-  ? navigator.serviceWorker.register("./firebase-messaging-sw.js?v=4.2.4", {
+  ? navigator.serviceWorker.register("./firebase-messaging-sw.js?v=4.3.0", {
       updateViaCache:"none"
     })
       .then(reg => {
@@ -3043,8 +3045,12 @@ function enterRoom() {
     const key = snap.key;
     const msg = snap.val();
     const el = messageElementForKey(key);
+    const timelineIndex = activeTimelineEntries.findIndex(entry => entry.key === key);
+    const searchTimelineIndex = searchTimelineEntries.findIndex(entry => entry.key === key);
 
     if (latestWindowMessages.has(key)) cacheLatestMessage(key, msg);
+    if (timelineIndex >= 0) activeTimelineEntries[timelineIndex] = { key, msg };
+    if (searchTimelineIndex >= 0) searchTimelineEntries[searchTimelineIndex] = { key, msg };
     if (!el) return;
 
     window._loadedMessages[key] = msg;
@@ -3157,31 +3163,40 @@ async function loadOlderMessages() {
   const beforeTop = cm.scrollTop;
 
   try {
-    const messagesRef = ref(db, `${ROOM_ID}/messages`);
+    let children = [];
 
-    const olderQuery = query(
-      messagesRef,
-      orderByKey(),
-      endBefore(oldestKey),
-      limitToLast(CHAT_PAGE_SIZE)
-    );
-
-    const snapshot = await get(olderQuery);
-    if (navigationRunId !== chatNavigationRunId) return;
-
-    if (!snapshot.exists()) {
+    if (activeTimelineEntries.length && activeTimelineStart > 0) {
+      const nextStart = Math.max(0, activeTimelineStart - CHAT_PAGE_SIZE);
+      children = activeTimelineEntries.slice(nextStart, activeTimelineStart);
+      activeTimelineStart = nextStart;
+      hasMoreOlder = activeTimelineStart > 0;
+    } else if (activeTimelineEntries.length) {
       hasMoreOlder = false;
       return;
-    }
+    } else {
+      const messagesRef = ref(db, `${ROOM_ID}/messages`);
+      const olderQuery = query(
+        messagesRef,
+        orderByKey(),
+        endBefore(oldestKey),
+        limitToLast(CHAT_PAGE_SIZE)
+      );
+      const snapshot = await get(olderQuery);
+      if (navigationRunId !== chatNavigationRunId) return;
 
-    const children = snapshotMessageEntries(snapshot);
+      if (!snapshot.exists()) {
+        hasMoreOlder = false;
+        return;
+      }
+
+      children = snapshotMessageEntries(snapshot);
+      hasMoreOlder = children.length === CHAT_PAGE_SIZE;
+    }
 
     if (!children.length) {
       hasMoreOlder = false;
       return;
     }
-
-    hasMoreOlder = children.length === CHAT_PAGE_SIZE;
 
     const fragment = document.createDocumentFragment();
 
@@ -3221,6 +3236,22 @@ async function loadNewerMessages() {
   const navigationRunId = chatNavigationRunId;
 
   try {
+    if (activeTimelineEntries.length && activeTimelineEnd < activeTimelineEntries.length) {
+      const nextEnd = Math.min(activeTimelineEntries.length, activeTimelineEnd + CHAT_PAGE_SIZE);
+      const entries = activeTimelineEntries.slice(activeTimelineEnd, nextEnd);
+      activeTimelineEnd = nextEnd;
+      appendNewerEntries(entries);
+      hasMoreNewer = activeTimelineEnd < activeTimelineEntries.length;
+
+      if (!hasMoreNewer) {
+        appendNewerEntries(cachedLatestEntries().filter(entry => !newestKey || entry.key > newestKey));
+        chatHistoryMode = false;
+      }
+
+      updateScrollBottomButton();
+      return;
+    }
+
     const messagesRef = ref(db, `${ROOM_ID}/messages`);
     const newerQuery = query(
       messagesRef,
@@ -3268,6 +3299,9 @@ window.returnToLatestMessages = async function() {
       return;
     }
 
+    activeTimelineEntries = [];
+    activeTimelineStart = -1;
+    activeTimelineEnd = -1;
     chatHistoryMode = false;
     hasMoreNewer = false;
     hasMoreOlder = entries.length === 50;
@@ -5009,6 +5043,8 @@ let searchIdx = -1;
 let searchRunId = 0;
 let searchTimer = null;
 let searchTotalMatches = 0;
+let searchTimelineEntries = [];
+let searchScanning = false;
 
 window.toggleSearch = function() {
   const bar = document.getElementById("searchBar");
@@ -5060,10 +5096,13 @@ window.doSearch = async function() {
   const runId = ++searchRunId;
   let cursor = null;
   let scanned = 0;
+  const timelineEntries = [];
 
   searchMatches = [];
   searchIdx = -1;
   searchTotalMatches = 0;
+  searchTimelineEntries = [];
+  searchScanning = true;
   results.classList.add("show");
   results.innerHTML = `<div class="search-empty">전체 대화를 검색하는 중...</div>`;
   count.textContent = "검색 중";
@@ -5085,6 +5124,7 @@ window.doSearch = async function() {
 
       if (!page.length) break;
 
+      timelineEntries.push(...page);
       scanned += page.length;
       cursor = page[0].key;
 
@@ -5104,10 +5144,14 @@ window.doSearch = async function() {
     }
 
     if (runId !== searchRunId) return;
+    searchTimelineEntries = mergeMessageEntries(timelineEntries);
+    searchScanning = false;
     searchIdx = searchMatches.length ? 0 : -1;
     renderSearchResults(false, scanned);
   } catch (err) {
     if (runId !== searchRunId) return;
+    searchScanning = false;
+    searchTimelineEntries = [];
     console.error("전체 메시지 검색 실패:", err);
     count.textContent = "실패";
     results.innerHTML = `<div class="search-empty">검색하지 못했습니다. 연결을 확인해주세요.</div>`;
@@ -5132,6 +5176,8 @@ function renderSearchResults(isScanning, scanned = 0) {
       button.className = `search-result-item ${index === searchIdx ? "active" : ""}`;
       button.dataset.searchIndex = index;
       button.dataset.messageKey = key;
+      button.disabled = isScanning;
+      button.title = isScanning ? "전체 대화 검색이 끝나면 이동할 수 있습니다." : "원본 대화 위치로 이동";
       button.onclick = () => window.jumpToMessage(key);
 
       const meta = document.createElement("div");
@@ -5192,6 +5238,30 @@ function focusSearchResult() {
     `${searchIdx + 1}/${searchTotalMatches}건`;
 }
 
+async function fetchCompleteMessageTimeline(navigationRunId) {
+  const messagesRef = ref(db, `${ROOM_ID}/messages`);
+  const entries = [];
+  let cursor = null;
+
+  while (navigationRunId === chatNavigationRunId) {
+    const pageQuery = cursor
+      ? query(messagesRef, orderByKey(), endBefore(cursor), limitToLast(SEARCH_PAGE_SIZE))
+      : query(messagesRef, orderByKey(), limitToLast(SEARCH_PAGE_SIZE));
+    const snapshot = await get(pageQuery);
+    if (navigationRunId !== chatNavigationRunId) return null;
+
+    const page = snapshotMessageEntries(snapshot);
+    if (!page.length) break;
+
+    entries.push(...page);
+    cursor = page[0].key;
+    if (page.length < SEARCH_PAGE_SIZE) break;
+    await new Promise(resolve => setTimeout(resolve, 0));
+  }
+
+  return mergeMessageEntries(entries);
+}
+
 window.jumpToMessage = async function(key) {
   const navigationRunId = ++chatNavigationRunId;
   const existing = messageElementForKey(key);
@@ -5203,43 +5273,36 @@ window.jumpToMessage = async function(key) {
     return;
   }
 
-  const messagesRef = ref(db, `${ROOM_ID}/messages`);
-  const anchorLimit = CHAT_ANCHOR_SIDE + 1;
   const count = document.getElementById("searchCount");
   const selectedButton = [...document.querySelectorAll(".search-result-item")]
     .find(button => button.dataset.messageKey === key);
 
-  count.textContent = "이동 중";
+  count.textContent = searchScanning ? "검색 완료 대기" : "이동 중";
   if (selectedButton) selectedButton.disabled = true;
 
   try {
-    const [beforeSnap, afterSnap, latestSnap] = await Promise.all([
-      get(query(messagesRef, orderByKey(), endAt(key), limitToLast(anchorLimit))),
-      get(query(messagesRef, orderByKey(), startAt(key), limitToFirst(anchorLimit))),
-      get(query(messagesRef, orderByKey(), limitToLast(1)))
-    ]);
-    if (navigationRunId !== chatNavigationRunId) return;
+    let timeline = searchTimelineEntries;
 
-    const beforeEntries = snapshotMessageEntries(beforeSnap);
-    const afterEntries = snapshotMessageEntries(afterSnap);
-    const latestEntries = snapshotMessageEntries(latestSnap);
-    const hasTarget = beforeEntries.some(entry => entry.key === key) ||
-      afterEntries.some(entry => entry.key === key);
+    if (!timeline.some(entry => entry.key === key)) {
+      count.textContent = "전체 대화 불러오는 중";
+      timeline = await fetchCompleteMessageTimeline(navigationRunId);
+    }
 
-    if (!hasTarget) throw new Error("검색한 메시지가 더 이상 존재하지 않습니다.");
+    if (navigationRunId !== chatNavigationRunId || !timeline) return;
 
-    const entries = mergeMessageEntries(beforeEntries, afterEntries);
-    const latestKey = latestEntries.at(-1)?.key || null;
-    const windowNewestKey = entries.at(-1)?.key || null;
+    const timelineState = timelineWindowAround(timeline, key, CHAT_ANCHOR_SIDE);
+    if (timelineState.start < 0) throw new Error("검색한 메시지가 더 이상 존재하지 않습니다.");
 
-    hasMoreOlder = beforeEntries.length === anchorLimit;
-    hasMoreNewer = Boolean(latestKey && windowNewestKey !== latestKey);
-
+    activeTimelineEntries = timelineState.timeline;
+    activeTimelineStart = timelineState.start;
+    activeTimelineEnd = timelineState.end;
+    hasMoreOlder = timelineState.hasMoreOlder;
+    hasMoreNewer = timelineState.hasMoreNewer;
     chatHistoryMode = hasMoreNewer;
-    renderChatWindow(entries);
+    renderChatWindow(timelineState.windowEntries);
 
-    if (!chatHistoryMode && newestKey === latestKey) {
-      appendNewerEntries(cachedLatestEntries().filter(entry => entry.key > newestKey));
+    if (!chatHistoryMode) {
+      appendNewerEntries(cachedLatestEntries().filter(entry => !newestKey || entry.key > newestKey));
     }
 
     document.getElementById("searchBar").classList.remove("show");
@@ -5270,6 +5333,8 @@ function clearSearchResults() {
   searchMatches = [];
   searchIdx = -1;
   searchTotalMatches = 0;
+  searchScanning = false;
+  searchTimelineEntries = [];
   document.getElementById("searchCount").textContent = "";
   document.getElementById("searchResults").classList.remove("show");
   document.getElementById("searchResults").innerHTML = "";
