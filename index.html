@@ -5208,29 +5208,35 @@ window.jumpToMessage = async function(key) {
   if (selectedButton) selectedButton.disabled = true;
 
   try {
-    const [beforeSnap, afterSnap] = await Promise.all([
+    const [beforeSnap, afterSnap, latestSnap] = await Promise.all([
       get(query(messagesRef, orderByKey(), endAt(key), limitToLast(anchorLimit))),
-      get(query(messagesRef, orderByKey(), startAt(key), limitToFirst(anchorLimit)))
+      get(query(messagesRef, orderByKey(), startAt(key), limitToFirst(anchorLimit))),
+      get(query(messagesRef, orderByKey(), limitToLast(1)))
     ]);
     if (navigationRunId !== chatNavigationRunId) return;
 
     const beforeEntries = snapshotMessageEntries(beforeSnap);
     const afterEntries = snapshotMessageEntries(afterSnap);
+    const latestEntries = snapshotMessageEntries(latestSnap);
     const hasTarget = beforeEntries.some(entry => entry.key === key) ||
       afterEntries.some(entry => entry.key === key);
 
     if (!hasTarget) throw new Error("검색한 메시지가 더 이상 존재하지 않습니다.");
 
-    hasMoreOlder = beforeEntries.length === anchorLimit;
-    hasMoreNewer = afterEntries.length === anchorLimit;
+    const entries = mergeMessageEntries(beforeEntries, afterEntries);
+    const latestKey = latestEntries.at(-1)?.key || null;
+    const windowNewestKey = entries.at(-1)?.key || null;
 
-    const pages = hasMoreNewer
-      ? [beforeEntries, afterEntries]
-      : [beforeEntries, afterEntries, cachedLatestEntries()];
-    const entries = mergeMessageEntries(...pages);
+    hasMoreOlder = beforeEntries.length === anchorLimit;
+    hasMoreNewer = Boolean(latestKey && windowNewestKey !== latestKey);
 
     chatHistoryMode = hasMoreNewer;
     renderChatWindow(entries);
+
+    if (!chatHistoryMode && newestKey === latestKey) {
+      appendNewerEntries(cachedLatestEntries().filter(entry => entry.key > newestKey));
+    }
+
     document.getElementById("searchBar").classList.remove("show");
     clearSearch();
     updateScrollBottomButton();

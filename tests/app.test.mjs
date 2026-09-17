@@ -16,6 +16,7 @@ import {
   albumMonthKey,
   audioFileExtension,
   buildMediaKeyIndex,
+  compareFirebasePushKeys,
   favoriteKeySet,
   filterAlbumMedia,
   formatAudioDuration,
@@ -128,20 +129,36 @@ test("anchored chat pages merge in key order without duplicates", () => {
   assert.equal(CHAT_PAGE_SIZE, 30);
   assert.equal(CHAT_ANCHOR_SIDE, 30);
 
+  const realPushKeys = [
+    "-P0b7H6RW3XqdgRltK3M",
+    "-P0b7LI5SSqclT-MmXAd",
+    "-P0b7LNnTvSRSVFjjoKu",
+    "-P0b7Nl5vJAoJHsHQnlp",
+    "-P0b7P9qsV5Nf6uB47Dl",
+    "-P0b7WunNkqCwGv2KlW-",
+    "-P0b7aTEOLmgrV7zWF-_"
+  ];
+
+  assert.deepEqual([...realPushKeys].reverse().sort(compareFirebasePushKeys), realPushKeys);
+
   const merged = mergeMessageEntries(
     [
-      { key:"-b", msg:{ text:"old b" } },
-      { key:"-a", msg:{ text:"a" } }
+      { key:realPushKeys[4], msg:{ text:"old p" } },
+      { key:realPushKeys[0], msg:{ text:"h" } },
+      { key:realPushKeys[6], msg:{ text:"a" } }
     ],
     [
-      { key:"-c", msg:{ text:"c" } },
-      { key:"-b", msg:{ text:"new b" } },
+      { key:realPushKeys[2], msg:{ text:"l" } },
+      { key:realPushKeys[4], msg:{ text:"new p" } },
       null
     ]
   );
 
-  assert.deepEqual(merged.map(entry => entry.key), ["-a", "-b", "-c"]);
-  assert.equal(merged[1].msg.text, "new b");
+  assert.deepEqual(
+    merged.map(entry => entry.key),
+    [realPushKeys[0], realPushKeys[2], realPushKeys[4], realPushKeys[6]]
+  );
+  assert.equal(merged[2].msg.text, "new p");
   assert.deepEqual(mergeMessageEntries(null, [{ key:"", msg:{} }]), []);
 });
 
@@ -150,12 +167,15 @@ test("search and album source jump into the chat timeline", () => {
   assert.match(html, /window\.jumpToMessage = async function/);
   assert.match(html, /endAt\(key\), limitToLast\(anchorLimit\)/);
   assert.match(html, /startAt\(key\), limitToFirst\(anchorLimit\)/);
+  assert.match(html, /orderByKey\(\), limitToLast\(1\)/);
+  assert.match(html, /hasMoreNewer = Boolean\(latestKey && windowNewestKey !== latestKey\)/);
   assert.match(html, /async function loadNewerMessages\(\)/);
   assert.match(html, /startAfter\(newestKey\)/);
   assert.match(html, /window\.returnToLatestMessages = async function/);
   assert.match(html, /message-jump-target/);
   assert.match(html, /window\.switchTab\("chat"\);[\s\S]*?window\.jumpToMessage\(item\.messageKey\)/);
   assert.doesNotMatch(html, /openSearchContext|searchContextList/);
+  assert.doesNotMatch(html, /\[beforeEntries, afterEntries, cachedLatestEntries\(\)\]/);
 });
 
 test("voice message limits and expiration are deterministic", () => {

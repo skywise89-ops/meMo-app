@@ -1,4 +1,4 @@
-export const APP_VERSION = "4.2.1";
+export const APP_VERSION = "4.2.2";
 export const MAX_VIDEO_BYTES = 5 * 1024 * 1024;
 export const MAX_AUDIO_BYTES = 2 * 1024 * 1024;
 export const MAX_AUDIO_DURATION_MS = 60 * 1000;
@@ -21,6 +21,13 @@ export function normalizeSearchText(value) {
   return String(value || "").normalize("NFKC").toLocaleLowerCase();
 }
 
+export function compareFirebasePushKeys(left, right) {
+  const a = String(left || "");
+  const b = String(right || "");
+  if (a === b) return 0;
+  return a < b ? -1 : 1;
+}
+
 export function mergeMessageEntries(...pages) {
   const messages = new Map();
 
@@ -32,7 +39,7 @@ export function mergeMessageEntries(...pages) {
   });
 
   return [...messages.entries()]
-    .sort((a, b) => a[0].localeCompare(b[0]))
+    .sort((a, b) => compareFirebasePushKeys(a[0], b[0]))
     .map(([key, msg]) => ({ key, msg }));
 }
 
