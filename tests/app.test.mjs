@@ -33,6 +33,7 @@ import {
 
 const root = new URL("../", import.meta.url);
 const html = await readFile(new URL("index.html", root), "utf8");
+const appCoreSource = await readFile(new URL("app-core.js", root), "utf8");
 const worker = await readFile(new URL("firebase-messaging-sw.js", root), "utf8");
 const databaseRules = await readFile(new URL("database.rules.json", root), "utf8");
 const storageRules = await readFile(new URL("storage.rules", root), "utf8");
@@ -63,13 +64,17 @@ test("service worker parses", () => {
 });
 
 test("app shell updates bypass stale GitHub Pages caches", () => {
-  assert.match(html, /from "\.\/app-core\.js\?v=4\.2\.3"/);
-  assert.match(html, /firebase-messaging-sw\.js\?v=4\.2\.3/);
+  assert.match(html, /data-app-shell-version="4\.2\.4"/);
+  assert.match(html, /from "\.\/app-core\.js\?v=4\.2\.4"/);
+  assert.match(html, /firebase-messaging-sw\.js\?v=4\.2\.4/);
   assert.match(html, /updateViaCache:"none"/);
-  assert.match(worker, /const APP_VERSION = '4\.2\.3'/);
+  assert.match(worker, /const APP_VERSION = '4\.2\.4'/);
   assert.match(worker, /e\.request\.mode === 'navigate'/);
   assert.match(worker, /url\.pathname\.endsWith\('\/app-core\.js'\)/);
   assert.match(worker, /fetch\(e\.request, \{ cache:'no-store' \}\)/);
+  assert.match(html, /appVersionDisplay/);
+  assert.match(appCoreSource, /shellVersion !== APP_VERSION/);
+  assert.match(appCoreSource, /searchParams\.set\("memo-version", APP_VERSION\)/);
 });
 
 test("document ids are unique", () => {

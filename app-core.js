@@ -1,4 +1,4 @@
-export const APP_VERSION = "4.2.3";
+export const APP_VERSION = "4.2.4";
 export const MAX_VIDEO_BYTES = 5 * 1024 * 1024;
 export const MAX_AUDIO_BYTES = 2 * 1024 * 1024;
 export const MAX_AUDIO_DURATION_MS = 60 * 1000;
@@ -8,6 +8,24 @@ export const SEARCH_PAGE_SIZE = 200;
 export const SEARCH_RESULT_LIMIT = 300;
 export const CHAT_PAGE_SIZE = 30;
 export const CHAT_ANCHOR_SIDE = 30;
+
+if (typeof window !== "undefined" && typeof document !== "undefined") {
+  const shellVersion = document.documentElement?.dataset?.appShellVersion || "";
+
+  if (shellVersion !== APP_VERSION) {
+    const url = new URL(window.location.href);
+
+    if (url.searchParams.get("memo-version") !== APP_VERSION) {
+      url.searchParams.set("memo-version", APP_VERSION);
+      window.location.replace(url.href);
+    } else {
+      console.error("[Version] 앱 shell과 core 버전이 일치하지 않습니다.", {
+        shellVersion,
+        coreVersion:APP_VERSION
+      });
+    }
+  }
+}
 
 export const AUDIO_MIME_CANDIDATES = Object.freeze([
   "audio/mp4;codecs=mp4a.40.2",

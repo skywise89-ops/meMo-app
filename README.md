@@ -79,6 +79,12 @@
 - Service Worker 등록에 `updateViaCache: none`을 적용하고 시작 시 업데이트 확인
 - 앱 문서와 `app-core.js` 요청을 `cache: no-store`로 가져와 GitHub Pages 10분 cache 영향 제거
 
+## v4.2.4 개선
+
+- HTML shell과 `app-core.js` 버전을 별도로 대조해 혼합 버전 실행 차단
+- 구 `index.html`이 새 core를 불러오면 `memo-version` URL로 자동 재접속해 최신 shell 강제 로드
+- 화면의 앱 버전만 바뀌고 검색 이동 로직은 구버전으로 남는 상태 방지
+
 ## 검사
 
 ```bash

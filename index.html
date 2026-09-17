@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" data-app-shell-version="4.2.4">
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -2225,7 +2225,7 @@ import {
   validateAudioRecording,
   validateMediaFile,
   videoContentType
-} from "./app-core.js?v=4.2.3";
+} from "./app-core.js?v=4.2.4";
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
@@ -2443,7 +2443,7 @@ window.addEventListener("focus", () => {
 });
 
 const swReadyPromise = ("serviceWorker" in navigator)
-  ? navigator.serviceWorker.register("./firebase-messaging-sw.js?v=4.2.3", {
+  ? navigator.serviceWorker.register("./firebase-messaging-sw.js?v=4.2.4", {
       updateViaCache:"none"
     })
       .then(reg => {
