@@ -2225,7 +2225,7 @@ import {
   validateAudioRecording,
   validateMediaFile,
   videoContentType
-} from "./app-core.js";
+} from "./app-core.js?v=4.2.3";
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
@@ -2443,9 +2443,14 @@ window.addEventListener("focus", () => {
 });
 
 const swReadyPromise = ("serviceWorker" in navigator)
-  ? navigator.serviceWorker.register("./firebase-messaging-sw.js")
+  ? navigator.serviceWorker.register("./firebase-messaging-sw.js?v=4.2.3", {
+      updateViaCache:"none"
+    })
       .then(reg => {
         swRegistration = reg;
+        reg.update().catch(err => {
+          console.warn("[SW] 업데이트 확인 실패:", err);
+        });
         return reg;
       })
       .catch(err => {

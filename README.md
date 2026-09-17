@@ -73,6 +73,12 @@
 - 최신 message key를 별도 조회해 과거 모드·최신 복귀 상태를 정확히 판정
 - 실제 운영 push key 형태(대문자·소문자·`_`)로 정렬 회귀 테스트 추가
 
+## v4.2.3 개선
+
+- `app-core.js`와 Service Worker URL에 앱 버전을 붙여 이전 JavaScript cache 재사용 차단
+- Service Worker 등록에 `updateViaCache: none`을 적용하고 시작 시 업데이트 확인
+- 앱 문서와 `app-core.js` 요청을 `cache: no-store`로 가져와 GitHub Pages 10분 cache 영향 제거
+
 ## 검사
 
 ```bash

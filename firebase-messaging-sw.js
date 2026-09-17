@@ -14,7 +14,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
-const APP_VERSION = '3.0.0';
+const APP_VERSION = '4.2.3';
 
 // notification payload는 FCM SDK가 이미 표시한다. data-only payload만 직접 표시한다.
 messaging.onBackgroundMessage(async (payload) => {
@@ -69,7 +69,18 @@ self.addEventListener('activate', e => {
     }).then(() => clients.claim())
   );
 });
-self.addEventListener('fetch', e => { e.respondWith(fetch(e.request).catch(() => caches.match(e.request))); });
+self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
+
+  const url = new URL(e.request.url);
+  const isAppShellRequest =
+    url.origin === self.location.origin &&
+    (e.request.mode === 'navigate' || url.pathname.endsWith('/app-core.js'));
+
+  if (!isAppShellRequest) return;
+
+  e.respondWith(fetch(e.request, { cache:'no-store' }));
+});
 
 // 알림 클릭시 웹앱 창 열기 및 포커스
 self.addEventListener('notificationclick', e => {

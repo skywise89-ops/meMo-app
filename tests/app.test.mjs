@@ -62,6 +62,16 @@ test("service worker parses", () => {
   assert.equal(result.status, 0, result.stderr);
 });
 
+test("app shell updates bypass stale GitHub Pages caches", () => {
+  assert.match(html, /from "\.\/app-core\.js\?v=4\.2\.3"/);
+  assert.match(html, /firebase-messaging-sw\.js\?v=4\.2\.3/);
+  assert.match(html, /updateViaCache:"none"/);
+  assert.match(worker, /const APP_VERSION = '4\.2\.3'/);
+  assert.match(worker, /e\.request\.mode === 'navigate'/);
+  assert.match(worker, /url\.pathname\.endsWith\('\/app-core\.js'\)/);
+  assert.match(worker, /fetch\(e\.request, \{ cache:'no-store' \}\)/);
+});
+
 test("document ids are unique", () => {
   const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map(match => match[1]);
   const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);

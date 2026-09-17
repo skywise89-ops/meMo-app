@@ -1,4 +1,4 @@
-export const APP_VERSION = "4.2.2";
+export const APP_VERSION = "4.2.3";
 export const MAX_VIDEO_BYTES = 5 * 1024 * 1024;
 export const MAX_AUDIO_BYTES = 2 * 1024 * 1024;
 export const MAX_AUDIO_DURATION_MS = 60 * 1000;
