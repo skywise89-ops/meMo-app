@@ -1,4 +1,4 @@
-export const APP_VERSION = "4.3.0";
+export const APP_VERSION = "4.2.0";
 export const MAX_VIDEO_BYTES = 5 * 1024 * 1024;
 export const MAX_AUDIO_BYTES = 2 * 1024 * 1024;
 export const MAX_AUDIO_DURATION_MS = 60 * 1000;
@@ -6,26 +6,6 @@ export const AUDIO_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 export const ALBUM_ADMIN_EMAIL = "fromkevinjung@gmail.com";
 export const SEARCH_PAGE_SIZE = 200;
 export const SEARCH_RESULT_LIMIT = 300;
-export const CHAT_PAGE_SIZE = 100;
-export const CHAT_ANCHOR_SIDE = 100;
-
-if (typeof window !== "undefined" && typeof document !== "undefined") {
-  const shellVersion = document.documentElement?.dataset?.appShellVersion || "";
-
-  if (shellVersion !== APP_VERSION) {
-    const url = new URL(window.location.href);
-
-    if (url.searchParams.get("memo-version") !== APP_VERSION) {
-      url.searchParams.set("memo-version", APP_VERSION);
-      window.location.replace(url.href);
-    } else {
-      console.error("[Version] 앱 shell과 core 버전이 일치하지 않습니다.", {
-        shellVersion,
-        coreVersion:APP_VERSION
-      });
-    }
-  }
-}
 
 export const AUDIO_MIME_CANDIDATES = Object.freeze([
   "audio/mp4;codecs=mp4a.40.2",
@@ -37,57 +17,6 @@ export const AUDIO_MIME_CANDIDATES = Object.freeze([
 
 export function normalizeSearchText(value) {
   return String(value || "").normalize("NFKC").toLocaleLowerCase();
-}
-
-export function compareFirebasePushKeys(left, right) {
-  const a = String(left || "");
-  const b = String(right || "");
-  if (a === b) return 0;
-  return a < b ? -1 : 1;
-}
-
-export function mergeMessageEntries(...pages) {
-  const messages = new Map();
-
-  pages.forEach(page => {
-    (Array.isArray(page) ? page : []).forEach(entry => {
-      if (!entry || typeof entry.key !== "string" || !entry.key || !entry.msg) return;
-      messages.set(entry.key, entry.msg);
-    });
-  });
-
-  return [...messages.entries()]
-    .sort((a, b) => compareFirebasePushKeys(a[0], b[0]))
-    .map(([key, msg]) => ({ key, msg }));
-}
-
-export function timelineWindowAround(entries, targetKey, sideSize = CHAT_ANCHOR_SIDE) {
-  const timeline = mergeMessageEntries(entries);
-  const targetIndex = timeline.findIndex(entry => entry.key === targetKey);
-
-  if (targetIndex < 0) {
-    return {
-      timeline,
-      windowEntries:[],
-      start:-1,
-      end:-1,
-      hasMoreOlder:false,
-      hasMoreNewer:false
-    };
-  }
-
-  const side = Math.max(0, Math.floor(Number(sideSize) || 0));
-  const start = Math.max(0, targetIndex - side);
-  const end = Math.min(timeline.length, targetIndex + side + 1);
-
-  return {
-    timeline,
-    windowEntries:timeline.slice(start, end),
-    start,
-    end,
-    hasMoreOlder:start > 0,
-    hasMoreNewer:end < timeline.length
-  };
 }
 
 export function albumMonthKey(ts) {

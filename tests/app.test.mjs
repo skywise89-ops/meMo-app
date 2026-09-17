@@ -8,25 +8,20 @@ import { fileURLToPath } from "node:url";
 import {
   ALBUM_ADMIN_EMAIL,
   AUDIO_RETENTION_MS,
-  CHAT_ANCHOR_SIDE,
-  CHAT_PAGE_SIZE,
   MAX_AUDIO_BYTES,
   MAX_AUDIO_DURATION_MS,
   MAX_VIDEO_BYTES,
   albumMonthKey,
   audioFileExtension,
   buildMediaKeyIndex,
-  compareFirebasePushKeys,
   favoriteKeySet,
   filterAlbumMedia,
   formatAudioDuration,
   isAudioExpired,
   mediaKind,
-  mergeMessageEntries,
   normalizedVideoFileName,
   normalizeSearchText,
   selectAudioMimeType,
-  timelineWindowAround,
   validateAudioRecording,
   validateMediaFile,
   videoContentType
@@ -34,7 +29,6 @@ import {
 
 const root = new URL("../", import.meta.url);
 const html = await readFile(new URL("index.html", root), "utf8");
-const appCoreSource = await readFile(new URL("app-core.js", root), "utf8");
 const worker = await readFile(new URL("firebase-messaging-sw.js", root), "utf8");
 const databaseRules = await readFile(new URL("database.rules.json", root), "utf8");
 const storageRules = await readFile(new URL("storage.rules", root), "utf8");
@@ -62,20 +56,6 @@ test("service worker parses", () => {
     encoding:"utf8"
   });
   assert.equal(result.status, 0, result.stderr);
-});
-
-test("app shell updates bypass stale GitHub Pages caches", () => {
-  assert.match(html, /data-app-shell-version="4\.3\.0"/);
-  assert.match(html, /from "\.\/app-core\.js\?v=4\.3\.0"/);
-  assert.match(html, /firebase-messaging-sw\.js\?v=4\.3\.0/);
-  assert.match(html, /updateViaCache:"none"/);
-  assert.match(worker, /const APP_VERSION = '4\.3\.0'/);
-  assert.match(worker, /e\.request\.mode === 'navigate'/);
-  assert.match(worker, /url\.pathname\.endsWith\('\/app-core\.js'\)/);
-  assert.match(worker, /fetch\(e\.request, \{ cache:'no-store' \}\)/);
-  assert.match(html, /appVersionDisplay/);
-  assert.match(appCoreSource, /shellVersion !== APP_VERSION/);
-  assert.match(appCoreSource, /searchParams\.set\("memo-version", APP_VERSION\)/);
 });
 
 test("document ids are unique", () => {
@@ -139,76 +119,6 @@ test("iOS video upload uses a stable blob and non-resumable request", () => {
 test("search normalization and album month grouping are deterministic", () => {
   assert.equal(normalizeSearchText("ＡBC 가나다"), "abc 가나다");
   assert.match(albumMonthKey(new Date(2026, 7, 2).getTime()), /^2026-08$/);
-});
-
-test("complete chat timeline windows remain ordered and pageable", () => {
-  assert.equal(CHAT_PAGE_SIZE, 100);
-  assert.equal(CHAT_ANCHOR_SIDE, 100);
-
-  const realPushKeys = [
-    "-P0b7H6RW3XqdgRltK3M",
-    "-P0b7LI5SSqclT-MmXAd",
-    "-P0b7LNnTvSRSVFjjoKu",
-    "-P0b7Nl5vJAoJHsHQnlp",
-    "-P0b7P9qsV5Nf6uB47Dl",
-    "-P0b7WunNkqCwGv2KlW-",
-    "-P0b7aTEOLmgrV7zWF-_"
-  ];
-
-  assert.deepEqual([...realPushKeys].reverse().sort(compareFirebasePushKeys), realPushKeys);
-
-  const merged = mergeMessageEntries(
-    [
-      { key:realPushKeys[4], msg:{ text:"old p" } },
-      { key:realPushKeys[0], msg:{ text:"h" } },
-      { key:realPushKeys[6], msg:{ text:"a" } }
-    ],
-    [
-      { key:realPushKeys[2], msg:{ text:"l" } },
-      { key:realPushKeys[4], msg:{ text:"new p" } },
-      null
-    ]
-  );
-
-  assert.deepEqual(
-    merged.map(entry => entry.key),
-    [realPushKeys[0], realPushKeys[2], realPushKeys[4], realPushKeys[6]]
-  );
-  assert.equal(merged[2].msg.text, "new p");
-  assert.deepEqual(mergeMessageEntries(null, [{ key:"", msg:{} }]), []);
-
-  const timelineState = timelineWindowAround(
-    realPushKeys.map(key => ({ key, msg:{ text:key } })),
-    realPushKeys[3],
-    2
-  );
-  assert.deepEqual(timelineState.windowEntries.map(entry => entry.key), realPushKeys.slice(1, 6));
-  assert.equal(timelineState.start, 1);
-  assert.equal(timelineState.end, 6);
-  assert.equal(timelineState.hasMoreOlder, true);
-  assert.equal(timelineState.hasMoreNewer, true);
-
-  const missingState = timelineWindowAround(timelineState.timeline, "missing", 2);
-  assert.equal(missingState.start, -1);
-  assert.deepEqual(missingState.windowEntries, []);
-});
-
-test("search and album source anchor a complete paged chat timeline", () => {
-  assert.match(html, /button\.onclick = \(\) => window\.jumpToMessage\(key\)/);
-  assert.match(html, /window\.jumpToMessage = async function/);
-  assert.match(html, /timelineEntries\.push\(\.\.\.page\)/);
-  assert.match(html, /searchTimelineEntries = mergeMessageEntries\(timelineEntries\)/);
-  assert.match(html, /timelineWindowAround\(timeline, key, CHAT_ANCHOR_SIDE\)/);
-  assert.match(html, /activeTimelineEntries\.slice\(nextStart, activeTimelineStart\)/);
-  assert.match(html, /activeTimelineEntries\.slice\(activeTimelineEnd, nextEnd\)/);
-  assert.match(html, /fetchCompleteMessageTimeline\(navigationRunId\)/);
-  assert.match(html, /async function loadNewerMessages\(\)/);
-  assert.match(html, /startAfter\(newestKey\)/);
-  assert.match(html, /window\.returnToLatestMessages = async function/);
-  assert.match(html, /message-jump-target/);
-  assert.match(html, /window\.switchTab\("chat"\);[\s\S]*?window\.jumpToMessage\(item\.messageKey\)/);
-  assert.doesNotMatch(html, /openSearchContext|searchContextList/);
-  assert.doesNotMatch(html, /endAt\(key\)|startAt\(key\)/);
 });
 
 test("voice message limits and expiration are deterministic", () => {
