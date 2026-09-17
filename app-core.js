@@ -1,4 +1,4 @@
-export const APP_VERSION = "4.2.0";
+export const APP_VERSION = "4.2.1";
 export const MAX_VIDEO_BYTES = 5 * 1024 * 1024;
 export const MAX_AUDIO_BYTES = 2 * 1024 * 1024;
 export const MAX_AUDIO_DURATION_MS = 60 * 1000;
@@ -6,6 +6,8 @@ export const AUDIO_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 export const ALBUM_ADMIN_EMAIL = "fromkevinjung@gmail.com";
 export const SEARCH_PAGE_SIZE = 200;
 export const SEARCH_RESULT_LIMIT = 300;
+export const CHAT_PAGE_SIZE = 30;
+export const CHAT_ANCHOR_SIDE = 30;
 
 export const AUDIO_MIME_CANDIDATES = Object.freeze([
   "audio/mp4;codecs=mp4a.40.2",
@@ -17,6 +19,21 @@ export const AUDIO_MIME_CANDIDATES = Object.freeze([
 
 export function normalizeSearchText(value) {
   return String(value || "").normalize("NFKC").toLocaleLowerCase();
+}
+
+export function mergeMessageEntries(...pages) {
+  const messages = new Map();
+
+  pages.forEach(page => {
+    (Array.isArray(page) ? page : []).forEach(entry => {
+      if (!entry || typeof entry.key !== "string" || !entry.key || !entry.msg) return;
+      messages.set(entry.key, entry.msg);
+    });
+  });
+
+  return [...messages.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([key, msg]) => ({ key, msg }));
 }
 
 export function albumMonthKey(ts) {

@@ -8,6 +8,8 @@ import { fileURLToPath } from "node:url";
 import {
   ALBUM_ADMIN_EMAIL,
   AUDIO_RETENTION_MS,
+  CHAT_ANCHOR_SIDE,
+  CHAT_PAGE_SIZE,
   MAX_AUDIO_BYTES,
   MAX_AUDIO_DURATION_MS,
   MAX_VIDEO_BYTES,
@@ -19,6 +21,7 @@ import {
   formatAudioDuration,
   isAudioExpired,
   mediaKind,
+  mergeMessageEntries,
   normalizedVideoFileName,
   normalizeSearchText,
   selectAudioMimeType,
@@ -119,6 +122,40 @@ test("iOS video upload uses a stable blob and non-resumable request", () => {
 test("search normalization and album month grouping are deterministic", () => {
   assert.equal(normalizeSearchText("ＡBC 가나다"), "abc 가나다");
   assert.match(albumMonthKey(new Date(2026, 7, 2).getTime()), /^2026-08$/);
+});
+
+test("anchored chat pages merge in key order without duplicates", () => {
+  assert.equal(CHAT_PAGE_SIZE, 30);
+  assert.equal(CHAT_ANCHOR_SIDE, 30);
+
+  const merged = mergeMessageEntries(
+    [
+      { key:"-b", msg:{ text:"old b" } },
+      { key:"-a", msg:{ text:"a" } }
+    ],
+    [
+      { key:"-c", msg:{ text:"c" } },
+      { key:"-b", msg:{ text:"new b" } },
+      null
+    ]
+  );
+
+  assert.deepEqual(merged.map(entry => entry.key), ["-a", "-b", "-c"]);
+  assert.equal(merged[1].msg.text, "new b");
+  assert.deepEqual(mergeMessageEntries(null, [{ key:"", msg:{} }]), []);
+});
+
+test("search and album source jump into the chat timeline", () => {
+  assert.match(html, /button\.onclick = \(\) => window\.jumpToMessage\(key\)/);
+  assert.match(html, /window\.jumpToMessage = async function/);
+  assert.match(html, /endAt\(key\), limitToLast\(anchorLimit\)/);
+  assert.match(html, /startAt\(key\), limitToFirst\(anchorLimit\)/);
+  assert.match(html, /async function loadNewerMessages\(\)/);
+  assert.match(html, /startAfter\(newestKey\)/);
+  assert.match(html, /window\.returnToLatestMessages = async function/);
+  assert.match(html, /message-jump-target/);
+  assert.match(html, /window\.switchTab\("chat"\);[\s\S]*?window\.jumpToMessage\(item\.messageKey\)/);
+  assert.doesNotMatch(html, /openSearchContext|searchContextList/);
 });
 
 test("voice message limits and expiration are deterministic", () => {

@@ -1566,6 +1566,30 @@ body.hide-translations .msg-translation {
   display:flex;
 }
 
+.scroll-bottom-btn.history-return {
+  width:auto;
+  min-width:48px;
+  padding:0 12px;
+  border-radius:18px;
+  color:var(--accent);
+  font-size:.72rem;
+  font-weight:600;
+}
+
+.msg-wrap.message-jump-target .msg-bubble,
+.system-msg.message-jump-target {
+  animation:message-jump-highlight 1.8s ease-out;
+}
+
+@keyframes message-jump-highlight {
+  0%,35% {
+    box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 78%,transparent),0 0 22px color-mix(in srgb,var(--accent) 34%,transparent);
+  }
+  100% {
+    box-shadow:none;
+  }
+}
+
 .date-sep {
   text-align:center;
   padding:12px 0 4px;
@@ -1795,72 +1819,6 @@ body.hide-translations .msg-translation {
   aspect-ratio:1;
   object-fit:cover;
   border-radius:8px;
-}
-
-#searchContext {
-  position:fixed;
-  inset:0;
-  z-index:520;
-  background:rgba(0,0,0,.72);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
-}
-
-#searchContext.open {
-  display:flex;
-}
-
-.search-context-card {
-  width:min(680px,100%);
-  max-height:min(760px,88vh);
-  display:flex;
-  flex-direction:column;
-  background:var(--bg);
-  border:1px solid var(--border);
-  border-radius:18px;
-  overflow:hidden;
-}
-
-.search-context-head {
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:14px 16px;
-  background:var(--surface);
-  border-bottom:1px solid var(--border);
-}
-
-.search-context-list {
-  overflow-y:auto;
-  padding:12px;
-}
-
-.search-context-row {
-  padding:10px 12px;
-  border-radius:12px;
-  margin-bottom:6px;
-  background:var(--surface);
-  border:1px solid var(--border);
-}
-
-.search-context-row.target {
-  border-color:var(--accent);
-  box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 20%,transparent);
-}
-
-.search-context-meta {
-  color:var(--text2);
-  font-size:.7rem;
-  margin-bottom:4px;
-}
-
-.search-context-body {
-  font-size:.88rem;
-  line-height:1.5;
-  white-space:pre-wrap;
-  word-break:break-word;
 }
 
 @media (min-width:900px) {
@@ -2225,16 +2183,6 @@ body.hide-translations .msg-translation {
   <div class="lb-counter" id="lbCounter"></div>
 </div>
 
-<div id="searchContext" role="dialog" aria-modal="true" aria-label="검색된 메시지 문맥">
-  <div class="search-context-card">
-    <div class="search-context-head">
-      <strong>검색된 메시지 문맥</strong>
-      <button class="icon-btn" onclick="closeSearchContext()" aria-label="닫기">✕</button>
-    </div>
-    <div class="search-context-list" id="searchContextList"></div>
-  </div>
-</div>
-
 <div id="trashModal" role="dialog" aria-modal="true" aria-label="앨범 휴지통">
   <div class="trash-card">
     <div class="trash-head">
@@ -2258,6 +2206,8 @@ import {
   MAX_AUDIO_DURATION_MS,
   APP_VERSION,
   MAX_VIDEO_BYTES,
+  CHAT_ANCHOR_SIDE,
+  CHAT_PAGE_SIZE,
   SEARCH_PAGE_SIZE,
   SEARCH_RESULT_LIMIT,
   albumMonthKey,
@@ -2268,6 +2218,7 @@ import {
   formatAudioDuration,
   isAudioExpired,
   mediaKind,
+  mergeMessageEntries,
   normalizedVideoFileName,
   normalizeSearchText,
   selectAudioMimeType,
@@ -2299,6 +2250,7 @@ import {
   query,
   orderByKey,
   startAt,
+  startAfter,
   endAt,
   limitToFirst,
   limitToLast,
@@ -2414,8 +2366,15 @@ let partnerLastRead = 0;
 let enterTime = 0;
 
 let oldestKey = null;
+let newestKey = null;
 let loadingOlder = false;
+let loadingNewer = false;
 let hasMoreOlder = true;
+let hasMoreNewer = false;
+let chatHistoryMode = false;
+let chatNavigationRunId = 0;
+let jumpHighlightTimer = null;
+let returningToLatest = false;
 let initialLoadTimer = null;
 let albumMedia = [];
 let albumMediaKeyByUrl = new Map();
@@ -2441,6 +2400,7 @@ let messageSendQueue = Promise.resolve();
 let clientTranslationRetryAt = 0;
 
 const seenKeys = new Set();
+const latestWindowMessages = new Map();
 window._loadedMessages = {};
 
 const CHECK_SINGLE = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
@@ -2552,10 +2512,124 @@ function isNearBottom(el, threshold = 120) {
   return el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
 }
 
+function snapshotMessageEntries(snapshot) {
+  const entries = [];
+  snapshot.forEach(child => entries.push({ key:child.key, msg:child.val() }));
+  return entries;
+}
+
+function cacheLatestMessage(key, msg) {
+  latestWindowMessages.set(key, msg);
+
+  while (latestWindowMessages.size > 50) {
+    latestWindowMessages.delete(latestWindowMessages.keys().next().value);
+  }
+}
+
+function cachedLatestEntries() {
+  return [...latestWindowMessages.entries()].map(([key, msg]) => ({ key, msg }));
+}
+
+function messageElementForKey(key) {
+  return [...document.querySelectorAll("#chatMessages [data-key]")]
+    .find(element => element.dataset.key === key) || null;
+}
+
+function rebuildDateSeparators() {
+  const container = document.getElementById("chatMessages");
+  if (!container) return;
+
+  [...container.children]
+    .filter(child => child.classList.contains("date-sep"))
+    .forEach(separator => separator.remove());
+
+  let previousDate = "";
+  [...container.children]
+    .filter(child => child.classList.contains("msg-wrap") || child.classList.contains("system-msg"))
+    .forEach(message => {
+      const date = message.dataset.date || "";
+      if (!date || date === previousDate) return;
+
+      const separator = document.createElement("div");
+      separator.className = "date-sep";
+      separator.dataset.date = date;
+      separator.textContent = date;
+      container.insertBefore(separator, message);
+      previousDate = date;
+    });
+}
+
+function renderChatWindow(entries) {
+  const container = document.getElementById("chatMessages");
+  const sentinel = document.getElementById("topSentinel");
+
+  [...container.children].forEach(child => {
+    if (child !== sentinel) child.remove();
+  });
+
+  seenKeys.clear();
+  window._loadedMessages = {};
+  oldestKey = null;
+  newestKey = null;
+
+  mergeMessageEntries(entries).forEach(({ key, msg }) => {
+    seenKeys.add(key);
+    renderMessage(msg, key, false);
+    if (!oldestKey || key < oldestKey) oldestKey = key;
+    if (!newestKey || key > newestKey) newestKey = key;
+  });
+
+  rebuildDateSeparators();
+}
+
+function appendNewerEntries(entries) {
+  mergeMessageEntries(entries).forEach(({ key, msg }) => {
+    if (seenKeys.has(key)) return;
+
+    seenKeys.add(key);
+    renderMessage(msg, key, false);
+    if (!oldestKey || key < oldestKey) oldestKey = key;
+    if (!newestKey || key > newestKey) newestKey = key;
+  });
+}
+
+function updateScrollBottomButton() {
+  const container = document.getElementById("chatMessages");
+  const button = document.getElementById("scrollBottomBtn");
+  if (!container || !button) return;
+
+  button.classList.toggle("history-return", chatHistoryMode);
+  button.classList.toggle("show", chatHistoryMode || !isNearBottom(container));
+  button.textContent = chatHistoryMode ? "최신" : "↓";
+  button.setAttribute("aria-label", chatHistoryMode ? "최신 메시지로 이동" : "아래로 이동");
+}
+
+function revealMessage(key) {
+  const target = messageElementForKey(key);
+  if (!target) return false;
+
+  clearTimeout(jumpHighlightTimer);
+  document.querySelectorAll(".message-jump-target").forEach(element => {
+    element.classList.remove("message-jump-target");
+  });
+
+  target.scrollIntoView({ block:"center", behavior:"auto" });
+  target.classList.add("message-jump-target");
+  jumpHighlightTimer = setTimeout(() => target.classList.remove("message-jump-target"), 1900);
+  updateScrollBottomButton();
+  return true;
+}
+
 window.scrollToLatest = function() {
+  if (chatHistoryMode) {
+    window.returnToLatestMessages();
+    return;
+  }
+
   const el = document.getElementById("chatMessages");
   if (!el) return;
   el.scrollTop = el.scrollHeight;
+  updateScrollBottomButton();
 };
 
 const THEME_IDS = ["dark","rose","skyblue","purple","cream"];
@@ -2916,19 +2990,21 @@ function enterRoom() {
 
   onChildAdded(initialQuery, snap => {
     const key = snap.key;
-
-    if (seenKeys.has(key)) return;
-
     const msg = snap.val();
-    const shouldStickToBottom = !initialLoadDone || isNearBottom(container);
+    const alreadyRendered = seenKeys.has(key);
 
-    seenKeys.add(key);
+    cacheLatestMessage(key, msg);
 
-    if (!oldestKey) {
-      oldestKey = key;
+    if (!chatHistoryMode && !alreadyRendered) {
+      const shouldStickToBottom = !initialLoadDone || isNearBottom(container);
+
+      seenKeys.add(key);
+
+      if (!oldestKey) oldestKey = key;
+      if (!newestKey || key > newestKey) newestKey = key;
+
+      renderMessage(msg, key, shouldStickToBottom);
     }
-
-    renderMessage(msg, key, shouldStickToBottom);
 
     if (msg.uid !== me.name && msg.ts > latestTheirTs) {
       latestTheirTs = msg.ts;
@@ -2939,27 +3015,37 @@ function enterRoom() {
       }
     }
 
-    clearTimeout(initialLoadTimer);
+    if (chatHistoryMode && msg.uid === me.name && msg.ts > enterTime) {
+      window.returnToLatestMessages();
+    }
 
-    initialLoadTimer = setTimeout(() => {
-      if (initialLoadDone) return;
+    if (!chatHistoryMode) {
+      clearTimeout(initialLoadTimer);
 
-      initialLoadDone = true;
-      window.scrollToLatest();
-      setupHistoryScroll();
-    }, 250);
+      initialLoadTimer = setTimeout(() => {
+        if (initialLoadDone) return;
+
+        initialLoadDone = true;
+        setupHistoryScroll();
+        if (!chatHistoryMode) window.scrollToLatest();
+      }, 250);
+    }
+
+    updateScrollBottomButton();
   });
 
   onChildChanged(messagesRef, snap => {
     const key = snap.key;
     const msg = snap.val();
-    const el = container.querySelector(`[data-key="${key}"]`);
+    const el = messageElementForKey(key);
 
-    window._loadedMessages[key] = msg;
+    if (latestWindowMessages.has(key)) cacheLatestMessage(key, msg);
     if (!el) return;
 
+    window._loadedMessages[key] = msg;
     const replacement = createMessageElement(msg, key);
     replacement.dataset.date = el.dataset.date || getDateStr(msg.ts);
+    replacement.classList.toggle("message-jump-target", el.classList.contains("message-jump-target"));
     el.replaceWith(replacement);
   });
 
@@ -3040,6 +3126,10 @@ function setupHistoryScroll() {
     if (cm.scrollTop <= 120 && !loadingOlder && hasMoreOlder) {
       loadOlderMessages();
     }
+
+    if (chatHistoryMode && isNearBottom(cm, 160) && !loadingNewer && hasMoreNewer) {
+      loadNewerMessages();
+    }
   }, { passive:true });
 
   requestAnimationFrame(() => {
@@ -3053,6 +3143,7 @@ async function loadOlderMessages() {
   if (loadingOlder || !hasMoreOlder || !oldestKey) return;
 
   loadingOlder = true;
+  const navigationRunId = chatNavigationRunId;
 
   const cm = document.getElementById("chatMessages");
   const sentinel = document.getElementById("topSentinel");
@@ -3067,57 +3158,35 @@ async function loadOlderMessages() {
       messagesRef,
       orderByKey(),
       endBefore(oldestKey),
-      limitToLast(20)
+      limitToLast(CHAT_PAGE_SIZE)
     );
 
     const snapshot = await get(olderQuery);
+    if (navigationRunId !== chatNavigationRunId) return;
 
     if (!snapshot.exists()) {
       hasMoreOlder = false;
       return;
     }
 
-    const children = [];
-
-    snapshot.forEach(child => {
-      children.push({
-        key: child.key,
-        val: child.val()
-      });
-    });
+    const children = snapshotMessageEntries(snapshot);
 
     if (!children.length) {
       hasMoreOlder = false;
       return;
     }
 
-    if (children.length < 20) {
-      hasMoreOlder = false;
-    }
+    hasMoreOlder = children.length === CHAT_PAGE_SIZE;
 
     const fragment = document.createDocumentFragment();
 
-    let previousDate = sentinel.nextElementSibling?.dataset?.date || "";
-
-    for (const { key, val: msg } of children) {
+    for (const { key, msg } of children) {
       if (seenKeys.has(key)) continue;
 
       seenKeys.add(key);
 
-      const dateStr = getDateStr(msg.ts);
-
-      if (dateStr !== previousDate) {
-        const sep = document.createElement("div");
-        sep.className = "date-sep";
-        sep.dataset.date = dateStr;
-        sep.textContent = dateStr;
-        fragment.appendChild(sep);
-
-        previousDate = dateStr;
-      }
-
       const wrap = createMessageElement(msg, key);
-      wrap.dataset.date = dateStr;
+      wrap.dataset.date = getDateStr(msg.ts);
       fragment.appendChild(wrap);
     }
 
@@ -3125,9 +3194,11 @@ async function loadOlderMessages() {
 
     if (fragment.childNodes.length) {
       cm.insertBefore(fragment, sentinel.nextSibling);
+      rebuildDateSeparators();
 
       requestAnimationFrame(() => {
         cm.scrollTop = beforeTop + (cm.scrollHeight - beforeHeight);
+        updateScrollBottomButton();
       });
     }
   } catch (err) {
@@ -3137,6 +3208,75 @@ async function loadOlderMessages() {
     loadingOlder = false;
   }
 }
+
+async function loadNewerMessages() {
+  if (loadingNewer || !chatHistoryMode || !hasMoreNewer || !newestKey) return;
+
+  loadingNewer = true;
+  const navigationRunId = chatNavigationRunId;
+
+  try {
+    const messagesRef = ref(db, `${ROOM_ID}/messages`);
+    const newerQuery = query(
+      messagesRef,
+      orderByKey(),
+      startAfter(newestKey),
+      limitToFirst(CHAT_PAGE_SIZE)
+    );
+    const snapshot = await get(newerQuery);
+    if (navigationRunId !== chatNavigationRunId) return;
+
+    const entries = snapshotMessageEntries(snapshot);
+    appendNewerEntries(entries);
+    hasMoreNewer = entries.length === CHAT_PAGE_SIZE;
+
+    if (!hasMoreNewer) {
+      appendNewerEntries(cachedLatestEntries().filter(entry => !newestKey || entry.key > newestKey));
+      chatHistoryMode = false;
+    }
+
+    updateScrollBottomButton();
+  } catch (err) {
+    console.error("이후 메시지 로드 실패:", err);
+    showToast("이후 메시지를 불러오지 못했습니다.");
+  } finally {
+    loadingNewer = false;
+  }
+}
+
+window.returnToLatestMessages = async function() {
+  if (returningToLatest) return;
+
+  returningToLatest = true;
+  const navigationRunId = ++chatNavigationRunId;
+
+  try {
+    const messagesRef = ref(db, `${ROOM_ID}/messages`);
+    const snapshot = await get(query(messagesRef, orderByKey(), limitToLast(50)));
+    if (navigationRunId !== chatNavigationRunId) return;
+
+    const snapshotEntries = snapshotMessageEntries(snapshot);
+    const entries = mergeMessageEntries(snapshotEntries, cachedLatestEntries()).slice(-50);
+
+    if (!entries.length) {
+      showToast("최신 메시지가 없습니다.");
+      return;
+    }
+
+    chatHistoryMode = false;
+    hasMoreNewer = false;
+    hasMoreOlder = entries.length === 50;
+    renderChatWindow(entries);
+    updateScrollBottomButton();
+
+    requestAnimationFrame(() => window.scrollToLatest());
+  } catch (err) {
+    console.error("최신 메시지 로드 실패:", err);
+    showToast("최신 메시지를 불러오지 못했습니다.");
+  } finally {
+    returningToLatest = false;
+  }
+};
 
 async function initStickerPanel() {
   buildStickerGrid();
@@ -4283,7 +4423,8 @@ function createAlbumItem(item, gallery) {
     source.textContent = "대화 보기";
     source.onclick = event => {
       event.stopPropagation();
-      window.openSearchContext(item.messageKey);
+      window.switchTab("chat");
+      window.jumpToMessage(item.messageKey);
     };
     div.appendChild(source);
   }
@@ -4527,12 +4668,6 @@ window.lightboxNav = function(direction) {
 
 document.addEventListener("keydown", event => {
   const lb = document.getElementById("lightbox");
-  const searchContext = document.getElementById("searchContext");
-
-  if (event.key === "Escape" && searchContext.classList.contains("open")) {
-    window.closeSearchContext();
-    return;
-  }
 
   if (!lb.classList.contains("open")) return;
 
@@ -4991,7 +5126,8 @@ function renderSearchResults(isScanning, scanned = 0) {
       button.type = "button";
       button.className = `search-result-item ${index === searchIdx ? "active" : ""}`;
       button.dataset.searchIndex = index;
-      button.onclick = () => window.openSearchContext(key);
+      button.dataset.messageKey = key;
+      button.onclick = () => window.jumpToMessage(key);
 
       const meta = document.createElement("div");
       meta.className = "search-result-meta";
@@ -5051,58 +5187,65 @@ function focusSearchResult() {
     `${searchIdx + 1}/${searchTotalMatches}건`;
 }
 
-window.openSearchContext = async function(key) {
-  const modal = document.getElementById("searchContext");
-  const list = document.getElementById("searchContextList");
-  const messagesRef = ref(db, `${ROOM_ID}/messages`);
+window.jumpToMessage = async function(key) {
+  const navigationRunId = ++chatNavigationRunId;
+  const existing = messageElementForKey(key);
 
-  modal.classList.add("open");
-  list.innerHTML = `<div class="search-empty">문맥을 불러오는 중...</div>`;
+  if (existing) {
+    document.getElementById("searchBar").classList.remove("show");
+    clearSearch();
+    requestAnimationFrame(() => revealMessage(key));
+    return;
+  }
+
+  const messagesRef = ref(db, `${ROOM_ID}/messages`);
+  const anchorLimit = CHAT_ANCHOR_SIDE + 1;
+  const count = document.getElementById("searchCount");
+  const selectedButton = [...document.querySelectorAll(".search-result-item")]
+    .find(button => button.dataset.messageKey === key);
+
+  count.textContent = "이동 중";
+  if (selectedButton) selectedButton.disabled = true;
 
   try {
     const [beforeSnap, afterSnap] = await Promise.all([
-      get(query(messagesRef, orderByKey(), endAt(key), limitToLast(6))),
-      get(query(messagesRef, orderByKey(), startAt(key), limitToFirst(6)))
+      get(query(messagesRef, orderByKey(), endAt(key), limitToLast(anchorLimit))),
+      get(query(messagesRef, orderByKey(), startAt(key), limitToFirst(anchorLimit)))
     ]);
+    if (navigationRunId !== chatNavigationRunId) return;
 
-    const context = new Map();
-    beforeSnap.forEach(child => context.set(child.key, child.val()));
-    afterSnap.forEach(child => context.set(child.key, child.val()));
+    const beforeEntries = snapshotMessageEntries(beforeSnap);
+    const afterEntries = snapshotMessageEntries(afterSnap);
+    const hasTarget = beforeEntries.some(entry => entry.key === key) ||
+      afterEntries.some(entry => entry.key === key);
 
-    list.innerHTML = "";
+    if (!hasTarget) throw new Error("검색한 메시지가 더 이상 존재하지 않습니다.");
 
-    [...context.entries()]
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .forEach(([messageKey, msg]) => {
-        const row = document.createElement("div");
-        row.className = `search-context-row ${messageKey === key ? "target" : ""}`;
-        row.dataset.contextKey = messageKey;
+    hasMoreOlder = beforeEntries.length === anchorLimit;
+    hasMoreNewer = afterEntries.length === anchorLimit;
 
-        const meta = document.createElement("div");
-        meta.className = "search-context-meta";
-        meta.textContent = `${msg.name || "System"} · ${fmtFull(msg.ts)}`;
+    const pages = hasMoreNewer
+      ? [beforeEntries, afterEntries]
+      : [beforeEntries, afterEntries, cachedLatestEntries()];
+    const entries = mergeMessageEntries(...pages);
 
-        const body = document.createElement("div");
-        body.className = "search-context-body";
-        body.textContent = searchableMessageText(msg);
+    chatHistoryMode = hasMoreNewer;
+    renderChatWindow(entries);
+    document.getElementById("searchBar").classList.remove("show");
+    clearSearch();
+    updateScrollBottomButton();
 
-        row.appendChild(meta);
-        row.appendChild(body);
-        list.appendChild(row);
-      });
-
-    requestAnimationFrame(() => {
-      list.querySelector(".search-context-row.target")?.scrollIntoView({ block:"center" });
-    });
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (!revealMessage(key)) showToast("메시지 위치를 표시하지 못했습니다.");
+    }));
   } catch (err) {
-    console.error("검색 문맥 로드 실패:", err);
-    list.innerHTML = `<div class="search-empty">문맥을 불러오지 못했습니다.</div>`;
+    if (navigationRunId !== chatNavigationRunId) return;
+    console.error("검색 메시지 이동 실패:", err);
+    count.textContent = "실패";
+    showToast(err?.message || "메시지 위치로 이동하지 못했습니다.");
+  } finally {
+    if (selectedButton?.isConnected) selectedButton.disabled = false;
   }
-};
-
-window.closeSearchContext = function() {
-  document.getElementById("searchContext").classList.remove("open");
-  document.getElementById("searchContextList").innerHTML = "";
 };
 
 function clearSearch() {
@@ -5366,15 +5509,12 @@ window.showToast = function(message) {
 
 document.addEventListener("DOMContentLoaded", () => {
   const cm = document.getElementById("chatMessages");
-  const btn = document.getElementById("scrollBottomBtn");
 
   cm.addEventListener("scroll", () => {
-    btn.classList.toggle("show", !isNearBottom(cm));
+    updateScrollBottomButton();
   }, { passive:true });
 
-  document.getElementById("searchContext").addEventListener("click", event => {
-    if (event.target.id === "searchContext") window.closeSearchContext();
-  });
+  updateScrollBottomButton();
 });
 </script>
 
