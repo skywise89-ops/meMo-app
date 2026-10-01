@@ -1925,6 +1925,16 @@ body.hide-translations .msg-translation {
   opacity:1;
   transform:translateX(-50%) translateY(0);
 }
+
+/* Deferred videos keep inline playback; preview cards never autoplay. */
+.memo-video-player { position:relative; width:100%; min-height:150px; background:var(--surface); border-radius:10px; overflow:hidden; }
+.memo-video-player video { width:100%; display:block; max-height:70vh; }
+.memo-video-player .memo-video-play { position:absolute; inset:0; width:100%; border:0; background:rgba(0,0,0,.16); color:white; font:inherit; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; }
+.memo-video-player .memo-video-status { position:absolute; left:10px; right:10px; bottom:42px; padding:6px 9px; border-radius:7px; background:rgba(0,0,0,.65); color:white; font-size:.75rem; pointer-events:none; }
+.memo-video-preview { display:block; width:100%; height:100%; object-fit:cover; }
+.archive-item-media .memo-video-player { max-width:100%; }
+#lightboxContent .memo-video-player { width:min(90vw,900px); }
+
 </style>
 </head>
 
@@ -2274,7 +2284,9 @@ import {
   validateAudioRecording,
   validateMediaFile,
   videoContentType
-} from "./app-core.js";
+} from "./app-core.js?v=4.4.0";
+import { SearchPageCache, albumTileSignature } from "./performance-core.js?v=4.4.0";
+import { createVideoPreview, createDeferredVideo, generateVideoThumbnail, clearMediaPreviews, stopMediaWithin } from "./media-performance.js?v=4.4.0";
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
@@ -2294,6 +2306,7 @@ import {
   onValue,
   onChildAdded,
   onChildChanged,
+  onChildRemoved,
   onDisconnect,
   serverTimestamp,
   query,
@@ -2407,6 +2420,9 @@ let appHasFocus = true;
 let swRegistration = null;
 
 let roomEntered = false;
+let activeRoomSession = 0;
+let activeRoomUserId = "";
+const roomCleanupTasks = new Set();
 let stickerPanelOpen = false;
 let pendingProofKey = null;
 let replyTo = null;
@@ -2442,6 +2458,133 @@ let clientTranslationRetryAt = 0;
 
 const seenKeys = new Set();
 window._loadedMessages = {};
+
+function isCurrentRoomSession(sessionId, userId = activeRoomUserId) {
+  return roomEntered
+    && activeRoomSession === sessionId
+    && activeRoomUserId === userId;
+}
+
+function registerRoomCleanup(sessionId, cleanup) {
+  if (typeof cleanup !== "function") return cleanup;
+
+  if (!isCurrentRoomSession(sessionId)) {
+    cleanup();
+    return cleanup;
+  }
+
+  roomCleanupTasks.add(cleanup);
+  return cleanup;
+}
+
+function addRoomEventListener(sessionId, target, type, handler, options) {
+  target.addEventListener(type, handler, options);
+  registerRoomCleanup(sessionId, () => target.removeEventListener(type, handler, options));
+}
+
+function resetAccountPrivateState() {
+  me = null;
+  partner = null;
+  pendingProofKey = null;
+  replyTo = null;
+  partnerLastRead = 0;
+  enterTime = 0;
+  oldestKey = null;
+  loadingOlder = false;
+  hasMoreOlder = true;
+  albumMedia = [];
+  albumMediaKeyByUrl = new Map();
+  favoriteMediaKeys = new Set();
+  albumFavoriteOnly = false;
+  trashMedia = [];
+  fcmReady = false;
+  seenKeys.clear();
+  window._loadedMessages = {};
+  delete window._myLastReadSent;
+  delete window._incomingJitsiUrl;
+
+  const chat = document.getElementById("chatMessages");
+  if (chat) {
+    Array.from(chat.children).forEach(child => {
+      if (child.id !== "topSentinel") child.remove();
+    });
+    delete chat.dataset.historyScrollBound;
+  }
+
+  const privateContainers = ["albumGrid", "archiveList", "todoActiveList", "todoDoneList", "trashList"];
+  privateContainers.forEach(id => {
+    const element = document.getElementById(id);
+    if (element) element.innerHTML = "";
+  });
+
+  const partnerStatus = document.getElementById("partnerStatus");
+  if (partnerStatus) partnerStatus.textContent = "상대방 대기 중...";
+
+  const albumCount = document.getElementById("albumCount");
+  if (albumCount) albumCount.textContent = "0개";
+
+  const albumTrashButton = document.getElementById("albumTrashBtn");
+  if (albumTrashButton) albumTrashButton.hidden = true;
+
+  const favoriteButton = document.getElementById("albumFavoriteFilter");
+  if (favoriteButton) {
+    favoriteButton.classList.remove("on");
+    favoriteButton.setAttribute("aria-pressed", "false");
+    favoriteButton.textContent = "♥ 좋아요";
+  }
+
+  const replyBar = document.getElementById("replyBar");
+  if (replyBar) replyBar.classList.remove("show");
+
+  const profileFields = {
+    myNameDisplay:"-",
+    myEmailDisplay:"-",
+    myAvatarDisplay:"-"
+  };
+  Object.entries(profileFields).forEach(([id, value]) => {
+    const element = document.getElementById(id);
+    if (element) element.textContent = value;
+  });
+}
+
+function disposeRoom() {
+  activeRoomSession += 1;
+  activeRoomUserId = "";
+  roomEntered = false;
+
+  const cleanupTasks = Array.from(roomCleanupTasks);
+  roomCleanupTasks.clear();
+
+  cleanupTasks.reverse().forEach(cleanup => {
+    try {
+      cleanup();
+    } catch (err) {
+      console.warn("[Room cleanup]", err);
+    }
+  });
+
+  clearTimeout(initialLoadTimer);
+  initialLoadTimer = null;
+  resetAccountPrivateState();
+
+  const clearPrivateState = window.clearPrivatePerformanceState;
+  if (typeof clearPrivateState === "function") {
+    try {
+      clearPrivateState();
+    } catch (err) {
+      console.warn("[Private state cleanup]", err);
+    }
+  } else {
+    queueMicrotask(() => {
+      try {
+        window.clearPrivatePerformanceState?.();
+        if (roomEntered) postPrivateCacheSession();
+      } catch (err) {
+        console.warn("[Private state cleanup]", err);
+      }
+    });
+  }
+}
 
 const CHECK_SINGLE = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
 const CHECK_DOUBLE = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 6 7 17 2 12"/><polyline points="23 6 12 17"/></svg>`;
@@ -2483,9 +2626,10 @@ window.addEventListener("focus", () => {
 });
 
 const swReadyPromise = ("serviceWorker" in navigator)
-  ? navigator.serviceWorker.register("./firebase-messaging-sw.js")
+  ? navigator.serviceWorker.register("./firebase-messaging-sw.js", { updateViaCache:"none" })
       .then(reg => {
         swRegistration = reg;
+        postPrivateCacheSession();
         return reg;
       })
       .catch(err => {
@@ -2585,7 +2729,7 @@ async function getFCMToken() {
   });
 }
 
-async function initNotif() {
+async function initNotif(sessionId = activeRoomSession, userId = activeRoomUserId, roomUser = me) {
   const saved = localStorage.getItem("memo_notif");
   const toggle = document.getElementById("notifToggle");
 
@@ -2599,13 +2743,15 @@ async function initNotif() {
 
     try {
       const token = await getFCMToken();
-      if (token && me) {
-        await set(ref(db, `${ROOM_ID}/tokens/${me.name}`), token);
-        fcmReady = true;
+      if (token && roomUser && isCurrentRoomSession(sessionId, userId)) {
+        await set(ref(db, `${ROOM_ID}/tokens/${roomUser.name}`), token);
+        if (isCurrentRoomSession(sessionId, userId)) fcmReady = true;
       }
     } catch (err) {
-      fcmReady = false;
-      console.warn("[FCM] 토큰 갱신 실패:", err);
+      if (isCurrentRoomSession(sessionId, userId)) {
+        fcmReady = false;
+        console.warn("[FCM] 토큰 갱신 실패:", err);
+      }
     }
   }
 }
@@ -2770,17 +2916,17 @@ window.signInWithGoogle = async function() {
 
 onAuthStateChanged(auth, async user => {
   if (!user) {
-    roomEntered = false;
+    disposeRoom();
     showScreen("loginScreen");
     return;
   }
 
-  if (roomEntered) return;
+  if (roomEntered && activeRoomUserId === user.uid) return;
 
   const profile = ALLOWED[user.email];
 
   if (!profile) {
-    await signOut(auth);
+    disposeRoom();
 
     const errEl = document.getElementById("loginError");
     if (errEl) {
@@ -2788,8 +2934,11 @@ onAuthStateChanged(auth, async user => {
     }
 
     showScreen("loginScreen");
+    await signOut(auth);
     return;
   }
+
+  disposeRoom();
 
   me = {
     ...profile,
@@ -2807,53 +2956,76 @@ onAuthStateChanged(auth, async user => {
   showTranslations = loadTranslationPreference(user.email);
   applyTranslationVisibility();
 
-  roomEntered = true;
   enterRoom();
 });
 
 function enterRoom() {
-  const meRef = ref(db, `${ROOM_ID}/presence/${me.name}`);
+  if (!me || !partner) return;
+
+  const sessionId = ++activeRoomSession;
+  const roomMe = me;
+  const roomPartner = partner;
+  const userId = roomMe.authUid;
+
+  activeRoomUserId = userId;
+  roomEntered = true;
+  enterTime = Date.now();
+  postPrivateCacheSession();
+
+  const meRef = ref(db, `${ROOM_ID}/presence/${roomMe.name}`);
+  const onlineRef = ref(db, `${ROOM_ID}/presence/${roomMe.name}/online`);
 
   set(meRef, {
     online: true,
-    name: me.name,
-    photoURL: me.photoURL || "",
+    name: roomMe.name,
+    photoURL: roomMe.photoURL || "",
     ts: serverTimestamp()
+  }).catch(err => console.warn("[Presence] 온라인 상태 저장 실패:", err));
+
+  const disconnectPresence = onDisconnect(meRef);
+  disconnectPresence.update({ online: false })
+    .catch(err => console.warn("[Presence] 연결 종료 상태 등록 실패:", err));
+  registerRoomCleanup(sessionId, () => {
+    disconnectPresence.cancel()
+      .catch(err => console.warn("[Presence] 연결 종료 상태 해제 실패:", err));
   });
 
-  onDisconnect(meRef).update({ online: false });
+  const onRoomVisibilityChange = () => {
+    if (!isCurrentRoomSession(sessionId, userId)) return;
 
-  document.addEventListener("visibilitychange", () => {
-    if (!me) return;
+    set(onlineRef, document.visibilityState === "visible")
+      .catch(err => console.warn("[Presence] 표시 상태 저장 실패:", err));
+  };
 
-    set(
-      ref(db, `${ROOM_ID}/presence/${me.name}/online`),
-      document.visibilityState === "visible"
-    );
-  });
+  const onRoomBeforeUnload = () => {
+    if (!isCurrentRoomSession(sessionId, userId)) return;
+    set(onlineRef, false).catch(() => {});
+  };
 
-  window.addEventListener("beforeunload", () => {
-    if (!me) return;
-    set(ref(db, `${ROOM_ID}/presence/${me.name}/online`), false);
-  });
+  addRoomEventListener(sessionId, document, "visibilitychange", onRoomVisibilityChange);
+  addRoomEventListener(sessionId, window, "beforeunload", onRoomBeforeUnload);
 
-  onValue(ref(db, `${ROOM_ID}/presence/${partner.name}`), snap => {
-    const data = snap.val();
-    const el = document.getElementById("partnerStatus");
+  registerRoomCleanup(sessionId, onValue(
+    ref(db, `${ROOM_ID}/presence/${roomPartner.name}`),
+    snap => {
+      if (!isCurrentRoomSession(sessionId, userId)) return;
 
-    if (!el) return;
+      const data = snap.val();
+      const el = document.getElementById("partnerStatus");
+      if (!el) return;
 
-    el.innerHTML = "";
+      el.innerHTML = "";
 
-    if (data?.online) {
-      const dot = document.createElement("span");
-      dot.className = "online-dot";
-      el.appendChild(dot);
-      el.appendChild(document.createTextNode(`${partner.name} 온라인`));
-    } else {
-      el.textContent = `${partner.name} 오프라인`;
+      if (data?.online) {
+        const dot = document.createElement("span");
+        dot.className = "online-dot";
+        el.appendChild(dot);
+        el.appendChild(document.createTextNode(`${roomPartner.name} 온라인`));
+      } else {
+        el.textContent = `${roomPartner.name} 오프라인`;
+      }
     }
-  });
+  ));
 
   const container = document.getElementById("chatMessages");
   const messagesRef = ref(db, `${ROOM_ID}/messages`);
@@ -2861,7 +3033,12 @@ function enterRoom() {
   let latestTheirTs = 0;
   let lastReadTimer = null;
   let initialLoadDone = false;
-  let pressTimer;
+  let pressTimer = null;
+
+  registerRoomCleanup(sessionId, () => {
+    clearTimeout(lastReadTimer);
+    clearTimeout(pressTimer);
+  });
 
   function updateMyLastRead(ts) {
     if (!ts || ts === window._myLastReadSent) return;
@@ -2869,12 +3046,15 @@ function enterRoom() {
     clearTimeout(lastReadTimer);
 
     lastReadTimer = setTimeout(() => {
+      if (!isCurrentRoomSession(sessionId, userId)) return;
+
       window._myLastReadSent = ts;
-      set(ref(db, `${ROOM_ID}/lastRead/${me.name}`), ts);
+      set(ref(db, `${ROOM_ID}/lastRead/${roomMe.name}`), ts)
+        .catch(err => console.warn("[Read state] 저장 실패:", err));
     }, 500);
   }
 
-  container.addEventListener("touchstart", event => {
+  const onMessageTouchStart = event => {
     const wrap = event.target.closest(".msg-wrap");
     if (!wrap?.dataset.key) return;
 
@@ -2882,14 +3062,16 @@ function enterRoom() {
     if (!msg || msg.type === "system") return;
 
     pressTimer = setTimeout(() => {
-      showCtxMenu(msg, wrap);
+      if (isCurrentRoomSession(sessionId, userId)) showCtxMenu(msg, wrap);
     }, 500);
-  }, { passive:true });
+  };
 
-  container.addEventListener("touchend", () => clearTimeout(pressTimer), { passive:true });
-  container.addEventListener("touchmove", () => clearTimeout(pressTimer), { passive:true });
+  const cancelMessagePress = () => {
+    clearTimeout(pressTimer);
+    pressTimer = null;
+  };
 
-  container.addEventListener("contextmenu", event => {
+  const onMessageContextMenu = event => {
     const wrap = event.target.closest(".msg-wrap");
     if (!wrap?.dataset.key) return;
 
@@ -2898,15 +3080,21 @@ function enterRoom() {
 
     event.preventDefault();
     showCtxMenu(msg, wrap, { x:event.clientX, y:event.clientY });
-  });
+  };
 
-  container.addEventListener("dblclick", event => {
+  const onMessageDoubleClick = event => {
     const wrap = event.target.closest(".msg-wrap");
     if (!wrap?.dataset.key) return;
 
     const msg = window._loadedMessages[wrap.dataset.key];
     if (msg?.type === "text") window.setReply(msg);
-  });
+  };
+
+  addRoomEventListener(sessionId, container, "touchstart", onMessageTouchStart, { passive:true });
+  addRoomEventListener(sessionId, container, "touchend", cancelMessagePress, { passive:true });
+  addRoomEventListener(sessionId, container, "touchmove", cancelMessagePress, { passive:true });
+  addRoomEventListener(sessionId, container, "contextmenu", onMessageContextMenu);
+  addRoomEventListener(sessionId, container, "dblclick", onMessageDoubleClick);
 
   const initialQuery = query(
     messagesRef,
@@ -2914,8 +3102,11 @@ function enterRoom() {
     limitToLast(50)
   );
 
-  onChildAdded(initialQuery, snap => {
+  registerRoomCleanup(sessionId, onChildAdded(initialQuery, snap => {
+    if (!isCurrentRoomSession(sessionId, userId)) return;
+
     const key = snap.key;
+    window.invalidateSearchPageCache?.(key);
 
     if (seenKeys.has(key)) return;
 
@@ -2930,7 +3121,7 @@ function enterRoom() {
 
     renderMessage(msg, key, shouldStickToBottom);
 
-    if (msg.uid !== me.name && msg.ts > latestTheirTs) {
+    if (msg.uid !== roomMe.name && msg.ts > latestTheirTs) {
       latestTheirTs = msg.ts;
       updateMyLastRead(msg.ts);
 
@@ -2942,16 +3133,20 @@ function enterRoom() {
     clearTimeout(initialLoadTimer);
 
     initialLoadTimer = setTimeout(() => {
-      if (initialLoadDone) return;
+      if (!isCurrentRoomSession(sessionId, userId) || initialLoadDone) return;
 
       initialLoadDone = true;
       window.scrollToLatest();
-      setupHistoryScroll();
+      setupHistoryScroll(sessionId, userId);
     }, 250);
-  });
+  }));
 
-  onChildChanged(messagesRef, snap => {
+  registerRoomCleanup(sessionId, onChildChanged(messagesRef, snap => {
+    if (!isCurrentRoomSession(sessionId, userId)) return;
+
     const key = snap.key;
+    window.invalidateSearchPageCache?.(key);
+
     const msg = snap.val();
     const el = container.querySelector(`[data-key="${key}"]`);
 
@@ -2961,63 +3156,80 @@ function enterRoom() {
     const replacement = createMessageElement(msg, key);
     replacement.dataset.date = el.dataset.date || getDateStr(msg.ts);
     el.replaceWith(replacement);
-  });
+  }));
 
-  onValue(ref(db, `${ROOM_ID}/lastRead/${partner.name}`), snap => {
-    partnerLastRead = snap.val() || 0;
+  registerRoomCleanup(sessionId, onChildRemoved(messagesRef, snap => {
+    if (!isCurrentRoomSession(sessionId, userId)) return;
 
-    document.querySelectorAll(".read-check[data-ts]").forEach(el => {
-      if (Number(el.dataset.ts) <= partnerLastRead) {
-        el.className = "read-check read";
-        el.innerHTML = CHECK_DOUBLE;
-      }
-    });
-  });
+    const key = snap.key;
+    window.invalidateSearchPageCache?.(key);
+    seenKeys.delete(key);
+    delete window._loadedMessages[key];
+    container.querySelector(`[data-key="${key}"]`)?.remove();
+  }));
 
-  onValue(ref(db, `${ROOM_ID}/media`), snap => {
+  registerRoomCleanup(sessionId, onValue(
+    ref(db, `${ROOM_ID}/lastRead/${roomPartner.name}`),
+    snap => {
+      if (!isCurrentRoomSession(sessionId, userId)) return;
+
+      partnerLastRead = snap.val() || 0;
+
+      document.querySelectorAll(".read-check[data-ts]").forEach(el => {
+        if (Number(el.dataset.ts) <= partnerLastRead) {
+          el.className = "read-check read";
+          el.innerHTML = CHECK_DOUBLE;
+        }
+      });
+    }
+  ));
+
+  registerRoomCleanup(sessionId, onValue(ref(db, `${ROOM_ID}/media`), snap => {
+    if (!isCurrentRoomSession(sessionId, userId)) return;
     updateAlbum(snap.val());
-  });
+  }));
 
-  const isAdmin = me.email.toLowerCase() === ALBUM_ADMIN_EMAIL;
+  const isAdmin = roomMe.email.toLowerCase() === ALBUM_ADMIN_EMAIL;
   document.getElementById("albumTrashBtn").hidden = !isAdmin;
-  if (isAdmin) listenTrash();
+  if (isAdmin) registerRoomCleanup(sessionId, listenTrash(sessionId, userId));
 
-  listenTodos();
-  listenSignaling();
-  listenArchive();
-  listenFavorites();
+  registerRoomCleanup(sessionId, listenTodos(sessionId, userId));
+  registerRoomCleanup(sessionId, listenSignaling(sessionId, userId));
+  registerRoomCleanup(sessionId, listenArchive(sessionId, userId));
+  const unsubscribeFavorites = listenFavorites();
+  registerRoomCleanup(sessionId, unsubscribeFavorites);
 
   const avatarEl = document.getElementById("myAvatarDisplay");
 
   if (avatarEl) {
-    if (me.photoURL) {
+    if (roomMe.photoURL) {
       const img = document.createElement("img");
-      img.src = me.photoURL;
+      img.src = roomMe.photoURL;
       avatarEl.innerHTML = "";
       avatarEl.appendChild(img);
     } else {
-      avatarEl.textContent = me.emoji;
+      avatarEl.textContent = roomMe.emoji;
     }
   }
 
-  document.getElementById("myNameDisplay").textContent = me.name;
-  document.getElementById("myEmailDisplay").textContent = me.email;
+  document.getElementById("myNameDisplay").textContent = roomMe.name;
+  document.getElementById("myEmailDisplay").textContent = roomMe.email;
   document.getElementById("langSelect").value = myLang;
   document.getElementById("translateToggle").checked = showTranslations;
   document.getElementById("appVersionDisplay").textContent = `meMo v${APP_VERSION}`;
 
-  enterTime = Date.now();
-
   loadTheme();
-  initNotif();
+  initNotif(sessionId, userId, roomMe);
 
   initStickerPanel().catch(err => {
-    console.warn("[Sticker] 초기화 실패:", err);
+    if (isCurrentRoomSession(sessionId, userId)) {
+      console.warn("[Sticker] 초기화 실패:", err);
+    }
   });
 
   showScreen("mainScreen");
 
-  document.addEventListener("click", event => {
+  const onRoomDocumentClick = event => {
     if (!stickerPanelOpen) return;
 
     const panel = document.getElementById("stickerPanel");
@@ -3026,36 +3238,58 @@ function enterRoom() {
     if (!panel.contains(event.target) && !button.contains(event.target)) {
       closeStickerPanel();
     }
-  });
+  };
+
+  addRoomEventListener(sessionId, document, "click", onRoomDocumentClick);
 }
 
-function setupHistoryScroll() {
+function setupHistoryScroll(sessionId = activeRoomSession, userId = activeRoomUserId) {
   const cm = document.getElementById("chatMessages");
 
-  if (!cm || cm.dataset.historyScrollBound === "1") return;
+  if (!cm || !isCurrentRoomSession(sessionId, userId) || cm.dataset.historyScrollBound === "1") return;
 
   cm.dataset.historyScrollBound = "1";
 
-  cm.addEventListener("scroll", () => {
+  const onHistoryScroll = () => {
+    if (!isCurrentRoomSession(sessionId, userId)) return;
+
     if (cm.scrollTop <= 120 && !loadingOlder && hasMoreOlder) {
       loadOlderMessages();
     }
-  }, { passive:true });
+  };
 
-  requestAnimationFrame(() => {
-    if (cm.scrollHeight <= cm.clientHeight + 80 && hasMoreOlder) {
+  addRoomEventListener(sessionId, cm, "scroll", onHistoryScroll, { passive:true });
+  registerRoomCleanup(sessionId, () => {
+    delete cm.dataset.historyScrollBound;
+  });
+
+  const initialHistoryFrame = requestAnimationFrame(() => {
+    if (
+      isCurrentRoomSession(sessionId, userId)
+      && cm.scrollHeight <= cm.clientHeight + 80
+      && hasMoreOlder
+    ) {
       loadOlderMessages();
     }
   });
+
+  registerRoomCleanup(sessionId, () => cancelAnimationFrame(initialHistoryFrame));
 }
 
 async function loadOlderMessages() {
-  if (loadingOlder || !hasMoreOlder || !oldestKey) return;
+  if (loadingOlder || !hasMoreOlder || !oldestKey || !roomEntered) return;
 
+  const sessionId = activeRoomSession;
+  const userId = activeRoomUserId;
+  const paginationKey = oldestKey;
   loadingOlder = true;
 
   const cm = document.getElementById("chatMessages");
   const sentinel = document.getElementById("topSentinel");
+  if (!cm || !sentinel) {
+    loadingOlder = false;
+    return;
+  }
 
   const beforeHeight = cm.scrollHeight;
   const beforeTop = cm.scrollTop;
@@ -3066,11 +3300,12 @@ async function loadOlderMessages() {
     const olderQuery = query(
       messagesRef,
       orderByKey(),
-      endBefore(oldestKey),
+      endBefore(paginationKey),
       limitToLast(20)
     );
 
     const snapshot = await get(olderQuery);
+    if (!isCurrentRoomSession(sessionId, userId)) return;
 
     if (!snapshot.exists()) {
       hasMoreOlder = false;
@@ -3126,15 +3361,21 @@ async function loadOlderMessages() {
     if (fragment.childNodes.length) {
       cm.insertBefore(fragment, sentinel.nextSibling);
 
-      requestAnimationFrame(() => {
-        cm.scrollTop = beforeTop + (cm.scrollHeight - beforeHeight);
+      const restoreScrollFrame = requestAnimationFrame(() => {
+        if (isCurrentRoomSession(sessionId, userId)) {
+          cm.scrollTop = beforeTop + (cm.scrollHeight - beforeHeight);
+        }
       });
+      registerRoomCleanup(sessionId, () => cancelAnimationFrame(restoreScrollFrame));
     }
   } catch (err) {
+    if (!isCurrentRoomSession(sessionId, userId)) return;
     console.error("과거 메시지 로드 실패:", err);
     showToast("과거 메시지를 불러오지 못했습니다.");
   } finally {
-    loadingOlder = false;
+    if (activeRoomSession === sessionId) {
+      loadingOlder = false;
+    }
   }
 }
 
@@ -3513,12 +3754,7 @@ function createMessageElement(msg, key) {
     const media = document.createElement("div");
     media.className = "msg-media";
 
-    const video = document.createElement("video");
-    video.src = msg.url;
-    video.controls = true;
-    video.playsInline = true;
-
-    media.appendChild(video);
+    media.appendChild(createDeferredVideo(msg));
     bubble.appendChild(media);
   }
 
@@ -3570,12 +3806,7 @@ function createMessageElement(msg, key) {
         deleted.textContent = "삭제됨";
         cell.appendChild(deleted);
       } else if (item.type === "video") {
-        const video = document.createElement("video");
-        video.src = item.url;
-        video.preload = "metadata";
-        video.muted = true;
-        video.playsInline = true;
-        cell.appendChild(video);
+        cell.appendChild(createVideoPreview(item));
       } else {
         const img = document.createElement("img");
         img.src = item.url;
@@ -3942,9 +4173,10 @@ async function uploadOneFile(file, progressPrefix = "") {
       targetFile = new Blob([bytes], { type:contentType });
     }
 
+    const previewPromise = isVideo ? generateVideoThumbnail(targetFile) : Promise.resolve({});
     const safeName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${uploadName}`;
     const storageRef = sRef(storage, `${ROOM_ID}/${safeName}`);
-    const metadata = { contentType };
+    const metadata = { contentType, cacheControl:"private,max-age=86400" };
     let uploadedRef;
 
     if (isVideo) {
@@ -3968,6 +4200,7 @@ async function uploadOneFile(file, progressPrefix = "") {
     }
 
     const url = await getDownloadURL(uploadedRef);
+    const preview = await previewPromise;
 
     return {
       url,
@@ -3975,7 +4208,8 @@ async function uploadOneFile(file, progressPrefix = "") {
       size:targetFile.size,
       mimeType:contentType,
       fileName:uploadName,
-      storagePath:`${ROOM_ID}/${safeName}`
+      storagePath:`${ROOM_ID}/${safeName}`,
+      ...preview
     };
   } catch (err) {
     console.error("[Storage upload failed]", {
@@ -4020,6 +4254,8 @@ async function sendSingleMedia(file) {
       url,
       mediaKey,
       storagePath:uploaded.storagePath,
+      ...(uploaded.thumbnail ? { thumbnail:uploaded.thumbnail } : {}),
+      ...(uploaded.durationMs ? { durationMs:uploaded.durationMs } : {}),
       ts
       },
       [`media/${mediaKey}`]:{
@@ -4032,6 +4268,8 @@ async function sendSingleMedia(file) {
         size:uploaded.size,
         mimeType:uploaded.mimeType,
         storagePath:uploaded.storagePath,
+        ...(uploaded.thumbnail ? { thumbnail:uploaded.thumbnail } : {}),
+        ...(uploaded.durationMs ? { durationMs:uploaded.durationMs } : {}),
         ownerUid:me.authUid,
         ownerEmail:me.email
       }
@@ -4084,6 +4322,8 @@ async function sendMediaGroup(files) {
         size:item.size,
         mimeType:item.mimeType,
         storagePath:item.storagePath,
+        ...(item.thumbnail ? { thumbnail:item.thumbnail } : {}),
+        ...(item.durationMs ? { durationMs:item.durationMs } : {}),
         ownerUid:me.authUid,
         ownerEmail:me.email
       };
@@ -4122,13 +4362,39 @@ window.sendMedia = async function(event) {
   }
 };
 
+const albumTiles = new Map();
+const albumSections = new Map();
+let albumVisibleGallery = [];
+
+function postPrivateCacheSession() {
+  const worker = navigator.serviceWorker?.controller || swRegistration?.active;
+  worker?.postMessage({ type:"MEMO_CACHE_SESSION", uid:me?.authUid || null });
+}
+
+function invalidatePrivateImageUrls(urls) {
+  const worker = navigator.serviceWorker?.controller || swRegistration?.active;
+  const eligible = urls.filter(value => {
+    try { const url = new URL(value); return url.hostname === "firebasestorage.googleapis.com" && url.pathname.includes("/b/memo-e366f.firebasestorage.app/o/"); } catch { return false; }
+  });
+  for (let offset = 0; offset < eligible.length; offset += 64) worker?.postMessage({ type:"MEMO_CACHE_INVALIDATE", urls:eligible.slice(offset, offset + 64) });
+}
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.addEventListener("controllerchange", postPrivateCacheSession);
+  setInterval(postPrivateCacheSession, 30000);
+}
+
 function updateAlbum(media) {
+  const oldUrls = new Set(albumMedia.map(item => item.url));
   albumMedia = media
     ? Object.entries(media)
         .map(([key, item]) => ({ key, ...item }))
         .sort((a, b) => b.ts - a.ts)
     : [];
 
+  const currentUrls = new Set(albumMedia.map(item => item.url));
+  const removedUrls = [...oldUrls].filter(url => !currentUrls.has(url));
+  if (removedUrls.length) invalidatePrivateImageUrls(removedUrls);
   albumMediaKeyByUrl = buildMediaKeyIndex(albumMedia);
 
   refreshAlbumMonthOptions();
@@ -4141,7 +4407,13 @@ function favoritePath() {
 }
 
 function listenFavorites() {
-  onValue(ref(db, favoritePath()), snap => {
+  const sessionId = activeRoomSession;
+  const userId = activeRoomUserId;
+  const path = favoritePath();
+
+  return onValue(ref(db, path), snap => {
+    if (!isCurrentRoomSession(sessionId, userId)) return;
+
     favoriteMediaKeys = favoriteKeySet(snap.val());
     updateAlbumFavoriteToggle();
     window.renderAlbum();
@@ -4171,6 +4443,9 @@ function refreshAlbumMonthOptions() {
   const previous = select.value || "all";
   const months = [...new Set(albumMedia.map(item => albumMonthKey(item.ts)))].sort().reverse();
 
+  const signature = months.join(",");
+  if (select.dataset.months === signature) return;
+  select.dataset.months = signature;
   select.innerHTML = `<option value="all">전체 기간</option>`;
 
   months.forEach(month => {
@@ -4186,70 +4461,97 @@ function refreshAlbumMonthOptions() {
 
 window.renderAlbum = function() {
   const grid = document.getElementById("albumGrid");
+  const pane = document.getElementById("albumGrid");
   const month = document.getElementById("albumMonthFilter").value;
   const type = document.getElementById("albumTypeFilter").value;
-
   const filtered = filterAlbumMedia(albumMedia, {
-    month,
-    type,
-    favoritesOnly:albumFavoriteOnly,
-    favorites:favoriteMediaKeys
+    month, type, favoritesOnly:albumFavoriteOnly, favorites:favoriteMediaKeys
   });
-
+  albumVisibleGallery = filtered;
+  const paneTop = pane.getBoundingClientRect().top;
+  const anchor = !document.getElementById("albumPane").classList.contains("hidden") && pane.scrollTop > 0
+    ? [...grid.querySelectorAll(".album-item")].find(node => node.getBoundingClientRect().bottom > paneTop)
+    : null;
+  const anchorTop = anchor?.getBoundingClientRect().top;
   document.getElementById("albumCount").textContent = albumFavoriteOnly
-    ? `♥ ${filtered.length}개`
-    : `${filtered.length}개`;
-  grid.innerHTML = "";
-
+    ? `♥ ${filtered.length}개` : `${filtered.length}개`;
+  const activeKeys = new Set(filtered.map(item => item.key));
+  for (const [key, entry] of albumTiles) {
+    if (!activeKeys.has(key)) {
+      stopMediaWithin(entry.node, { force:true });
+      entry.node.remove();
+      albumTiles.delete(key);
+    }
+  }
+  grid.querySelector(".album-empty")?.remove();
   if (!filtered.length) {
-    grid.innerHTML = `<div class="album-empty" style="height:300px">${
-      albumFavoriteOnly
-        ? "좋아요한 사진이 없어요. 사진을 크게 열어 ♡를 눌러보세요."
-        : "조건에 맞는 미디어가 없어요"
-    }</div>`;
+    for (const section of albumSections.values()) section.node.remove();
+    albumSections.clear();
+    const empty = document.createElement("div");
+    empty.className = "album-empty";
+    empty.style.height = "300px";
+    empty.textContent = albumFavoriteOnly
+      ? "좋아요한 사진이 없어요. 사진을 크게 열어 ♡를 눌러보세요."
+      : "조건에 맞는 미디어가 없어요";
+    grid.appendChild(empty);
     return;
   }
-
   const groups = new Map();
-
   filtered.forEach(item => {
     const date = getDateStr(item.ts);
     if (!groups.has(date)) groups.set(date, []);
     groups.get(date).push(item);
   });
-
-  groups.forEach((items, date) => {
-    const section = document.createElement("section");
-    section.className = "album-section";
-
-    const title = document.createElement("div");
-    title.className = "album-section-title";
-    title.textContent = `${date} · ${items.length}개`;
-
-    const sectionGrid = document.createElement("div");
-    sectionGrid.className = "album-section-grid";
-
-    items.forEach(item => {
-      sectionGrid.appendChild(createAlbumItem(item, filtered));
+  for (const [date, section] of albumSections) {
+    if (!groups.has(date)) { section.node.remove(); albumSections.delete(date); }
+  }
+  let sectionIndex = 0;
+  for (const [date, items] of groups) {
+    let section = albumSections.get(date);
+    if (!section) {
+      const node = document.createElement("section");
+      node.className = "album-section";
+      const title = document.createElement("div");
+      title.className = "album-section-title";
+      const body = document.createElement("div");
+      body.className = "album-section-grid";
+      node.append(title, body);
+      section = { node, title, body };
+      albumSections.set(date, section);
+    }
+    section.title.textContent = `${date} · ${items.length}개`;
+    items.forEach((item, index) => {
+      const signature = albumTileSignature(item);
+      let entry = albumTiles.get(item.key);
+      if (!entry || entry.signature !== signature) {
+        if (entry) { stopMediaWithin(entry.node, { force:true }); entry.node.remove(); }
+        const node = createAlbumItem(item);
+        node.dataset.mediaKey = item.key;
+        entry = { node, signature };
+        albumTiles.set(item.key, entry);
+      }
+      let badge = entry.node.querySelector(".album-fav-badge");
+      if (favoriteMediaKeys.has(item.key) && !badge) {
+        badge = document.createElement("span");
+        badge.className = "album-fav-badge";
+        badge.textContent = "♥";
+        badge.setAttribute("aria-hidden", "true");
+        entry.node.appendChild(badge);
+      } else if (!favoriteMediaKeys.has(item.key)) badge?.remove();
+      if (section.body.children[index] !== entry.node) section.body.insertBefore(entry.node, section.body.children[index] || null);
     });
-
-    section.appendChild(title);
-    section.appendChild(sectionGrid);
-    grid.appendChild(section);
-  });
+    if (grid.children[sectionIndex] !== section.node) grid.insertBefore(section.node, grid.children[sectionIndex] || null);
+    sectionIndex += 1;
+  }
+  if (anchor?.isConnected && anchorTop !== undefined) pane.scrollTop += anchor.getBoundingClientRect().top - anchorTop;
 };
 
-function createAlbumItem(item, gallery) {
+function createAlbumItem(item) {
   const div = document.createElement("div");
   div.className = "album-item";
 
   if (item.type === "video") {
-    const video = document.createElement("video");
-    video.src = item.url;
-    video.preload = "metadata";
-    video.muted = true;
-    video.playsInline = true;
-    div.appendChild(video);
+    div.appendChild(createVideoPreview(item));
 
     const play = document.createElement("div");
     play.className = "play-icon";
@@ -4264,6 +4566,7 @@ function createAlbumItem(item, gallery) {
   }
 
   div.onclick = () => {
+    const gallery = albumVisibleGallery;
     const index = gallery.findIndex(entry => entry.key === item.key);
     window.openLightbox(item.type, item.url, gallery, Math.max(index, 0));
   };
@@ -4318,8 +4621,10 @@ function createAlbumItem(item, gallery) {
   return div;
 }
 
-function listenTrash() {
-  onValue(ref(db, `${ROOM_ID}/trash/media`), snap => {
+function listenTrash(sessionId = activeRoomSession, userId = activeRoomUserId) {
+  return onValue(ref(db, `${ROOM_ID}/trash/media`), snap => {
+    if (!isCurrentRoomSession(sessionId, userId)) return;
+
     const value = snap.val();
     trashMedia = value
       ? Object.entries(value)
@@ -4346,12 +4651,7 @@ function renderTrash() {
     item.className = "trash-item";
 
     if (media.type === "video") {
-      const video = document.createElement("video");
-      video.src = media.url || "";
-      video.preload = "metadata";
-      video.muted = true;
-      video.playsInline = true;
-      item.appendChild(video);
+      item.appendChild(createVideoPreview(media));
     } else {
       const image = document.createElement("img");
       image.src = media.url || "";
@@ -4449,6 +4749,7 @@ window.toggleLightboxFavorite = async function() {
 
 function renderLightboxItem(type, url) {
   const content = document.getElementById("lightboxContent");
+  stopMediaWithin(content, { force:true });
   content.innerHTML = "";
   lightboxMediaUrl = url || "";
 
@@ -4457,12 +4758,12 @@ function renderLightboxItem(type, url) {
     img.src = url;
     content.appendChild(img);
   } else {
-    const video = document.createElement("video");
-    video.src = url;
-    video.controls = true;
-    video.playsInline = true;
-    video.autoplay = true;
-    content.appendChild(video);
+    const item = lightboxGallery?.items[lightboxGallery.index]
+      || albumMedia.find(media => media.url === url)
+      || { url, type:"video" };
+    const player = createDeferredVideo(item, { autoplay:true });
+    content.appendChild(player);
+    player.startPlayback?.();
   }
 }
 
@@ -4503,6 +4804,7 @@ window.openLightbox = function(type, url, items, index = 0) {
 
 window.closeLightbox = function() {
   document.getElementById("lightbox").classList.remove("open");
+  stopMediaWithin(document.getElementById("lightboxContent"), { force:true });
   document.getElementById("lightboxContent").innerHTML = "";
   lightboxGallery = null;
   lightboxMediaUrl = "";
@@ -4549,8 +4851,9 @@ document.addEventListener("keydown", event => {
   }
 });
 
-function listenTodos() {
-  onValue(ref(db, `${ROOM_ID}/todos`), snap => {
+function listenTodos(sessionId = activeRoomSession, userId = activeRoomUserId) {
+  return onValue(ref(db, `${ROOM_ID}/todos`), snap => {
+    if (!isCurrentRoomSession(sessionId, userId)) return;
     renderTodos(snap.val());
   });
 }
@@ -4763,14 +5066,18 @@ window.startJitsiCall = async function(type) {
   showToast(type === "audio" ? "음성통화 시작..." : "영상통화 시작...");
 };
 
-function listenSignaling() {
-  onValue(ref(db, `${ROOM_ID}/signal/${me.name}`), snap => {
-    const sig = snap.val();
+function listenSignaling(sessionId = activeRoomSession, userId = activeRoomUserId) {
+  const signalName = me.name;
+  const signalRef = ref(db, `${ROOM_ID}/signal/${signalName}`);
 
+  return onValue(signalRef, snap => {
+    if (!isCurrentRoomSession(sessionId, userId)) return;
+
+    const sig = snap.val();
     if (!sig) return;
 
     if (sig.ts && Date.now() - sig.ts > 30000) {
-      set(ref(db, `${ROOM_ID}/signal/${me.name}`), null);
+      set(signalRef, null);
       return;
     }
 
@@ -4855,11 +5162,19 @@ window.saveTranslatePref = function() {
 window.doLogout = async function() {
   if (!confirm("로그아웃 할까요?")) return;
 
+  const roomMe = me;
   resetVoiceComposer();
+  disposeRoom();
 
-  await set(ref(db, `${ROOM_ID}/presence/${me.name}`), {
-    online:false
-  });
+  if (roomMe) {
+    try {
+      await set(ref(db, `${ROOM_ID}/presence/${roomMe.name}`), {
+        online:false
+      });
+    } catch (err) {
+      console.warn("[Presence] 로그아웃 상태 저장 실패:", err);
+    }
+  }
 
   await signOut(auth);
 };
@@ -4869,6 +5184,37 @@ let searchIdx = -1;
 let searchRunId = 0;
 let searchTimer = null;
 let searchTotalMatches = 0;
+const searchPageCache = new SearchPageCache();
+let searchRefreshTimer = null;
+let searchContextRunId = 0;
+
+window.invalidateSearchPageCache = function(key) {
+  searchPageCache.invalidate(key);
+  const input = document.getElementById("searchInput");
+  const results = document.getElementById("searchResults");
+  if (me && input?.value.trim() && results?.classList.contains("show")) {
+    searchRunId += 1;
+    clearTimeout(searchRefreshTimer);
+    searchRefreshTimer = setTimeout(() => window.doSearch(), 350);
+  }
+};
+
+window.clearPrivatePerformanceState = function() {
+  searchPageCache.clear();
+  clearTimeout(searchRefreshTimer);
+  clearSearch();
+  document.getElementById("searchBar")?.classList.remove("show");
+  window.closeSearchContext();
+  clearMediaPreviews();
+  stopMediaWithin(document.getElementById("mainScreen"), { force:true });
+  albumTiles.clear();
+  albumSections.clear();
+  albumVisibleGallery = [];
+  const select = document.getElementById("albumMonthFilter");
+  if (select) delete select.dataset.months;
+  navigator.serviceWorker?.controller?.postMessage({ type:"MEMO_CACHE_SESSION", uid:null });
+  swRegistration?.active?.postMessage({ type:"MEMO_CACHE_SESSION", uid:null });
+};
 
 window.toggleSearch = function() {
   const bar = document.getElementById("searchBar");
@@ -4906,6 +5252,7 @@ window.queueSearch = function() {
 
 window.doSearch = async function() {
   clearTimeout(searchTimer);
+  clearTimeout(searchRefreshTimer);
 
   const input = document.getElementById("searchInput");
   const count = document.getElementById("searchCount");
@@ -4918,6 +5265,9 @@ window.doSearch = async function() {
   }
 
   const runId = ++searchRunId;
+  const searchUser = me?.authUid;
+  if (!searchUser) return;
+  postPrivateCacheSession();
   let cursor = null;
   let scanned = 0;
 
@@ -4935,13 +5285,18 @@ window.doSearch = async function() {
         ? query(messagesRef, orderByKey(), endBefore(cursor), limitToLast(SEARCH_PAGE_SIZE))
         : query(messagesRef, orderByKey(), limitToLast(SEARCH_PAGE_SIZE));
 
-      const snapshot = await get(pageQuery);
-      if (runId !== searchRunId) return;
-
-      const page = [];
-      snapshot.forEach(child => {
-        page.push({ key:child.key, msg:child.val() });
-      });
+      // Always refresh the newest page. Reuse older pages only within this
+      // authenticated session; live changed/removed events invalidate them.
+      let page = cursor ? searchPageCache.get(cursor) : null;
+      if (!page) {
+        const generation = searchPageCache.generation;
+        const snapshot = await get(pageQuery);
+        if (runId !== searchRunId || me?.authUid !== searchUser) return;
+        page = [];
+        snapshot.forEach(child => page.push({ key:child.key, msg:child.val() }));
+        if (generation === searchPageCache.generation) searchPageCache.set(cursor, page, SEARCH_PAGE_SIZE);
+      }
+      if (runId !== searchRunId || me?.authUid !== searchUser) return;
 
       if (!page.length) break;
 
@@ -5052,6 +5407,9 @@ function focusSearchResult() {
 }
 
 window.openSearchContext = async function(key) {
+  const contextRunId = ++searchContextRunId;
+  const contextUserId = me?.authUid;
+  if (!contextUserId) return;
   const modal = document.getElementById("searchContext");
   const list = document.getElementById("searchContextList");
   const messagesRef = ref(db, `${ROOM_ID}/messages`);
@@ -5065,6 +5423,7 @@ window.openSearchContext = async function(key) {
       get(query(messagesRef, orderByKey(), startAt(key), limitToFirst(6)))
     ]);
 
+    if (contextRunId !== searchContextRunId || me?.authUid !== contextUserId) return;
     const context = new Map();
     beforeSnap.forEach(child => context.set(child.key, child.val()));
     afterSnap.forEach(child => context.set(child.key, child.val()));
@@ -5095,12 +5454,14 @@ window.openSearchContext = async function(key) {
       list.querySelector(".search-context-row.target")?.scrollIntoView({ block:"center" });
     });
   } catch (err) {
+    if (contextRunId !== searchContextRunId || me?.authUid !== contextUserId) return;
     console.error("검색 문맥 로드 실패:", err);
     list.innerHTML = `<div class="search-empty">문맥을 불러오지 못했습니다.</div>`;
   }
 };
 
 window.closeSearchContext = function() {
+  searchContextRunId += 1;
   document.getElementById("searchContext").classList.remove("open");
   document.getElementById("searchContextList").innerHTML = "";
 };
@@ -5196,6 +5557,7 @@ async function saveToArchive(msg) {
     translation:msg.translation || null,
     type:msg.type || "text",
     url:msg.url || null,
+    ...(msg.thumbnail ? { thumbnail:msg.thumbnail } : {}),
     items:Array.isArray(msg.items) ? msg.items : null,
     durationMs:msg.durationMs || null,
     expiresAt:msg.expiresAt || null,
@@ -5213,8 +5575,11 @@ async function deleteFromArchive(key) {
   await set(ref(db, `${archivePath()}/${key}`), null);
 }
 
-function listenArchive() {
-  onValue(ref(db, archivePath()), snap => {
+function listenArchive(sessionId = activeRoomSession, userId = activeRoomUserId) {
+  const path = archivePath();
+
+  return onValue(ref(db, path), snap => {
+    if (!isCurrentRoomSession(sessionId, userId)) return;
     renderArchiveList(snap.val());
   });
 }
@@ -5274,11 +5639,7 @@ function renderArchiveList(data) {
         wrap.className = "archive-item-media";
 
         if (item.type === "video") {
-          const video = document.createElement("video");
-          video.src = item.url;
-          video.controls = true;
-          video.playsInline = true;
-          wrap.appendChild(video);
+          wrap.appendChild(createDeferredVideo(item));
         } else {
           const img = document.createElement("img");
           img.src = item.url;
@@ -5322,13 +5683,8 @@ function renderArchiveList(data) {
             deleted.textContent = "삭제됨";
             album.appendChild(deleted);
           } else if (media.type === "video") {
-            const video = document.createElement("video");
-            video.src = media.url;
-            video.preload = "metadata";
-            video.muted = true;
-            video.playsInline = true;
-            video.onclick = () => window.openLightbox(media.type, media.url, item.items, index);
-            album.appendChild(video);
+            const preview = createVideoPreview(media, { onActivate:() => window.openLightbox(media.type, media.url, item.items, index) });
+            album.appendChild(preview);
           } else {
             const img = document.createElement("img");
             img.src = media.url;
