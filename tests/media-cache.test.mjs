@@ -517,13 +517,13 @@ test('expired entries miss to network and cache API failures remain fail-open', 
 test('activation removes old public and old private formats but retains the active private format', async () => {
   const h = createHarness();
   await h.cacheStorage.open('memo-v3.0.0');
-  await h.cacheStorage.open('memo-v4.5.0');
+  await h.cacheStorage.open('memo-v4.5.1');
   await h.cacheStorage.open('memo-private-v1-old');
   await h.cacheStorage.open('memo-private-v2-retained');
 
   await h.activate();
   const names = await h.cacheStorage.keys();
-  assert.deepEqual(names.sort(), ['memo-private-v2-retained', 'memo-v4.5.0']);
+  assert.deepEqual(names.sort(), ['memo-private-v2-retained', 'memo-v4.5.1']);
 });
 
 test('service worker logs never include private storage URLs', async () => {

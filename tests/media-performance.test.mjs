@@ -716,3 +716,45 @@ test("module is browser-standalone and contains no persistence or network writes
   assert.match(source, /dataset\.deferredSrc/);
   assert.match(source, /THUMBNAIL_TIMEOUT_MS = 3_000/);
 });
+
+
+test("browser timer receiver is preserved when autoplay is scheduled", async () => {
+  const host = globalThis;
+  const calls = [];
+  const { restore } = installFakeBrowser({
+    setTimeout:function(callback, delay) {
+      assert.equal(this, host, "native Window timer requires its receiver");
+      calls.push(delay);
+      queueMicrotask(callback);
+      return 1;
+    }
+  });
+  try {
+    const wrapper = createDeferredVideo({ url:"blob:brand-checked-autoplay" }, { autoplay:true });
+    wrapper.isConnected = true;
+    await flush();
+    assert.deepEqual(calls, [0]);
+    assert.equal(wrapper.children[0].playCalls, 1);
+  } finally { restore(); }
+});
+
+test("browser timer receivers survive thumbnail timeout destructuring", async () => {
+  const host = globalThis;
+  const cleared = [];
+  const { restore } = installFakeBrowser({
+    URL:{ createObjectURL:() => "blob:brand-checked-image", revokeObjectURL:() => {} },
+    setTimeout:function(callback) {
+      assert.equal(this, host, "detached native timer requires Window");
+      queueMicrotask(callback);
+      return 42;
+    },
+    clearTimeout:function(id) {
+      assert.equal(this, host, "detached native clearTimer requires Window");
+      cleared.push(id);
+    }
+  });
+  try {
+    assert.deepEqual(await generateImageThumbnail(new Blob(["invalid image"])), {});
+    assert.deepEqual(cleared, [42]);
+  } finally { restore(); }
+});

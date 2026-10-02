@@ -19,12 +19,15 @@ let sessionThumbnailBytes = 0;
 
 function environment() {
   const source = environmentOverrides || {};
+  const setTimer = source.setTimeout || globalThis.setTimeout;
+  const clearTimer = source.clearTimeout || globalThis.clearTimeout;
   return {
     document: source.document || globalThis.document,
     IntersectionObserver: source.IntersectionObserver || globalThis.IntersectionObserver,
     URL: source.URL || globalThis.URL,
-    setTimeout: source.setTimeout || globalThis.setTimeout,
-    clearTimeout: source.clearTimeout || globalThis.clearTimeout,
+    // Native Window timers require their receiver, even after destructuring.
+    setTimeout: typeof setTimer === "function" ? setTimer.bind(globalThis) : undefined,
+    clearTimeout: typeof clearTimer === "function" ? clearTimer.bind(globalThis) : undefined,
     isSafeAlbumThumbnailUrl: source.isSafeAlbumThumbnailUrl
   };
 }
