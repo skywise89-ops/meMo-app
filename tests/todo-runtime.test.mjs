@@ -17,6 +17,7 @@ test('runtime save preserves proof completion and creator metadata',async()=>{
   const h=harness();await h.context.window.saveTodoEditor();
   assert.equal(h.records.key.text,'edited');assert.equal(h.records.key.country,'jp');
   assert.equal(h.records.key.proofUrl,'proof');assert.equal(h.records.key.completedAt,3);assert.equal(h.records.key.createdAt,1);
+  assert.equal(h.context.todoEditState,null,'successful save closes the editor');
 });
 test('runtime edit cannot resurrect deleted or overwrite changed row',async()=>{
   for(const absent of [true,false]){const h=harness();if(absent)delete h.records.key;else h.records.key={...h.records.key,text:'partner changed'};

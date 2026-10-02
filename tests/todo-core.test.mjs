@@ -48,7 +48,7 @@ test('concurrent editable changes and missing rows are detected',()=>{
   assert.equal(isTodoEditStale({text:'a'},{text:'a',country:'kr'}),false);
 });
 test('bucket UI includes categories editor and per-item actions',()=>{
-  assert.match(html,/todo-core\.js\?v=4\.6\.0/);
+  assert.match(html,/todo-core\.js\?v=4\.6\.1/);
   assert.match(html,/data-todo-key|dataset\.todoKey/);
   assert.match(html,/role="dialog"/);
   assert.match(html,/runTransaction/);

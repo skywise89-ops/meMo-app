@@ -2385,10 +2385,10 @@ import {
   validateAudioRecording,
   validateMediaFile,
   videoContentType
-} from "./app-core.js?v=4.6.0";
-import { SearchPageCache, albumTileSignature } from "./performance-core.js?v=4.6.0";
-import { createVideoPreview, createDeferredVideo, generateVideoThumbnail, generateImageThumbnail, thumbnailDataUrlToBlob, createAlbumThumbnail, clearMediaPreviews, stopMediaWithin } from "./media-performance.js?v=4.6.0";
-import { TODO_COUNTRIES, todoCountry, partitionTodos, validateTodoText, buildTodoEditPatch, isTodoEditStale } from "./todo-core.js?v=4.6.0";
+} from "./app-core.js?v=4.6.1";
+import { SearchPageCache, albumTileSignature } from "./performance-core.js?v=4.6.1";
+import { createVideoPreview, createDeferredVideo, generateVideoThumbnail, generateImageThumbnail, thumbnailDataUrlToBlob, createAlbumThumbnail, clearMediaPreviews, stopMediaWithin } from "./media-performance.js?v=4.6.1";
+import { TODO_COUNTRIES, todoCountry, partitionTodos, validateTodoText, buildTodoEditPatch, isTodoEditStale } from "./todo-core.js?v=4.6.1";
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
@@ -5308,7 +5308,7 @@ window.saveTodoEditor = async function() {
       }
       return;
     }
-    if (todoEditState === state && canUseTodoSession(state.sessionId, state.userId)) closeTodoEditor();
+    if (todoEditState === state && canUseTodoSession(state.sessionId, state.userId)) closeTodoEditor({ force:true });
   } catch (err) {
     console.warn("[Todo] 수정 실패:", err);
     if (canUseTodoSession(state.sessionId, state.userId)) {
