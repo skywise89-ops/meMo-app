@@ -1125,6 +1125,8 @@ body.hide-translations .msg-translation {
 
 .todo-checkbox {
   width:24px;
+  padding:0;
+  background:transparent;
   height:24px;
   border:2px solid var(--text2);
   border-radius:50%;
@@ -1187,6 +1189,84 @@ body.hide-translations .msg-translation {
   color:var(--text2);
   font-size:.85rem;
   padding:20px 0;
+}
+
+.todo-country-tabs {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  padding:4px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:var(--surface2);
+}
+
+.todo-country-tab {
+  min-height:40px;
+  border:0;
+  border-radius:10px;
+  background:transparent;
+  color:var(--text2);
+  font:inherit;
+  font-size:.86rem;
+  cursor:pointer;
+}
+
+.todo-country-tab.active {
+  background:var(--surface);
+  color:var(--text);
+  box-shadow:0 1px 5px rgba(0,0,0,.14);
+}
+
+.todo-country-count {
+  color:var(--accent);
+  font-size:.76rem;
+  margin-left:4px;
+}
+
+.todo-item-content { min-width:0; flex:1; }
+.todo-actions { display:flex; gap:6px; flex-shrink:0; }
+.todo-action-btn {
+  border:1px solid var(--border);
+  border-radius:9px;
+  padding:7px 9px;
+  color:var(--text2);
+  background:var(--surface2);
+  font-size:.76rem;
+  cursor:pointer;
+}
+.todo-action-btn.delete { color:#e77b7b; }
+.todo-action-btn:disabled, .todo-add-btn:disabled { opacity:.55; cursor:wait; }
+
+.todo-edit-modal {
+  position:fixed;
+  inset:0;
+  z-index:110;
+  display:none;
+  align-items:flex-end;
+  justify-content:center;
+  padding:16px;
+  background:rgba(0,0,0,.52);
+}
+.todo-edit-modal.open { display:flex; }
+.todo-edit-dialog {
+  width:min(100%,460px);
+  padding:20px;
+  border:1px solid var(--border);
+  border-radius:18px;
+  background:var(--surface);
+  box-shadow:0 18px 50px rgba(0,0,0,.32);
+}
+.todo-edit-dialog h2 { margin:0 0 16px; font-size:1rem; }
+.todo-edit-label { display:block; margin:12px 0 6px; color:var(--text2); font-size:.78rem; }
+.todo-edit-select { width:100%; box-sizing:border-box; }
+.todo-edit-buttons { display:flex; justify-content:flex-end; gap:8px; margin-top:18px; }
+.todo-edit-buttons button { min-height:40px; }
+@media (min-width:600px) { .todo-edit-modal { align-items:center; } }
+@media (max-width:390px) {
+  .todo-item { gap:10px; padding:13px; }
+  .todo-actions { flex-direction:column; }
+  .todo-action-btn { padding:5px 7px; }
 }
 
 #lightbox {
@@ -2095,9 +2175,14 @@ body.hide-translations .msg-translation {
       <div class="topbar"><div class="topbar-title">📝 함께 할 일</div></div>
 
       <div class="todo-container">
+        <div class="todo-country-tabs" role="tablist" aria-label="버킷 여행 국가">
+          <button class="todo-country-tab active" id="todoCountryKr" type="button" role="tab" aria-selected="true" onclick="selectTodoCountry('kr')">한국 <span class="todo-country-count" id="todoCountryCountKr">0</span></button>
+          <button class="todo-country-tab" id="todoCountryJp" type="button" role="tab" aria-selected="false" onclick="selectTodoCountry('jp')">일본 <span class="todo-country-count" id="todoCountryCountJp">0</span></button>
+        </div>
+
         <div class="todo-input-wrap">
-          <input type="text" class="todo-input" id="todoInput" placeholder="우리가 함께 하고 싶은 일은..." onkeydown="if(event.key==='Enter' && !event.isComposing) addTodo()">
-          <button class="todo-add-btn" onclick="addTodo()">추가</button>
+          <input type="text" class="todo-input" id="todoInput" maxlength="500" placeholder="우리가 함께 하고 싶은 일은..." onkeydown="if(event.key==='Enter' && !event.isComposing) addTodo()">
+          <button class="todo-add-btn" id="todoAddBtn" onclick="addTodo()">추가</button>
         </div>
 
         <div>
@@ -2112,6 +2197,19 @@ body.hide-translations .msg-translation {
       </div>
 
       <input type="file" id="todoProofInput" accept="image/*,video/*" style="display:none" onchange="uploadTodoProof(event)">
+      <div class="todo-edit-modal" id="todoEditModal" role="dialog" aria-modal="true" aria-labelledby="todoEditTitle" aria-hidden="true">
+        <form class="todo-edit-dialog" id="todoEditForm">
+          <h2 id="todoEditTitle">버킷 수정</h2>
+          <label class="todo-edit-label" for="todoEditText">하고 싶은 일</label>
+          <input class="todo-input" id="todoEditText" maxlength="500" required autocomplete="off">
+          <label class="todo-edit-label" for="todoEditCountry">카테고리</label>
+          <select class="todo-input todo-edit-select" id="todoEditCountry"></select>
+          <div class="todo-edit-buttons">
+            <button class="todo-action-btn" type="button" id="todoEditCancel">취소</button>
+            <button class="todo-add-btn" type="submit" id="todoEditSave">저장</button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <div id="profilePane" class="tab-pane hidden">
@@ -2287,9 +2385,10 @@ import {
   validateAudioRecording,
   validateMediaFile,
   videoContentType
-} from "./app-core.js?v=4.5.2";
-import { SearchPageCache, albumTileSignature } from "./performance-core.js?v=4.5.2";
-import { createVideoPreview, createDeferredVideo, generateVideoThumbnail, generateImageThumbnail, thumbnailDataUrlToBlob, createAlbumThumbnail, clearMediaPreviews, stopMediaWithin } from "./media-performance.js?v=4.5.2";
+} from "./app-core.js?v=4.6.0";
+import { SearchPageCache, albumTileSignature } from "./performance-core.js?v=4.6.0";
+import { createVideoPreview, createDeferredVideo, generateVideoThumbnail, generateImageThumbnail, thumbnailDataUrlToBlob, createAlbumThumbnail, clearMediaPreviews, stopMediaWithin } from "./media-performance.js?v=4.6.0";
+import { TODO_COUNTRIES, todoCountry, partitionTodos, validateTodoText, buildTodoEditPatch, isTodoEditStale } from "./todo-core.js?v=4.6.0";
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
@@ -2319,7 +2418,8 @@ import {
   limitToFirst,
   limitToLast,
   endBefore,
-  get
+  get,
+  runTransaction
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
 import {
@@ -2441,6 +2541,13 @@ let albumMediaKeyByUrl = new Map();
 let favoriteMediaKeys = new Set();
 let albumFavoriteOnly = false;
 let trashMedia = [];
+let todoDataCache = null;
+let selectedTodoCountry = "kr";
+let todoEditState = null;
+let todoEditSaving = false;
+let todoProofUploading = false;
+let todoProofUploadId = 0;
+const todoDeleteKeys = new Set();
 
 let voiceRecorder = null;
 let voiceStream = null;
@@ -2500,6 +2607,18 @@ function resetAccountPrivateState() {
   favoriteMediaKeys = new Set();
   albumFavoriteOnly = false;
   trashMedia = [];
+  todoDataCache = null;
+  selectedTodoCountry = "kr";
+  todoEditSaving = false;
+  todoProofUploading = false;
+  todoProofUploadId += 1;
+  todoDeleteKeys.clear();
+  closeTodoEditor({ force:true });
+  updateTodoCountryTabs({ kr:0, jp:0 });
+  const todoInput = document.getElementById("todoInput");
+  if (todoInput) todoInput.value = "";
+  const todoAddButton = document.getElementById("todoAddBtn");
+  if (todoAddButton) todoAddButton.disabled = false;
   fcmReady = false;
   seenKeys.clear();
   window._loadedMessages = {};
@@ -4854,6 +4973,11 @@ document.addEventListener("keydown", event => {
     return;
   }
 
+  if (event.key === "Escape" && document.getElementById("todoEditModal")?.classList.contains("open")) {
+    closeTodoEditor();
+    return;
+  }
+
   if (!lb.classList.contains("open")) return;
 
   if (event.key === "Escape") {
@@ -4872,64 +4996,101 @@ document.addEventListener("keydown", event => {
 function listenTodos(sessionId = activeRoomSession, userId = activeRoomUserId) {
   return onValue(ref(db, `${ROOM_ID}/todos`), snap => {
     if (!isCurrentRoomSession(sessionId, userId)) return;
-    renderTodos(snap.val());
+    todoDataCache = snap.val() || {};
+    renderTodos(todoDataCache);
   });
 }
+
+function updateTodoCountryTabs(counts = { kr:0, jp:0 }) {
+  TODO_COUNTRIES.forEach(({ value }) => {
+    const button = document.getElementById(`todoCountry${value === "kr" ? "Kr" : "Jp"}`);
+    const count = document.getElementById(`todoCountryCount${value === "kr" ? "Kr" : "Jp"}`);
+    if (button) {
+      const selected = value === selectedTodoCountry;
+      button.classList.toggle("active", selected);
+      button.setAttribute("aria-selected", String(selected));
+    }
+    if (count) count.textContent = String(counts[value] || 0);
+  });
+}
+
+window.selectTodoCountry = function(country) {
+  if (!TODO_COUNTRIES.some(item => item.value === country)) return;
+  selectedTodoCountry = country;
+  renderTodos(todoDataCache || {});
+};
 
 function renderTodos(data) {
   const activeList = document.getElementById("todoActiveList");
   const doneList = document.getElementById("todoDoneList");
+  if (!activeList || !doneList) return;
 
-  activeList.innerHTML = "";
-  doneList.innerHTML = "";
+  activeList.replaceChildren();
+  doneList.replaceChildren();
 
-  if (!data) {
-    activeList.innerHTML = `<div class="todo-empty">함께 하고 싶은 일을 추가해보세요!</div>`;
-    doneList.innerHTML = `<div class="todo-empty">아직 해낸 일이 없어요</div>`;
-    return;
-  }
-
-  const todos = Object.entries(data).map(([key, val]) => ({ key, ...val }));
-
-  const active = todos
-    .filter(item => !item.isDone)
-    .sort((a, b) => b.createdAt - a.createdAt);
-
-  const done = todos
-    .filter(item => item.isDone)
-    .sort((a, b) => b.completedAt - a.completedAt);
+  const partition = partitionTodos(data || {}, selectedTodoCountry);
+  updateTodoCountryTabs(partition.counts);
+  const active = [...partition.active].sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+  const done = [...partition.done].sort((a, b) => Number(b.completedAt || 0) - Number(a.completedAt || 0));
 
   if (!active.length) {
-    activeList.innerHTML = `<div class="todo-empty">모든 버킷을 달성했어요!</div>`;
+    const empty = document.createElement("div");
+    empty.className = "todo-empty";
+    empty.textContent = partition.total ? "모든 버킷을 달성했어요!" : "함께 하고 싶은 일을 추가해보세요!";
+    activeList.appendChild(empty);
   } else {
     active.forEach(item => activeList.appendChild(createTodoEl(item)));
   }
 
   if (!done.length) {
-    doneList.innerHTML = `<div class="todo-empty">아직 해낸 일이 없어요</div>`;
+    const empty = document.createElement("div");
+    empty.className = "todo-empty";
+    empty.textContent = "아직 해낸 일이 없어요";
+    doneList.appendChild(empty);
   } else {
     done.forEach(item => doneList.appendChild(createTodoEl(item)));
   }
 }
 
+function todoActionButton(label, className, key, todoText, onClick) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = `todo-action-btn ${className}`;
+  button.textContent = label;
+  button.dataset.todoKey = key;
+  button.setAttribute("aria-label", `${todoText} ${label}`);
+  button.onclick = onClick;
+  return button;
+}
+
 function createTodoEl(todo) {
   const div = document.createElement("div");
   div.className = `todo-item ${todo.isDone ? "done" : ""}`;
+  div.dataset.todoKey = todo.key;
 
-  const check = document.createElement("div");
+  const check = document.createElement("button");
+  check.type = "button";
   check.className = "todo-checkbox";
+  check.dataset.todoKey = todo.key;
+  check.setAttribute("aria-label", todo.isDone ? `${todo.text} 완료됨` : `${todo.text} 완료 처리`);
 
   if (todo.isDone) {
+    check.disabled = true;
     check.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="3" fill="none"><polyline points="20 6 9 17 4 12"/></svg>`;
   } else {
-    check.onclick = event => {
-      event.currentTarget.style.pointerEvents = "none";
-      window.toggleTodo(todo.key, todo.isDone, todo.text);
+    check.onclick = async event => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      const completed = await window.toggleTodo(todo.key, todo.isDone, todo.text);
+      if (!completed && canUseTodoSession()) {
+        button.disabled = false;
+        renderTodos(todoDataCache || {});
+      }
     };
   }
 
   const content = document.createElement("div");
-  content.style.flex = "1";
+  content.className = "todo-item-content";
 
   const text = document.createElement("div");
   text.className = "todo-text";
@@ -4961,51 +5122,260 @@ function createTodoEl(todo) {
       const btn = document.createElement("button");
       btn.className = "todo-proof-btn";
       btn.textContent = "📷 인증샷 남기기";
+      btn.dataset.todoKey = todo.key;
       btn.onclick = () => window.clickAddProof(todo.key);
       content.appendChild(btn);
     }
   }
 
-  div.appendChild(check);
-  div.appendChild(content);
+  const actions = document.createElement("div");
+  actions.className = "todo-actions";
+  actions.appendChild(todoActionButton("수정", "edit", todo.key, todo.text, () => window.openTodoEditor(todo.key)));
+  actions.appendChild(todoActionButton("삭제", "delete", todo.key, todo.text, event => window.deleteTodo(todo.key, event.currentTarget)));
 
+  div.append(check, content, actions);
   return div;
 }
 
-window.addTodo = function() {
+function canUseTodoSession(sessionId = activeRoomSession, userId = activeRoomUserId) {
+  return Boolean(me && isCurrentRoomSession(sessionId, userId));
+}
+
+window.addTodo = async function() {
+  const sessionId = activeRoomSession;
+  const userId = activeRoomUserId;
+  if (!canUseTodoSession(sessionId, userId)) return;
   const input = document.getElementById("todoInput");
-  const text = input.value.trim();
+  const addButton = document.getElementById("todoAddBtn");
+  if (!input || !addButton || addButton.disabled) return;
 
-  if (!text) return;
+  const submittedValue = input.value;
+  const country = selectedTodoCountry;
+  const creator = me.name;
+  let text;
+  try {
+    text = validateTodoText(submittedValue);
+  } catch (err) {
+    showToast(err?.message || "버킷 내용을 확인해주세요.");
+    return;
+  }
 
-  push(ref(db, `${ROOM_ID}/todos`), {
-    text,
-    isDone:false,
-    creator:me.name,
-    createdAt:Date.now()
-  });
-
-  input.value = "";
+  addButton.disabled = true;
+  try {
+    await push(ref(db, `${ROOM_ID}/todos`), {
+      text,
+      country,
+      isDone:false,
+      creator,
+      createdAt:Date.now()
+    });
+    if (canUseTodoSession(sessionId, userId) && input.value === submittedValue) input.value = "";
+  } catch (err) {
+    console.warn("[Todo] 추가 실패:", err);
+    if (canUseTodoSession(sessionId, userId)) showToast("버킷 추가에 실패했어요. 다시 시도해주세요.");
+  } finally {
+    if (canUseTodoSession(sessionId, userId)) addButton.disabled = false;
+  }
 };
 
-window.toggleTodo = function(key, isCurrentlyDone, text) {
-  if (isCurrentlyDone) return;
+window.toggleTodo = async function(key, isCurrentlyDone, text) {
+  if (isCurrentlyDone) return false;
+  const sessionId = activeRoomSession;
+  const userId = activeRoomUserId;
+  const completedBy = me?.name;
+  if (!completedBy || !canUseTodoSession(sessionId, userId)) return false;
 
-  update(ref(db, `${ROOM_ID}/todos/${key}`), {
-    isDone:true,
-    completedAt:Date.now()
-  });
+  try {
+    let reason = "";
+    const result = await runTransaction(ref(db, `${ROOM_ID}/todos/${key}`), current => {
+      if (!canUseTodoSession(sessionId, userId)) {
+        reason = "session";
+        return;
+      }
+      if (!current) {
+        reason = "deleted";
+        return;
+      }
+      if (current.isDone) {
+        reason = "done";
+        return;
+      }
+      return { ...current, isDone:true, completedAt:Date.now() };
+    });
+    if (!result.committed) return false;
+    if (!canUseTodoSession(sessionId, userId)) return true;
 
-  push(ref(db, `${ROOM_ID}/messages`), {
-    uid:"system",
-    name:"System",
-    text:`${me.name}님이 '${text}' 버킷을 완료했어요! 🎉`,
-    type:"system",
-    ts:Date.now()
-  });
+    try {
+      await push(ref(db, `${ROOM_ID}/messages`), {
+        uid:"system",
+        name:"System",
+        text:`${completedBy}님이 '${text}' 버킷을 완료했어요! 🎉`,
+        type:"system",
+        ts:Date.now()
+      });
+    } catch (err) {
+      console.warn("[Todo] 완료 메시지 저장 실패:", err);
+    }
+    return true;
+  } catch (err) {
+    console.warn("[Todo] 완료 처리 실패:", err);
+    if (canUseTodoSession(sessionId, userId)) showToast("버킷 완료 처리에 실패했어요. 다시 시도해주세요.");
+    return false;
+  }
 };
+
+function closeTodoEditor({ force = false } = {}) {
+  if (todoEditSaving && !force) return false;
+  todoEditState = null;
+  todoEditSaving = false;
+  const modal = document.getElementById("todoEditModal");
+  const save = document.getElementById("todoEditSave");
+  const cancel = document.getElementById("todoEditCancel");
+  if (modal) {
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+  }
+  if (save) save.disabled = false;
+  if (cancel) cancel.disabled = false;
+  return true;
+}
+
+window.openTodoEditor = function(key) {
+  if (!canUseTodoSession()) return;
+  const current = todoDataCache?.[key];
+  if (!current) {
+    showToast("이미 삭제된 버킷이에요.");
+    return;
+  }
+  const modal = document.getElementById("todoEditModal");
+  const textInput = document.getElementById("todoEditText");
+  const countrySelect = document.getElementById("todoEditCountry");
+  if (!modal || !textInput || !countrySelect) return;
+
+  countrySelect.replaceChildren(...TODO_COUNTRIES.map(({ value, label }) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = label;
+    return option;
+  }));
+  const country = todoCountry(current);
+  textInput.value = current.text || "";
+  countrySelect.value = country;
+  todoEditState = {
+    key,
+    base:{ key, ...current },
+    sessionId:activeRoomSession,
+    userId:activeRoomUserId
+  };
+  modal.classList.add("open");
+  modal.setAttribute("aria-hidden", "false");
+  textInput.focus();
+};
+
+window.saveTodoEditor = async function() {
+  const state = todoEditState;
+  if (!state || todoEditSaving || !canUseTodoSession(state.sessionId, state.userId)) return;
+  const textInput = document.getElementById("todoEditText");
+  const countrySelect = document.getElementById("todoEditCountry");
+  const save = document.getElementById("todoEditSave");
+  try {
+    const patch = buildTodoEditPatch(state.base, {
+      text:textInput?.value || "",
+      country:countrySelect?.value
+    }, me.name, Date.now());
+    todoEditSaving = true;
+    if (save) save.disabled = true;
+    document.getElementById("todoEditCancel").disabled = true;
+    let conflict = "";
+    const result = await runTransaction(ref(db, `${ROOM_ID}/todos/${state.key}`), current => {
+      if (!canUseTodoSession(state.sessionId, state.userId)) {
+        conflict = "session";
+        return;
+      }
+      if (!current) {
+        conflict = "deleted";
+        return;
+      }
+      if (isTodoEditStale(state.base, current)) {
+        conflict = "changed";
+        return;
+      }
+      return { ...current, ...patch };
+    });
+    if (!result.committed) {
+      if (canUseTodoSession(state.sessionId, state.userId)) {
+        showToast(conflict === "deleted" ? "이미 삭제된 버킷이에요." : "다른 곳에서 변경되어 저장하지 않았어요. 다시 열어주세요.");
+      }
+      return;
+    }
+    if (todoEditState === state && canUseTodoSession(state.sessionId, state.userId)) closeTodoEditor();
+  } catch (err) {
+    console.warn("[Todo] 수정 실패:", err);
+    if (canUseTodoSession(state.sessionId, state.userId)) {
+      showToast(err?.message || "버킷 수정에 실패했어요. 다시 시도해주세요.");
+    }
+  } finally {
+    if (todoEditState === state) {
+      todoEditSaving = false;
+      if (save) save.disabled = false;
+      document.getElementById("todoEditCancel").disabled = false;
+    }
+  }
+};
+
+window.deleteTodo = async function(key, button) {
+  if (!canUseTodoSession() || todoDeleteKeys.has(key)) return;
+  const base = todoDataCache?.[key];
+  if (!base) {
+    showToast("이미 삭제된 버킷이에요.");
+    return;
+  }
+  if (!confirm("이 버킷 항목만 삭제할까요? 인증샷과 영상은 앨범에 그대로 남아 있어요.")) return;
+
+  const sessionId = activeRoomSession;
+  const userId = activeRoomUserId;
+  todoDeleteKeys.add(key);
+  if (button) button.disabled = true;
+  try {
+    let conflict = "";
+    const result = await runTransaction(ref(db, `${ROOM_ID}/todos/${key}`), current => {
+      if (!canUseTodoSession(sessionId, userId)) {
+        conflict = "session";
+        return;
+      }
+      if (!current) {
+        conflict = "deleted";
+        return;
+      }
+      if (isTodoEditStale({ key, ...base }, current)) {
+        conflict = "changed";
+        return;
+      }
+      return null;
+    });
+    if (!result.committed) {
+      if (canUseTodoSession(sessionId, userId)) showToast(conflict === "deleted" ? "이미 삭제된 버킷이에요." : "다른 곳에서 변경되어 삭제하지 않았어요. 다시 확인해주세요.");
+    } else if (canUseTodoSession(sessionId, userId)) {
+      showToast("버킷을 삭제했어요.");
+    }
+  } catch (err) {
+    console.warn("[Todo] 삭제 실패:", err);
+    if (canUseTodoSession(sessionId, userId)) showToast("버킷 삭제에 실패했어요. 다시 시도해주세요.");
+  } finally {
+    todoDeleteKeys.delete(key);
+    if (canUseTodoSession(sessionId, userId) && button) button.disabled = false;
+  }
+};
+
+const todoEditForm = document.getElementById("todoEditForm");
+todoEditForm?.addEventListener("submit", event => {
+  event.preventDefault();
+  window.saveTodoEditor();
+});
+document.getElementById("todoEditCancel")?.addEventListener("click", closeTodoEditor);
 
 window.clickAddProof = function(key) {
+  if (todoProofUploading || !canUseTodoSession()) return;
   pendingProofKey = key;
   document.getElementById("todoProofInput").click();
 };
@@ -5013,52 +5383,74 @@ window.clickAddProof = function(key) {
 window.uploadTodoProof = async function(event) {
   const input = event.currentTarget || event.target;
   const file = input.files[0];
-
-  if (!file || !pendingProofKey) {
+  if (todoProofUploading || !file || !pendingProofKey) {
     input.value = "";
     return;
   }
 
+  const key = pendingProofKey;
+  const sessionId = activeRoomSession;
+  const userId = activeRoomUserId;
+  const author = me ? { name:me.name, authUid:me.authUid, email:me.email } : null;
+  if (!author || !canUseTodoSession(sessionId, userId)) {
+    input.value = "";
+    return;
+  }
   try {
     validateMediaFile(file);
   } catch (err) {
     showToast(err.message);
-    pendingProofKey = null;
+    if (pendingProofKey === key) pendingProofKey = null;
     input.value = "";
     return;
   }
 
+  const uploadId = ++todoProofUploadId;
+  todoProofUploading = true;
   showToast("인증샷 업로드 중...");
-
   try {
     const uploaded = await uploadOneFile(file);
     const { url, type } = uploaded;
-
-    await update(ref(db, `${ROOM_ID}/todos/${pendingProofKey}`), {
-      proofUrl:url,
-      proofType:type
+    let reason = "";
+    const proofResult = await runTransaction(ref(db, `${ROOM_ID}/todos/${key}`), current => {
+      if (!canUseTodoSession(sessionId, userId)) {
+        reason = "session";
+        return;
+      }
+      if (!current) {
+        reason = "deleted";
+        return;
+      }
+      return { ...current, proofUrl:url, proofType:type };
     });
+    if (!proofResult.committed || !canUseTodoSession(sessionId, userId)) {
+      if (reason === "deleted" && canUseTodoSession(sessionId, userId)) showToast("이미 삭제된 버킷이라 인증샷을 연결하지 않았어요.");
+      return;
+    }
 
     await push(ref(db, `${ROOM_ID}/media`), {
-      uid:me.name,
-      name:me.name,
+      uid:author.name,
+      name:author.name,
       type,
       url,
       ts:Date.now(),
-      sourceTodoKey:pendingProofKey,
+      sourceTodoKey:key,
       size:uploaded.size,
       mimeType:uploaded.mimeType,
       storagePath:uploaded.storagePath,
       ...(uploaded.thumbnailUrl ? { thumbnailUrl:uploaded.thumbnailUrl, thumbnailStoragePath:uploaded.thumbnailStoragePath } : {}),
-      ownerUid:me.authUid,
-      ownerEmail:me.email
+      ownerUid:author.authUid,
+      ownerEmail:author.email
     });
 
-    showToast("인증샷 등록 완료! 📷");
+    if (canUseTodoSession(sessionId, userId)) showToast("인증샷 등록 완료! 📷");
   } catch (err) {
-    showToast(`업로드 실패: ${uploadFailureMessage(err)}`);
+    if (canUseTodoSession(sessionId, userId)) showToast(`업로드 실패: ${uploadFailureMessage(err)}`);
   } finally {
-    pendingProofKey = null;
+    if (uploadId === todoProofUploadId) {
+      todoProofUploading = false;
+      if (pendingProofKey === key) pendingProofKey = null;
+    }
     input.value = "";
   }
 };
