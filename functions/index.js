@@ -3,7 +3,7 @@
 const { setGlobalOptions } = require("firebase-functions/v2");
 const { HttpsError, onCall } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
-const { onValueCreated } = require("firebase-functions/v2/database");
+const { onValueCreated, onValueWritten } = require("firebase-functions/v2/database");
 const { initializeApp } = require("firebase-admin/app");
 const { getDatabase } = require("firebase-admin/database");
 const { getStorage } = require("firebase-admin/storage");
@@ -30,6 +30,12 @@ const {
   targetLanguageFor,
   translatedTextFromResponse
 } = require("./translation");
+const {
+  buildLeanAlbumProjection,
+  classifyAlbumMediaWrite,
+  processAlbumMedia,
+  runWarmTransaction
+} = require("./album-thumbnails");
 
 initializeApp();
 setGlobalOptions({
@@ -120,6 +126,48 @@ exports.translateText = onCall({ timeoutSeconds:5 }, async request => {
     });
 
     throw new HttpsError("unavailable", "번역 서비스에 연결하지 못했습니다.");
+  }
+});
+
+exports.processAlbumThumbnail = onValueWritten({
+  ref:`/${ROOM_ID}/media/{mediaId}`,
+  instance:"memo-e366f-default-rtdb",
+  region:"asia-southeast1",
+  retry:false,
+  timeoutSeconds:120,
+  maxInstances:1,
+  concurrency:1,
+  cpu:1,
+  memory:"512MiB"
+}, async event => {
+  const mediaId = event.params.mediaId;
+  const before = event.data.before.exists() ? event.data.before.val() : null;
+  const after = event.data.after.exists() ? event.data.after.val() : null;
+  const decision = classifyAlbumMediaWrite(before, after);
+  if (!decision.process) return null;
+  const eventTime = Date.parse(event.time || "");
+
+  try {
+    const result = await processAlbumMedia(mediaId, {
+      db:getDatabase(),
+      bucket:getStorage().bucket(),
+      force:decision.force,
+      deletedAt:Number.isFinite(eventTime) ? eventTime : Date.now(),
+      logger:(message, details) => console.warn(`[processAlbumThumbnail] ${message}`, details)
+    });
+    console.info("[processAlbumThumbnail] result", {
+      mediaId,
+      reason:decision.reason,
+      status:result?.status || "unknown"
+    });
+    return result;
+  } catch (err) {
+    console.error("[processAlbumThumbnail] unexpected failure", {
+      mediaId,
+      reason:decision.reason,
+      code:err?.code || err?.name || "unknown"
+    });
+    return null;
   }
 });
 
@@ -269,7 +317,8 @@ exports.deleteAlbumMedia = onCall(async request => {
   };
   const updates = {
     [`trash/media/${mediaKey}`]:trash,
-    [`media/${mediaKey}`]:null
+    [`media/${mediaKey}`]:null,
+    [`albumIndex/${mediaKey}`]:{ deleted:true, deletedAt:now }
   };
 
   if (resolvedMessageKey && messageBefore) {
@@ -343,8 +392,12 @@ exports.restoreAlbumMedia = onCall(async request => {
       if (!exists) throw new HttpsError("failed-precondition", "원본 파일이 이미 삭제되었습니다.");
     }
 
+    const restoredMedia = { ...media, storagePath };
     const updates = {
-      [`media/${mediaKey}`]:{ ...media, storagePath },
+      [`media/${mediaKey}`]:restoredMedia,
+      [`albumIndex/${mediaKey}`]:buildLeanAlbumProjection(restoredMedia, {
+        indexRevisionAt:now
+      }),
       [`trash/media/${mediaKey}`]:null
     };
 
@@ -522,6 +575,18 @@ exports.purgeExpiredMedia = onSchedule({
 
     try {
       await deleteStorageObject(bucket, storagePath);
+      // Derived thumbnails are intentionally retained: an immutable object may be
+      // referenced by another live media record. A future cleanup must prove no
+      // live albumIndex/media reference exists before deleting a thumbs/ object.
+      await runWarmTransaction(roomRef.child(`albumIndex/${mediaKey}`), current => {
+        if (
+          current?.deleted === true
+          && Number(current.deletedAt || 0) === Number(trash.deletedAt || 0)
+        ) {
+          return null;
+        }
+        return undefined;
+      }, false);
       await trashRef.remove();
     } catch (err) {
       console.error("[Album purge]", mediaKey, err);

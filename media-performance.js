@@ -4,6 +4,8 @@ const SESSION_THUMBNAIL_MAX_ENTRIES = 256;
 const SESSION_THUMBNAIL_MAX_BYTES = 4 * 1024 * 1024;
 const PREVIEW_WIDTHS = Object.freeze([240, 200, 160, 128, 96]);
 const JPEG_QUALITIES = Object.freeze([0.78, 0.64, 0.5, 0.38, 0.28]);
+const CURRENT_FIREBASE_STORAGE_BUCKET = "memo-e366f.firebasestorage.app";
+const ALBUM_THUMBNAIL_PREFIX = "memo_private_room/thumbs/";
 
 let environmentOverrides = null;
 let previewObserver = null;
@@ -22,7 +24,8 @@ function environment() {
     IntersectionObserver: source.IntersectionObserver || globalThis.IntersectionObserver,
     URL: source.URL || globalThis.URL,
     setTimeout: source.setTimeout || globalThis.setTimeout,
-    clearTimeout: source.clearTimeout || globalThis.clearTimeout
+    clearTimeout: source.clearTimeout || globalThis.clearTimeout,
+    isSafeAlbumThumbnailUrl: source.isSafeAlbumThumbnailUrl
   };
 }
 
@@ -104,13 +107,74 @@ export function isUsableVideoThumbnail(value) {
     dataUrlByteLength(value) <= MAX_THUMBNAIL_BYTES;
 }
 
-export function fitVideoThumbnailSize(width, height, maxWidth = 240) {
+function hasSafeThumbnailObjectPath(objectPath) {
+  if (typeof objectPath !== "string" || !objectPath.startsWith(ALBUM_THUMBNAIL_PREFIX)) return false;
+  const segments = objectPath.split("/");
+  return segments.length >= 3 && Boolean(segments.at(-1)) && segments.every(segment => segment !== "." && segment !== "..");
+}
+
+/** Accepts only HTTPS download URLs for the app's current private thumbnail prefix. */
+export function isSafeAlbumThumbnailUrl(value) {
+  if (typeof value !== "string" || !value.trim()) return false;
+  const override = environment().isSafeAlbumThumbnailUrl;
+  if (typeof override === "function") return override(value) === true;
+
+  let parsed;
+  try {
+    parsed = new globalThis.URL(value);
+  } catch {
+    return false;
+  }
+  if (parsed.protocol !== "https:" || parsed.username || parsed.password || (parsed.port && parsed.port !== "443")) {
+    return false;
+  }
+
+  if (parsed.hostname === "firebasestorage.googleapis.com") {
+    const prefix = `/v0/b/${CURRENT_FIREBASE_STORAGE_BUCKET}/o/`;
+    if (!parsed.pathname.startsWith(prefix)) return false;
+    try {
+      return hasSafeThumbnailObjectPath(decodeURIComponent(parsed.pathname.slice(prefix.length)));
+    } catch {
+      return false;
+    }
+  }
+
+  if (parsed.hostname === "storage.googleapis.com") {
+    const prefix = `/${CURRENT_FIREBASE_STORAGE_BUCKET}/`;
+    if (!parsed.pathname.startsWith(prefix)) return false;
+    try {
+      return hasSafeThumbnailObjectPath(decodeURIComponent(parsed.pathname.slice(prefix.length)));
+    } catch {
+      return false;
+    }
+  }
+
+  return false;
+}
+
+/** Converts an accepted inline JPEG thumbnail to uploadable bytes. */
+export function thumbnailDataUrlToBlob(value) {
+  if (!isUsableVideoThumbnail(value) || typeof globalThis.atob !== "function" || typeof globalThis.Blob !== "function") {
+    return null;
+  }
+  try {
+    const body = value.slice(value.indexOf(",") + 1);
+    const decoded = globalThis.atob(body);
+    const bytes = new Uint8Array(decoded.length);
+    for (let index = 0; index < decoded.length; index += 1) bytes[index] = decoded.charCodeAt(index);
+    return new globalThis.Blob([bytes], { type:"image/jpeg" });
+  } catch {
+    return null;
+  }
+}
+
+export function fitVideoThumbnailSize(width, height, maxDimension = 240) {
   const sourceWidth = Number(width);
   const sourceHeight = Number(height);
-  if (!(sourceWidth > 0) || !(sourceHeight > 0) || !(maxWidth > 0)) {
+  if (!(sourceWidth > 0) || !(sourceHeight > 0) || !(maxDimension > 0)) {
     return { width:0, height:0 };
   }
-  const scale = Math.min(1, maxWidth / sourceWidth);
+  const scale = Math.min(1, maxDimension / sourceWidth, maxDimension / sourceHeight);
   return {
     width:Math.max(1, Math.round(sourceWidth * scale)),
     height:Math.max(1, Math.round(sourceHeight * scale))
@@ -141,6 +205,78 @@ function applyDurationMetadata(element, item) {
 function bindActivation(element, onActivate) {
   if (typeof onActivate !== "function") return;
   element.addEventListener("click", event => onActivate(event, element));
+}
+
+function styleAlbumPlaceholder(element) {
+  Object.assign(element.style, {
+    display:"block",
+    width:"100%",
+    minHeight:"72px",
+    background:"#e5e7eb",
+    border:"1px solid #d1d5db",
+    boxSizing:"border-box"
+  });
+}
+
+function createAlbumPlaceholder(doc, { className = "", onActivate, status = "missing", source = "none" } = {}) {
+  const placeholder = doc.createElement("div");
+  applyClassName(placeholder, className);
+  placeholder.setAttribute("role", "img");
+  placeholder.setAttribute("aria-label", "미리보기 없음");
+  placeholder.dataset.albumThumbnail = "true";
+  placeholder.dataset.thumbnailStatus = status;
+  placeholder.dataset.thumbnailSource = source;
+  placeholder.dataset.thumbnailPlaceholder = "true";
+  styleAlbumPlaceholder(placeholder);
+  bindActivation(placeholder, onActivate);
+  return placeholder;
+}
+
+/**
+ * Creates album-only media without ever consulting or loading item.url. Remote
+ * thumbnails are restricted to this app's current Firebase thumbnail prefix;
+ * older records may use a bounded inline JPEG.
+ */
+export function createAlbumThumbnail(item, { className = "", onActivate } = {}) {
+  const doc = browserDocument();
+  const remoteThumbnail = typeof item?.thumbnailUrl === "string" && isSafeAlbumThumbnailUrl(item.thumbnailUrl)
+    ? item.thumbnailUrl.trim()
+    : "";
+  const inlineThumbnail = isUsableVideoThumbnail(item?.thumbnail) ? item.thumbnail : "";
+  const thumbnail = remoteThumbnail || inlineThumbnail;
+  const source = remoteThumbnail ? "remote" : inlineThumbnail ? "inline" : "none";
+
+  if (!thumbnail) return createAlbumPlaceholder(doc, { className, onActivate, status:"missing", source });
+
+  const image = doc.createElement("img");
+  applyClassName(image, className);
+  image.alt = "앨범 미리보기";
+  image.loading = "lazy";
+  image.decoding = "async";
+  image.draggable = false;
+  image.dataset.albumThumbnail = "true";
+  image.dataset.thumbnailStatus = remoteThumbnail ? "loading" : "ready";
+  image.dataset.thumbnailSource = source;
+  image.dataset.thumbnailPlaceholder = "false";
+  bindActivation(image, onActivate);
+
+  image.addEventListener("load", () => {
+    image.dataset.thumbnailStatus = "ready";
+  }, { once:true });
+  image.addEventListener("error", () => {
+    const placeholder = createAlbumPlaceholder(doc, { className, onActivate, status:"error", source });
+    if (image.parentNode) image.replaceWith(placeholder);
+    else {
+      image.removeAttribute?.("src");
+      image.dataset.thumbnailStatus = "error";
+      image.dataset.thumbnailPlaceholder = "true";
+      styleAlbumPlaceholder(image);
+    }
+  }, { once:true });
+
+  if (remoteThumbnail) image.crossOrigin = "anonymous";
+  image.src = thumbnail;
+  return image;
 }
 
 function createThumbnailImage(doc, thumbnail, item, options = {}) {
@@ -178,15 +314,15 @@ function releasePreviewVideo(video, { unload = false } = {}) {
   if (unload) unloadVideo(video);
 }
 
-function makeCanvasThumbnail(video, maxBytes = MAX_THUMBNAIL_BYTES) {
+function makeCanvasThumbnail(media, maxBytes = MAX_THUMBNAIL_BYTES) {
   const doc = environment().document;
   if (!doc?.createElement) return "";
-  const sourceWidth = Number(video?.videoWidth);
-  const sourceHeight = Number(video?.videoHeight);
+  const sourceWidth = Number(media?.videoWidth || media?.naturalWidth || media?.width);
+  const sourceHeight = Number(media?.videoHeight || media?.naturalHeight || media?.height);
   if (!(sourceWidth > 0) || !(sourceHeight > 0)) return "";
 
-  for (const maxWidth of PREVIEW_WIDTHS) {
-    const size = fitVideoThumbnailSize(sourceWidth, sourceHeight, maxWidth);
+  for (const maxDimension of PREVIEW_WIDTHS) {
+    const size = fitVideoThumbnailSize(sourceWidth, sourceHeight, maxDimension);
     const canvas = doc.createElement("canvas");
     canvas.width = size.width;
     canvas.height = size.height;
@@ -194,7 +330,7 @@ function makeCanvasThumbnail(video, maxBytes = MAX_THUMBNAIL_BYTES) {
     if (!context) continue;
 
     try {
-      context.drawImage(video, 0, 0, size.width, size.height);
+      context.drawImage(media, 0, 0, size.width, size.height);
       for (const quality of JPEG_QUALITIES) {
         const thumbnail = canvas.toDataURL("image/jpeg", quality);
         if (isUsableVideoThumbnail(thumbnail) && dataUrlByteLength(thumbnail) <= maxBytes) {
@@ -608,6 +744,60 @@ function waitForVideoFrame(video, timeoutMs) {
     video.addEventListener("canplay", onLoaded);
     video.addEventListener("error", onError);
   });
+}
+
+function waitForImage(image, timeoutMs) {
+  const { setTimeout:setTimer, clearTimeout:clearTimer } = environment();
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const cleanup = () => {
+      image.removeEventListener?.("load", onLoaded);
+      image.removeEventListener?.("error", onError);
+      clearTimer?.(timer);
+    };
+    const finish = callback => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      callback();
+    };
+    const onLoaded = () => finish(resolve);
+    const onError = () => finish(() => reject(new Error("image decode failed")));
+    const timer = setTimer?.(() => finish(() => reject(new Error("image decode timed out"))), timeoutMs);
+    image.addEventListener("load", onLoaded);
+    image.addEventListener("error", onError);
+  });
+}
+
+/**
+ * Extracts a bounded inline JPEG from a local image File/Blob. The source blob
+ * is never modified or uploaded here, and failures resolve to {}.
+ */
+export async function generateImageThumbnail(file) {
+  const { document:doc, URL:UrlApi } = environment();
+  if (!file || !doc?.createElement || !UrlApi?.createObjectURL || !UrlApi?.revokeObjectURL) return {};
+
+  let objectUrl = "";
+  const image = doc.createElement("img");
+  try {
+    objectUrl = UrlApi.createObjectURL(file);
+    const imagePromise = waitForImage(image, THUMBNAIL_TIMEOUT_MS);
+    image.src = objectUrl;
+    await imagePromise;
+
+    const width = Number(image.naturalWidth || image.width) || 0;
+    const height = Number(image.naturalHeight || image.height) || 0;
+    const thumbnail = makeCanvasThumbnail(image);
+    if (!thumbnail) return {};
+    return { thumbnail, width, height };
+  } catch {
+    return {};
+  } finally {
+    try { image.removeAttribute?.("src"); } catch {}
+    if (objectUrl) {
+      try { UrlApi.revokeObjectURL(objectUrl); } catch {}
+    }
+  }
 }
 
 /**

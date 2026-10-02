@@ -1926,6 +1926,9 @@ body.hide-translations .msg-translation {
   transform:translateX(-50%) translateY(0);
 }
 
+.album-thumbnail { width:100%; height:100%; display:block; object-fit:cover; }
+.album-thumbnail-placeholder { display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px; background:var(--surface2); color:var(--text2); font-size:.72rem; padding:12px; text-align:center; }
+.album-thumbnail-placeholder svg { width:28px; height:28px; opacity:.6; }
 /* Deferred videos keep inline playback; preview cards never autoplay. */
 .memo-video-player { position:relative; width:100%; min-height:150px; background:var(--surface); border-radius:10px; overflow:hidden; }
 .memo-video-player video { width:100%; display:block; max-height:70vh; }
@@ -2284,9 +2287,9 @@ import {
   validateAudioRecording,
   validateMediaFile,
   videoContentType
-} from "./app-core.js?v=4.4.0";
-import { SearchPageCache, albumTileSignature } from "./performance-core.js?v=4.4.0";
-import { createVideoPreview, createDeferredVideo, generateVideoThumbnail, clearMediaPreviews, stopMediaWithin } from "./media-performance.js?v=4.4.0";
+} from "./app-core.js?v=4.5.0";
+import { SearchPageCache, albumTileSignature } from "./performance-core.js?v=4.5.0";
+import { createVideoPreview, createDeferredVideo, generateVideoThumbnail, generateImageThumbnail, thumbnailDataUrlToBlob, createAlbumThumbnail, clearMediaPreviews, stopMediaWithin } from "./media-performance.js?v=4.5.0";
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
@@ -3184,7 +3187,7 @@ function enterRoom() {
     }
   ));
 
-  registerRoomCleanup(sessionId, onValue(ref(db, `${ROOM_ID}/media`), snap => {
+  registerRoomCleanup(sessionId, onValue(ref(db, `${ROOM_ID}/albumIndex`), snap => {
     if (!isCurrentRoomSession(sessionId, userId)) return;
     updateAlbum(snap.val());
   }));
@@ -4173,16 +4176,18 @@ async function uploadOneFile(file, progressPrefix = "") {
       targetFile = new Blob([bytes], { type:contentType });
     }
 
-    const previewPromise = isVideo ? generateVideoThumbnail(targetFile) : Promise.resolve({});
+    const previewPromise = isVideo ? generateVideoThumbnail(targetFile) : generateImageThumbnail(targetFile);
     const safeName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${uploadName}`;
     const storageRef = sRef(storage, `${ROOM_ID}/${safeName}`);
     const metadata = { contentType, cacheControl:"private,max-age=86400" };
     let uploadedRef;
+    let originalGeneration = "";
 
     if (isVideo) {
       // 모든 영상은 5 MiB 이하이므로 Safari에서 더 안정적인 단일 요청을 쓴다.
       const snapshot = await uploadBytes(storageRef, targetFile, metadata);
       uploadedRef = snapshot.ref;
+      originalGeneration = snapshot.metadata?.generation || "";
       showToast(`${progressPrefix}업로드 100%`);
     } else {
       uploadedRef = await new Promise((resolve, reject) => {
@@ -4194,13 +4199,31 @@ async function uploadOneFile(file, progressPrefix = "") {
             showToast(`${progressPrefix}업로드 ${Math.round(snap.bytesTransferred / snap.totalBytes * 100)}%`);
           },
           reject,
-          () => resolve(task.snapshot.ref)
+          () => { originalGeneration = task.snapshot.metadata?.generation || ""; resolve(task.snapshot.ref); }
         );
       });
     }
 
     const url = await getDownloadURL(uploadedRef);
     const preview = await previewPromise;
+    const { thumbnail, ...rawPreviewMetadata } = preview;
+    const previewMetadata = Object.fromEntries(Object.entries(rawPreviewMetadata).filter(([,value]) => value !== undefined));
+    let thumbnailFields = { thumbnailStatus:"pending" };
+    const thumbnailBlob = thumbnailDataUrlToBlob(thumbnail);
+    if (thumbnailBlob) {
+      try {
+        const thumbnailStoragePath = `${ROOM_ID}/thumbs/${safeName}.jpg`;
+        const thumbnailRef = sRef(storage, thumbnailStoragePath);
+        await uploadBytes(thumbnailRef, thumbnailBlob, {
+          contentType:"image/jpeg", cacheControl:"private,max-age=86400",
+          customMetadata:{ sourceStoragePath:`${ROOM_ID}/${safeName}`, sourceGeneration:originalGeneration, thumbnailVersion:"1" }
+        });
+        thumbnailFields = { thumbnailUrl:await getDownloadURL(thumbnailRef), thumbnailStoragePath, thumbnailStatus:"ready" };
+      } catch (thumbnailError) {
+        // A failed thumbnail upload must not discard the original. The backend retries it.
+        console.warn("[Thumbnail upload]", thumbnailError?.code || "unavailable");
+      }
+    }
 
     return {
       url,
@@ -4209,7 +4232,8 @@ async function uploadOneFile(file, progressPrefix = "") {
       mimeType:contentType,
       fileName:uploadName,
       storagePath:`${ROOM_ID}/${safeName}`,
-      ...preview
+      ...previewMetadata,
+      ...thumbnailFields
     };
   } catch (err) {
     console.error("[Storage upload failed]", {
@@ -4254,7 +4278,7 @@ async function sendSingleMedia(file) {
       url,
       mediaKey,
       storagePath:uploaded.storagePath,
-      ...(uploaded.thumbnail ? { thumbnail:uploaded.thumbnail } : {}),
+      ...(uploaded.thumbnailUrl ? { thumbnailUrl:uploaded.thumbnailUrl, thumbnailStoragePath:uploaded.thumbnailStoragePath } : {}),
       ...(uploaded.durationMs ? { durationMs:uploaded.durationMs } : {}),
       ts
       },
@@ -4268,7 +4292,7 @@ async function sendSingleMedia(file) {
         size:uploaded.size,
         mimeType:uploaded.mimeType,
         storagePath:uploaded.storagePath,
-        ...(uploaded.thumbnail ? { thumbnail:uploaded.thumbnail } : {}),
+        ...(uploaded.thumbnailUrl ? { thumbnailUrl:uploaded.thumbnailUrl, thumbnailStoragePath:uploaded.thumbnailStoragePath } : {}),
         ...(uploaded.durationMs ? { durationMs:uploaded.durationMs } : {}),
         ownerUid:me.authUid,
         ownerEmail:me.email
@@ -4322,7 +4346,7 @@ async function sendMediaGroup(files) {
         size:item.size,
         mimeType:item.mimeType,
         storagePath:item.storagePath,
-        ...(item.thumbnail ? { thumbnail:item.thumbnail } : {}),
+        ...(item.thumbnailUrl ? { thumbnailUrl:item.thumbnailUrl, thumbnailStoragePath:item.thumbnailStoragePath } : {}),
         ...(item.durationMs ? { durationMs:item.durationMs } : {}),
         ownerUid:me.authUid,
         ownerEmail:me.email
@@ -4385,14 +4409,15 @@ if ("serviceWorker" in navigator) {
 }
 
 function updateAlbum(media) {
-  const oldUrls = new Set(albumMedia.map(item => item.url));
+  const oldUrls = new Set(albumMedia.flatMap(item => [item.url, item.thumbnailUrl].filter(Boolean)));
   albumMedia = media
     ? Object.entries(media)
+        .filter(([, item]) => item && !item.deleted && (item.type === "image" || item.type === "video"))
         .map(([key, item]) => ({ key, ...item }))
         .sort((a, b) => b.ts - a.ts)
     : [];
 
-  const currentUrls = new Set(albumMedia.map(item => item.url));
+  const currentUrls = new Set(albumMedia.flatMap(item => [item.url, item.thumbnailUrl].filter(Boolean)));
   const removedUrls = [...oldUrls].filter(url => !currentUrls.has(url));
   if (removedUrls.length) invalidatePrivateImageUrls(removedUrls);
   albumMediaKeyByUrl = buildMediaKeyIndex(albumMedia);
@@ -4549,20 +4574,13 @@ window.renderAlbum = function() {
 function createAlbumItem(item) {
   const div = document.createElement("div");
   div.className = "album-item";
+  div.appendChild(createAlbumThumbnail(item, { className:"album-thumbnail" }));
 
   if (item.type === "video") {
-    div.appendChild(createVideoPreview(item));
-
     const play = document.createElement("div");
     play.className = "play-icon";
     play.innerHTML = `<svg viewBox="0 0 24 24"><polygon points="8,5 19,12 8,19"/></svg>`;
     div.appendChild(play);
-  } else {
-    const img = document.createElement("img");
-    img.src = item.url;
-    img.loading = "lazy";
-    img.alt = "공유 사진";
-    div.appendChild(img);
   }
 
   div.onclick = () => {
@@ -5031,6 +5049,7 @@ window.uploadTodoProof = async function(event) {
       size:uploaded.size,
       mimeType:uploaded.mimeType,
       storagePath:uploaded.storagePath,
+      ...(uploaded.thumbnailUrl ? { thumbnailUrl:uploaded.thumbnailUrl, thumbnailStoragePath:uploaded.thumbnailStoragePath } : {}),
       ownerUid:me.authUid,
       ownerEmail:me.email
     });
@@ -5558,6 +5577,7 @@ async function saveToArchive(msg) {
     type:msg.type || "text",
     url:msg.url || null,
     ...(msg.thumbnail ? { thumbnail:msg.thumbnail } : {}),
+    ...(msg.thumbnailUrl ? { thumbnailUrl:msg.thumbnailUrl, thumbnailStoragePath:msg.thumbnailStoragePath } : {}),
     items:Array.isArray(msg.items) ? msg.items : null,
     durationMs:msg.durationMs || null,
     expiresAt:msg.expiresAt || null,

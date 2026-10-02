@@ -19,6 +19,14 @@ service firebase.storage {
       allow update, delete: if false;
     }
 
+    match /memo_private_room/thumbs/{fileName} {
+      allow read: if isMember();
+      allow create: if isMember()
+        && request.resource.size <= 16 * 1024
+        && request.resource.contentType == 'image/jpeg';
+      allow update, delete: if false;
+    }
+
     match /memo_private_room/{fileName} {
       allow read: if isMember();
       allow create: if isMember() && (

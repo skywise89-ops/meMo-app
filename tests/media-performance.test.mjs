@@ -3,21 +3,29 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   clearMediaPreviews,
+  createAlbumThumbnail,
   createDeferredVideo,
   createVideoPreview,
   dataUrlByteLength,
   fitVideoThumbnailSize,
   formatVideoDuration,
+  generateImageThumbnail,
   generateVideoThumbnail,
+  isSafeAlbumThumbnailUrl,
   isUsableVideoThumbnail,
   setMediaPerformanceEnvironment,
-  stopMediaWithin
+  stopMediaWithin,
+  thumbnailDataUrlToBlob
 } from "../media-performance.js";
 
 const source = await readFile(new URL("../media-performance.js", import.meta.url), "utf8");
 
 function jpegDataUrl(byteLength = 256) {
   return `data:image/jpeg;base64,${Buffer.alloc(byteLength, 7).toString("base64")}`;
+}
+
+function safeRemoteThumbnail(name = "sample.jpg") {
+  return `https://firebasestorage.googleapis.com/v0/b/memo-e366f.firebasestorage.app/o/memo_private_room%2Fthumbs%2F${encodeURIComponent(name)}?alt=media&token=test`;
 }
 
 class FakeEventTarget {
@@ -47,9 +55,10 @@ class FakeEventTarget {
 }
 
 class FakeElement extends FakeEventTarget {
-  constructor(tagName) {
+  constructor(tagName, ownerDocument = null) {
     super();
     this.tagName = tagName.toUpperCase();
+    this.ownerDocument = ownerDocument;
     this.children = [];
     this.parentNode = null;
     this.dataset = {};
@@ -106,6 +115,8 @@ class FakeElement extends FakeEventTarget {
   set src(value) {
     this._src = String(value);
     this.attributes.set("src", this._src);
+    this.ownerDocument?.requestedSources.push({ tagName:this.tagName, url:this._src });
+    if (this.tagName === "IMG" && this.emitLoadSynchronously && this._src) this.dispatch("load");
   }
 
   get src() {
@@ -135,8 +146,8 @@ class FakeElement extends FakeEventTarget {
 }
 
 class FakeVideo extends FakeElement {
-  constructor() {
-    super("video");
+  constructor(ownerDocument = null) {
+    super("video", ownerDocument);
     this.videoWidth = 640;
     this.videoHeight = 360;
     this.duration = 12.345;
@@ -165,6 +176,15 @@ class FakeVideo extends FakeElement {
   }
 }
 
+class FakeImage extends FakeElement {
+  constructor(ownerDocument, { width = 1200, height = 800, syncLoad = false } = {}) {
+    super("img", ownerDocument);
+    this.naturalWidth = width;
+    this.naturalHeight = height;
+    this.emitLoadSynchronously = syncLoad;
+  }
+}
+
 class FakeCanvas extends FakeElement {
   constructor(dataUrl) {
     super("canvas");
@@ -182,25 +202,57 @@ class FakeCanvas extends FakeElement {
 }
 
 class FakeDocument {
-  constructor({ canvasDataUrl = jpegDataUrl(300), autoLoadVideo = false, syncLoadVideo = false } = {}) {
+  constructor({
+    canvasDataUrl = jpegDataUrl(300),
+    autoLoadVideo = false,
+    syncLoadVideo = false,
+    syncLoadImage = false,
+    imageWidth = 1200,
+    imageHeight = 800,
+    videoWidth = 640,
+    videoHeight = 360
+  } = {}) {
     this.visibilityState = "visible";
     this.documentElement = { clientWidth:390, clientHeight:844 };
     this.canvasDataUrl = canvasDataUrl;
     this.autoLoadVideo = autoLoadVideo;
     this.syncLoadVideo = syncLoadVideo;
+    this.syncLoadImage = syncLoadImage;
+    this.imageWidth = imageWidth;
+    this.imageHeight = imageHeight;
+    this.videoWidth = videoWidth;
+    this.videoHeight = videoHeight;
     this.createdVideos = [];
+    this.createdImages = [];
+    this.createdCanvases = [];
+    this.requestedSources = [];
   }
 
   createElement(tagName) {
     if (tagName === "video") {
-      const video = new FakeVideo();
+      const video = new FakeVideo(this);
+      video.videoWidth = this.videoWidth;
+      video.videoHeight = this.videoHeight;
       video.emitLoadedOnLoad = this.autoLoadVideo;
       video.emitLoadedSynchronously = this.syncLoadVideo;
       this.createdVideos.push(video);
       return video;
     }
-    if (tagName === "canvas") return new FakeCanvas(this.canvasDataUrl);
-    return new FakeElement(tagName);
+    if (tagName === "img") {
+      const image = new FakeImage(this, {
+        width:this.imageWidth,
+        height:this.imageHeight,
+        syncLoad:this.syncLoadImage
+      });
+      this.createdImages.push(image);
+      return image;
+    }
+    if (tagName === "canvas") {
+      const canvas = new FakeCanvas(this.canvasDataUrl);
+      this.createdCanvases.push(canvas);
+      return canvas;
+    }
+    return new FakeElement(tagName, this);
   }
 }
 
@@ -240,8 +292,9 @@ function installFakeBrowser(options = {}) {
     document,
     IntersectionObserver:FakeIntersectionObserver,
     URL:options.URL || globalThis.URL,
-    setTimeout,
-    clearTimeout
+    setTimeout:options.setTimeout || setTimeout,
+    clearTimeout:options.clearTimeout || clearTimeout,
+    isSafeAlbumThumbnailUrl:options.isSafeAlbumThumbnailUrl
   });
   return { document, restore };
 }
@@ -264,9 +317,103 @@ test("thumbnail helpers enforce inline JPEG and 16 KiB cap", () => {
   assert.equal(isUsableVideoThumbnail(tooLarge), false);
   assert.equal(isUsableVideoThumbnail(exact.replace("image/jpeg", "image/png")), false);
   assert.deepEqual(fitVideoThumbnailSize(1920, 1080, 240), { width:240, height:135 });
+  assert.deepEqual(fitVideoThumbnailSize(1080, 1920, 240), { width:135, height:240 });
   assert.deepEqual(fitVideoThumbnailSize(120, 80, 240), { width:120, height:80 });
+  const blob = thumbnailDataUrlToBlob(jpegDataUrl(321));
+  assert.equal(blob?.type, "image/jpeg");
+  assert.equal(blob?.size, 321);
+  assert.equal(thumbnailDataUrlToBlob(tooLarge), null);
   assert.equal(formatVideoDuration(65_400), "1:05");
   assert.equal(formatVideoDuration(undefined), "");
+});
+
+test("album thumbnail URLs are restricted to the current bucket thumbnail prefix", () => {
+  assert.equal(isSafeAlbumThumbnailUrl(safeRemoteThumbnail()), true);
+  assert.equal(isSafeAlbumThumbnailUrl("http://firebasestorage.googleapis.com/v0/b/memo-e366f.firebasestorage.app/o/memo_private_room%2Fthumbs%2Fx.jpg"), false);
+  assert.equal(isSafeAlbumThumbnailUrl("https://firebasestorage.googleapis.com/v0/b/other.firebasestorage.app/o/memo_private_room%2Fthumbs%2Fx.jpg"), false);
+  assert.equal(isSafeAlbumThumbnailUrl("https://firebasestorage.googleapis.com/v0/b/memo-e366f.firebasestorage.app/o/memo_private_room%2Foriginals%2Fx.jpg"), false);
+  assert.equal(isSafeAlbumThumbnailUrl("https://firebasestorage.googleapis.com/v0/b/memo-e366f.firebasestorage.app/o/memo_private_room%2Fthumbs%2F..%2Foriginal.jpg"), false);
+  assert.equal(isSafeAlbumThumbnailUrl("https://private.invalid/thumb.jpg"), false);
+});
+
+test("album remote thumbnail is lazy, CORS-safe, and never requests the original", () => {
+  const { document, restore } = installFakeBrowser();
+  const original = "https://private.invalid/original.mov";
+  const thumbnailUrl = safeRemoteThumbnail("remote.jpg");
+  let activations = 0;
+  const thumbnail = createAlbumThumbnail(
+    { url:original, thumbnailUrl },
+    { className:"album-media", onActivate:() => { activations += 1; } }
+  );
+
+  assert.equal(thumbnail.tagName, "IMG");
+  assert.equal(thumbnail.src, thumbnailUrl);
+  assert.equal(thumbnail.loading, "lazy");
+  assert.equal(thumbnail.decoding, "async");
+  assert.equal(thumbnail.crossOrigin, "anonymous");
+  assert.equal(thumbnail.dataset.thumbnailStatus, "loading");
+  assert.equal(thumbnail.dataset.thumbnailSource, "remote");
+  assert.equal(thumbnail.dataset.thumbnailPlaceholder, "false");
+  assert.deepEqual(document.requestedSources, [{ tagName:"IMG", url:thumbnailUrl }]);
+  assert.equal(document.createdVideos.length, 0);
+  thumbnail.dispatch("load");
+  assert.equal(thumbnail.dataset.thumbnailStatus, "ready");
+  thumbnail.click();
+  assert.equal(activations, 1);
+  restore();
+});
+
+test("album uses bounded legacy inline JPEG and missing thumbnails stay neutral and clickable", () => {
+  const { document, restore } = installFakeBrowser();
+  const original = "https://private.invalid/original.jpg";
+  const inline = jpegDataUrl(500);
+  const image = createAlbumThumbnail({ url:original, thumbnail:inline, thumbnailUrl:"https://evil.invalid/thumb.jpg" });
+  assert.equal(image.tagName, "IMG");
+  assert.equal(image.src, inline);
+  assert.equal(image.dataset.thumbnailSource, "inline");
+
+  let activations = 0;
+  const missing = createAlbumThumbnail(
+    { url:original, thumbnail:jpegDataUrl(16 * 1024 + 1), thumbnailUrl:"https://evil.invalid/thumb.jpg" },
+    { className:"album-media", onActivate:() => { activations += 1; } }
+  );
+  assert.equal(missing.tagName, "DIV");
+  assert.equal(missing.className, "album-media");
+  assert.equal(missing.textContent, "");
+  assert.equal(missing.dataset.thumbnailStatus, "missing");
+  assert.equal(missing.dataset.thumbnailPlaceholder, "true");
+  assert.equal(missing.style.background, "#e5e7eb");
+  missing.click();
+  assert.equal(activations, 1);
+  assert.equal(document.requestedSources.some(request => request.url === original), false);
+  assert.equal(document.createdVideos.length, 0);
+  restore();
+});
+
+test("album thumbnail load failure becomes a placeholder without original fallback", () => {
+  const { document, restore } = installFakeBrowser();
+  const host = new FakeElement("div");
+  const original = "https://private.invalid/fallback-must-not-load.mp4";
+  const thumbnailUrl = safeRemoteThumbnail("broken.jpg");
+  let activations = 0;
+  const image = createAlbumThumbnail(
+    { url:original, thumbnailUrl },
+    { className:"album-media", onActivate:() => { activations += 1; } }
+  );
+  host.appendChild(image);
+  image.dispatch("error");
+
+  const placeholder = host.children[0];
+  assert.equal(placeholder.tagName, "DIV");
+  assert.equal(placeholder.dataset.thumbnailStatus, "error");
+  assert.equal(placeholder.dataset.thumbnailSource, "remote");
+  assert.equal(placeholder.dataset.thumbnailPlaceholder, "true");
+  assert.deepEqual(document.requestedSources, [{ tagName:"IMG", url:thumbnailUrl }]);
+  assert.equal(document.requestedSources.some(request => request.url === original), false);
+  assert.equal(document.createdVideos.length, 0);
+  placeholder.click();
+  assert.equal(activations, 1);
+  restore();
 });
 
 test("inline thumbnail preview is an image and performs no video request", () => {
@@ -473,19 +620,76 @@ test("stopMediaWithin unloads detached media but preserves retained connected ti
   restore();
 });
 
+test("image thumbnail extraction is bounded, caps portrait dimensions, and revokes its URL", async () => {
+  const revoked = [];
+  const UrlApi = {
+    createObjectURL:() => "blob:image-generated-locally",
+    revokeObjectURL:value => revoked.push(value)
+  };
+  const { document, restore } = installFakeBrowser({
+    URL:UrlApi,
+    syncLoadImage:true,
+    imageWidth:600,
+    imageHeight:1200,
+    canvasDataUrl:jpegDataUrl(700)
+  });
+  const original = new Blob(["image bytes"], { type:"image/png" });
+  const originalSize = original.size;
+  const result = await generateImageThumbnail(original);
+
+  assert.equal(isUsableVideoThumbnail(result.thumbnail), true);
+  assert.equal(result.width, 600);
+  assert.equal(result.height, 1200);
+  assert.equal(document.createdCanvases[0].width, 120);
+  assert.equal(document.createdCanvases[0].height, 240);
+  assert.equal(original.size, originalSize);
+  assert.deepEqual(revoked, ["blob:image-generated-locally"]);
+  restore();
+});
+
+test("image thumbnail generation uses the shared three-second failure bound", async () => {
+  const revoked = [];
+  const delays = [];
+  const UrlApi = {
+    createObjectURL:() => "blob:image-timeout",
+    revokeObjectURL:value => revoked.push(value)
+  };
+  const { restore } = installFakeBrowser({
+    URL:UrlApi,
+    setTimeout:(callback, delay) => {
+      delays.push(delay);
+      queueMicrotask(callback);
+      return 1;
+    },
+    clearTimeout:() => {}
+  });
+  assert.deepEqual(await generateImageThumbnail(new Blob(["bad image"])), {});
+  assert.deepEqual(delays, [3_000]);
+  assert.deepEqual(revoked, ["blob:image-timeout"]);
+  restore();
+});
+
 test("thumbnail extraction uses a local object URL, stays bounded, and revokes it", async () => {
   const revoked = [];
   const UrlApi = {
     createObjectURL:() => "blob:generated-locally",
     revokeObjectURL:value => revoked.push(value)
   };
-  const { restore } = installFakeBrowser({ URL:UrlApi, syncLoadVideo:true, canvasDataUrl:jpegDataUrl(700) });
+  const { document, restore } = installFakeBrowser({
+    URL:UrlApi,
+    syncLoadVideo:true,
+    videoWidth:1080,
+    videoHeight:1920,
+    canvasDataUrl:jpegDataUrl(700)
+  });
   const result = await generateVideoThumbnail(new Blob(["video bytes"], { type:"video/mp4" }));
 
   assert.equal(isUsableVideoThumbnail(result.thumbnail), true);
   assert.equal(result.durationMs, 12_345);
-  assert.equal(result.width, 640);
-  assert.equal(result.height, 360);
+  assert.equal(result.width, 1080);
+  assert.equal(result.height, 1920);
+  assert.equal(document.createdCanvases[0].width, 135);
+  assert.equal(document.createdCanvases[0].height, 240);
   assert.deepEqual(revoked, ["blob:generated-locally"]);
   restore();
 });
@@ -506,7 +710,7 @@ test("thumbnail extraction failure is non-blocking and still revokes the object 
 
 test("module is browser-standalone and contains no persistence or network writes", () => {
   assert.doesNotMatch(source, /\b(?:fetch|XMLHttpRequest)\s*\(/);
-  assert.doesNotMatch(source, /firebase|setDoc|updateDoc|localStorage|sessionStorage/);
+  assert.doesNotMatch(source, /from\s+["'][^"']*firebase|\b(?:setDoc|updateDoc|localStorage|sessionStorage)\b/);
   assert.doesNotMatch(source, /console\.(?:log|warn|error)/);
   assert.match(source, /data(?:set)?\.videoState|dataset\.videoState/);
   assert.match(source, /dataset\.deferredSrc/);

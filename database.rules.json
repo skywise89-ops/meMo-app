@@ -11,7 +11,9 @@
       },
       "messages": {
         ".read": "auth != null && auth.token.email_verified == true && (auth.token.email == 'fromkevinjung@gmail.com' || auth.token.email == 'momo.021118@gmail.com')",
-        ".indexOn": ["expiresAt"],
+        ".indexOn": [
+          "expiresAt"
+        ],
         "$messageId": {
           ".write": "auth != null && auth.token.email_verified == true && !data.exists() && newData.exists() && ((auth.token.email == 'fromkevinjung@gmail.com' && (newData.child('uid').val() == 'Kevin' || newData.child('uid').val() == 'system')) || (auth.token.email == 'momo.021118@gmail.com' && (newData.child('uid').val() == 'Momo' || newData.child('uid').val() == 'system')))"
         }
@@ -59,13 +61,24 @@
       "trash": {
         "media": {
           ".read": "auth != null && auth.token.email_verified == true && auth.token.email == 'fromkevinjung@gmail.com'",
-          ".indexOn": ["expiresAt"]
+          ".indexOn": [
+            "expiresAt"
+          ]
         }
       },
       "audioExpirations": {
         ".read": false,
         ".write": false,
-        ".indexOn": ["expiresAt"]
+        ".indexOn": [
+          "expiresAt"
+        ]
+      },
+      "albumIndex": {
+        ".read": "auth != null && auth.token.email_verified == true && (auth.token.email == 'fromkevinjung@gmail.com' || auth.token.email == 'momo.021118@gmail.com')",
+        ".write": false,
+        ".indexOn": [
+          "ts"
+        ]
       }
     }
   }
