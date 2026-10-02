@@ -14,7 +14,7 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
-const APP_VERSION = '4.5.1';
+const APP_VERSION = '4.5.2';
 
 // notification payload는 FCM SDK가 이미 표시한다. data-only payload만 직접 표시한다.
 messaging.onBackgroundMessage(async (payload) => {
